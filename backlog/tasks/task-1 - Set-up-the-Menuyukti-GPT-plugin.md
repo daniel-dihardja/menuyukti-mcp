@@ -1,11 +1,11 @@
 ---
 id: TASK-1
-title: Set up the Menuyukti GPT plugin
+title: Set up the Menuyukti MCP plugin
 status: Done
 assignee:
   - '@Daniel'
 created_date: '2026-11-03T10:03:00Z'
-updated_date: '2026-11-03T10:13:00Z'
+updated_date: '2026-11-03T12:19:00Z'
 labels:
   - plugin
   - analytics
@@ -52,6 +52,8 @@ Restaurant owners should be able to install a ChatGPT plugin and ask questions a
 
 <!-- SECTION:NOTES:BEGIN -->
 Implemented local MCP 2.x MCPServer (streamable HTTP) on 127.0.0.1:8787/mcp. Path gate uses MENUYUKTI_DATA_DIR before any file read. Analytics come from sibling menuyukti path dependency (detect → normalize → calculate_sales_analytics). npm run mcp starts the server; npm run dev remains the Backlog board. Verified with uv run pytest (5 passed) and a live Client call to summarize_local_sales against the ESB demo fixture.
+
+Naming: package/console script is menuyukti-mcp (was menuyukti-gpt).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

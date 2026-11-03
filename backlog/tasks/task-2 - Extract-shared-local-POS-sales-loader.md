@@ -5,12 +5,12 @@ status: Done
 assignee:
   - '@Daniel'
 created_date: '2026-11-03T10:49:00Z'
-updated_date: '2026-11-03T10:50:00Z'
+updated_date: '2026-11-03T12:19:00Z'
 labels: []
 dependencies: []
 references:
-  - src/menuyukti_gpt/sales.py
   - packages/menuyukti/src/menuyukti/core/analytics/registry.py
+  - src/menuyukti_mcp/sales.py
 ordinal: 2000
 ---
 

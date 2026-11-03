@@ -1,13 +1,13 @@
+.DS_Store
+
+# Rust
+/target/
+**/*.rs.bk
+
+# Optional local tooling
 .venv/
 __pycache__/
-*.py[cod]
 .pytest_cache/
-.mypy_cache/
-.ruff_cache/
-dist/
-*.egg-info/
-.DS_Store
-packages/**/src/*.egg-info/
 
 # Local POS exports for owners/devs (keep the default demo + folder README)
 sales-reports/*

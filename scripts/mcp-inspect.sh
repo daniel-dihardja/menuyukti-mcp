@@ -10,9 +10,9 @@ export MENUYUKTI_DATA_DIR="${MENUYUKTI_DATA_DIR:-$ROOT/sales-reports}"
 MCP_URL="${MCP_URL:-http://127.0.0.1:8787/mcp}"
 
 echo "MENUYUKTI_DATA_DIR=$MENUYUKTI_DATA_DIR"
-echo "Starting MCP server at $MCP_URL …"
+echo "Starting Rust MCP server at $MCP_URL …"
 
-uv run menuyukti-gpt &
+cargo run -p menuyukti-mcp --quiet &
 MCP_PID=$!
 
 cleanup() {

@@ -4,7 +4,7 @@ title: Add owner column-mapping config for custom POS exports
 status: Done
 assignee: []
 created_date: '2026-11-03T11:19:00Z'
-updated_date: '2026-11-03T11:20:00Z'
+updated_date: '2026-11-03T12:19:00Z'
 labels: []
 dependencies: []
 ordinal: 5000
@@ -34,6 +34,8 @@ Restaurant owners on unsupported POS systems still need analytics, but they cann
 
 <!-- SECTION:NOTES:BEGIN -->
 Added JSON column mapping + generic normalizer fallback; README + example file; pytest mapping/sales/mcp → 14 passed.
+
+Naming: package/module is now menuyukti-mcp / menuyukti_mcp (was menuyukti-gpt / menuyukti_gpt).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

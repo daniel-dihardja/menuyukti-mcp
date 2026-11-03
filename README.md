@@ -4,6 +4,38 @@ Local MCP server for restaurant POS sales analytics. Connect it to your personal
 
 Licensed under the [MIT License](LICENSE).
 
+## Requirements
+
+- [Rust](https://rustup.rs/) (stable toolchain with Cargo)
+
+Python is **not** required for the normal Excel → MCP workflow.
+
+## Run the local server
+
+1. Put POS Excel exports in [`sales-reports/`](sales-reports/) (a demo file is included).
+2. Start the Rust MCP server:
+
+```bash
+make mcp
+# or: bash scripts/run-mcp.sh
+# or: MENUYUKTI_DATA_DIR="$PWD/sales-reports" cargo run -p menuyukti-mcp
+```
+
+The server listens at `http://127.0.0.1:8787/mcp` (streamable HTTP).
+
+Optional Inspector (needs Node/`npx` for the Inspector UI only):
+
+```bash
+make mcp-inspect
+```
+
+Point ChatGPT / MCP clients at that URL. Tools:
+
+- `list_sales_reports`
+- `summarize_local_sales`
+- `list_normalized_sales`
+- `get_menu_heatmaps`
+
 ## Sales reports folder
 
 Put your POS Excel exports in [`sales-reports/`](sales-reports/).
@@ -54,3 +86,18 @@ Notes:
 - `name` is an optional label shown in tool results (defaults to `custom`).
 - Optional override: set `MENUYUKTI_COLUMN_MAPPING` to a full path if the file lives elsewhere.
 - Known POS formats still use their built-in normalizers; this mapping is used when the export is unrecognized.
+
+## Develop
+
+```bash
+make test
+# or: cargo test -p menuyukti && cargo test -p menuyukti-mcp
+make mcp
+make backlog   # Backlog.md board (optional)
+```
+
+Workspace layout:
+
+- `crates/menuyukti` — Excel normalize + analytics library
+- `crates/menuyukti-mcp` — MCP HTTP binary
+
