@@ -138,9 +138,10 @@ In the source checkout, put POS Excel exports in [`sales-reports/`](sales-report
 
 With a prebuilt binary, use any folder and set `MENUYUKTI_DATA_DIR` to it (see Option A).
 
-A sample file is included in this repo:
+Sample files included in this repo:
 
 - [`sales-reports/demo-cafe-sales-july-2026.xlsx`](sales-reports/demo-cafe-sales-july-2026.xlsx) — anonymized cafe month with real data
+- [`sales-reports/demo-cafe-cogs-july-2026.xlsx`](sales-reports/demo-cafe-cogs-july-2026.xlsx) — matching menu COGS (hospitality starter estimates; `Menu` + `COGS`)
 
 Example tool argument:
 
