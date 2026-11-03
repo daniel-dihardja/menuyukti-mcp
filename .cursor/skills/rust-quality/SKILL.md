@@ -32,7 +32,7 @@ Do not weaken the gate (`--fix`, broad allows, skipping `--locked`) unless the u
 | Crate | Own | Avoid |
 | --- | --- | --- |
 | `menuyukti` | normalize, paths, load, analytics, column mapping | HTTP/MCP transport details |
-| `menuyukti-mcp` | MCP tools, HTTP server, process main | Reimplementing Excel/analytics logic |
+| `gastro-mcp` | MCP tools, HTTP server, process main | Reimplementing Excel/analytics logic |
 
 New shared behavior → library first, thin MCP wrapper second.
 
@@ -43,7 +43,7 @@ New shared behavior → library first, thin MCP wrapper second.
 3. Add or update tests:
    - Path/security: `paths` unit tests or load-gate tests
    - POS/normalize: fixtures under `crates/menuyukti/tests` + `workspaces/` demos when relevant
-   - MCP: HTTP integration in `crates/menuyukti-mcp/tests` when tool surface changes
+   - MCP: HTTP integration in `crates/gastro-mcp/tests` when tool surface changes
 4. Run `make check`; fix failures before finishing.
 5. Keep README/`make help` in sync if you add developer commands.
 

@@ -1,4 +1,4 @@
-//! Menuyukti MCP server entrypoint (streamable HTTP).
+//! Gastro MCP server entrypoint (streamable HTTP).
 
 use std::net::SocketAddr;
 
@@ -23,7 +23,7 @@ const DEFAULT_PORT: u16 = 8787;
 const MCP_PATH: &str = "/mcp";
 
 const INSTRUCTIONS: &str = concat!(
-    "Local Menuyukti sales analytics for restaurant POS Excel files. ",
+    "Local Gastro MCP sales analytics for restaurant POS Excel files. ",
     "Onboarding: when an owner drops sales (+ optional COGS) Excel into a new ",
     "workspace folder, call list_workspace_files, infer file roles, confirm if ",
     "unclear, then write_workspace_config (workspace.yaml). After that, call ",
@@ -93,13 +93,13 @@ struct WriteWorkspaceConfigArgs {
 }
 
 #[derive(Clone)]
-struct MenuyuktiMcp {
+struct GastroMcp {
     // Populated by `#[tool_router]`; read by generated `ServerHandler` glue.
     #[allow(dead_code)]
     tool_router: ToolRouter<Self>,
 }
 
-impl MenuyuktiMcp {
+impl GastroMcp {
     fn new() -> Self {
         Self {
             tool_router: Self::tool_router(),
@@ -150,7 +150,7 @@ fn config_from_args(args: WorkspaceConfigArgs) -> menuyukti::WorkspaceConfig {
 }
 
 #[tool_router]
-impl MenuyuktiMcp {
+impl GastroMcp {
     #[tool(
         description = "List analysis workspaces under MENUYUKTI_DATA_DIR (typically workspaces/). Groups Excel files by workspace folder and returns relative file paths you can pass to the other sales tools. Ignores non-Excel files."
     )]
@@ -245,13 +245,10 @@ impl MenuyuktiMcp {
 }
 
 #[tool_handler]
-impl ServerHandler for MenuyuktiMcp {
+impl ServerHandler for GastroMcp {
     fn get_info(&self) -> ServerConfig {
         ServerConfig::new(ServerCapabilities::builder().enable_tools().build())
-            .with_server_info(Implementation::new(
-                "menuyukti-mcp",
-                env!("CARGO_PKG_VERSION"),
-            ))
+            .with_server_info(Implementation::new("gastro-mcp", env!("CARGO_PKG_VERSION")))
             .with_protocol_version(ProtocolVersion::default())
             .with_instructions(INSTRUCTIONS.to_string())
     }
@@ -273,7 +270,7 @@ async fn main() -> anyhow::Result<()> {
         .with_cancellation_token(ct.child_token());
 
     let service = StreamableHttpService::new(
-        || Ok(MenuyuktiMcp::new()),
+        || Ok(GastroMcp::new()),
         LocalSessionManager::default().into(),
         config,
     );
@@ -287,7 +284,7 @@ async fn main() -> anyhow::Result<()> {
     let listener = tokio::net::TcpListener::bind(addr).await?;
 
     tracing::info!(
-        "menuyukti-mcp MCP listening at http://{DEFAULT_HOST}:{port}{MCP_PATH} (menuyukti {})",
+        "gastro-mcp listening at http://{DEFAULT_HOST}:{port}{MCP_PATH} (menuyukti {})",
         menuyukti::VERSION
     );
 

@@ -161,9 +161,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.11.0"
+version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "375989decec1a0fa424442bed520fa12ede43a48475ce8c7417d2c69b32b5f6b"
+checksum = "86e055fa6e3e40ad6187ba25b6855eeb635d5271f8e0f0e1e9a5826b8d75bea0"
 dependencies = [
  "find-msvc-tools",
  "shlex",
@@ -446,6 +446,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "gastro-mcp"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "menuyukti",
+ "rmcp",
+ "schemars",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "getrandom"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -661,24 +679,6 @@ dependencies = [
  "serde_yaml",
  "tempfile",
  "thiserror",
-]
-
-[[package]]
-name = "menuyukti-mcp"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "axum",
- "menuyukti",
- "rmcp",
- "schemars",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
- "tokio-util",
- "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]

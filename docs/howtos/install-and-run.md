@@ -7,17 +7,17 @@ Gastro MCP runs on your computer. ChatGPT (or another MCP client) talks to it lo
 Tagged releases publish archives for Windows (x64), macOS (Apple Silicon + Intel), and Linux (x64 + ARM64). No Rust install.
 
 1. Download the archive for your OS from [GitHub Releases](https://github.com/daniel-dihardja/gastro-mcp/releases).
-2. Extract it. Inside you’ll find `menuyukti-mcp` (or `menuyukti-mcp.exe` on Windows), plus `LICENSE` and `README.md`.
+2. Extract it. Inside you’ll find `gastro-mcp` (or `gastro-mcp.exe` on Windows), plus `LICENSE` and `README.md`.
 3. Create a folder for your analysis workspaces (any path you like).
 4. Start the server:
 
 ```bash
 # macOS / Linux
-MENUYUKTI_DATA_DIR="/path/to/workspaces" ./menuyukti-mcp
+MENUYUKTI_DATA_DIR="/path/to/workspaces" ./gastro-mcp
 
 # Windows (PowerShell)
 $env:MENUYUKTI_DATA_DIR="C:\path\to\workspaces"
-.\menuyukti-mcp.exe
+.\gastro-mcp.exe
 ```
 
 Keep that terminal open while ChatGPT / your MCP client is connected.
@@ -34,7 +34,7 @@ The server listens at **`http://127.0.0.1:8787/mcp`**.
 ```bash
 make mcp
 # or: bash scripts/run-mcp.sh
-# or: MENUYUKTI_DATA_DIR="$PWD/workspaces" cargo run -p menuyukti-mcp
+# or: MENUYUKTI_DATA_DIR="$PWD/workspaces" cargo run -p gastro-mcp
 ```
 
 Optional: open [MCP Inspector](https://modelcontextprotocol.io/) against the running server (needs Node / `npx`):
@@ -46,5 +46,6 @@ make mcp-inspect
 ## Next steps
 
 - Put sales files in a [workspace](./workspaces.md).
-- Connect [ChatGPT with a Secure MCP Tunnel](./connect-chatgpt-tunnel.md).
+- In **ChatGPT Desktop** settings, add Gastro MCP as an MCP server at `http://127.0.0.1:8787/mcp`, then use it in chat.
+- Browser ChatGPT: connect with a [Secure MCP Tunnel](./connect-chatgpt-tunnel.md).
 - If your POS export isn’t recognized, see [Custom POS columns](./custom-pos-columns.md).

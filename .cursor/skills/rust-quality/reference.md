@@ -44,8 +44,7 @@ Use when running Bugbot / security / human review on Rust changes:
 **Supply chain / release**
 
 - Lockfile updated intentionally with dependency changes
-- Release tags still build `menuyukti-mcp` only from reviewed main
-
+- Release tags still build `gastro-mcp` only from reviewed main
 ## Clippy allow policy
 
 Allowed only when:

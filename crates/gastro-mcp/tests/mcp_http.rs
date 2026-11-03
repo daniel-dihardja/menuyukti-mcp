@@ -45,7 +45,7 @@ fn start_server(data_dir: &PathBuf) -> RunningServer {
     let port = free_port();
     let addr: SocketAddr = format!("127.0.0.1:{port}").parse().unwrap();
 
-    let bin = env!("CARGO_BIN_EXE_menuyukti-mcp");
+    let bin = env!("CARGO_BIN_EXE_gastro-mcp");
     let mut child = Command::new(bin)
         .env("MENUYUKTI_DATA_DIR", data_dir)
         .env("MENUYUKTI_MCP_PORT", port.to_string())
@@ -53,7 +53,7 @@ fn start_server(data_dir: &PathBuf) -> RunningServer {
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
-        .expect("spawn menuyukti-mcp");
+        .expect("spawn gastro-mcp");
 
     let deadline = Instant::now() + Duration::from_secs(10);
     while Instant::now() < deadline {
@@ -64,7 +64,7 @@ fn start_server(data_dir: &PathBuf) -> RunningServer {
     }
     let _ = child.kill();
     let _ = child.wait();
-    panic!("menuyukti-mcp failed to listen on {addr}");
+    panic!("gastro-mcp failed to listen on {addr}");
 }
 
 fn http_post_json(addr: SocketAddr, body: Value) -> Value {

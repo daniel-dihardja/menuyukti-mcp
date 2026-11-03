@@ -57,7 +57,7 @@ tunnel-client run
 
 If the tunnel does not appear in ChatGPT, confirm workspace association and **Tunnels Read + Use** on the account adding the plugin.
 
-If tool calls fail, confirm both `menuyukti-mcp` and `tunnel-client run` are still running, then re-run:
+If tool calls fail, confirm both `gastro-mcp` and `tunnel-client run` are still running, then re-run:
 
 ```bash
 tunnel-client doctor --profile gastro-local --explain
