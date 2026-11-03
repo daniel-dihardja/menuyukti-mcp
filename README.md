@@ -1,6 +1,6 @@
 # Gastro MCP
 
-Analyze your restaurant sales on **your own computer**. Gastro MCP reads your POS Excel exports locally and answers through ChatGPT — sales data stays on your machine, not on someone else’s server.
+Analyze your restaurant sales on **your own computer**. Gastro MCP reads your POS Excel exports locally and answers in **your ChatGPT** — sales data stays on your machine, not on someone else’s server.
 
 Licensed under the [MIT License](LICENSE).
 

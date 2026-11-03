@@ -53,13 +53,14 @@ Example tool argument (still the sales file path for now):
 1. Create a subdirectory under your data folder, for example `my-venue-aug-2026/`.
 2. Drop your POS Excel export in (and optional COGS / notes).
 3. Add a `workspace.json` (start from [`workspace.example.json`](../../workspace.example.json)).
-4. In ChatGPT or MCP Inspector, call `list_workspaces`, then pass a relative path such as `my-venue-aug-2026/sales.xlsx` to the analytics tools.
+4. In ChatGPT or MCP Inspector, call `list_workspaces` (or `list_workspace_files` on a folder), then pass a relative path such as `my-venue-aug-2026/sales.xlsx` to the analytics tools.
 
 Personal uploads under `workspaces/` are gitignored. Only the demo workspace is committed.
 
 ## What the tools can do
 
 - `list_workspaces` — see folders and Excel files Gastro MCP can read
+- `list_workspace_files` — see every file in one workspace folder (`workspace.json`, Excel, notes, …)
 - `summarize_local_sales` — totals and top items
 - `list_normalized_sales` — cleaned line items
 - `get_menu_heatmaps` — when each dish sells during the day / week

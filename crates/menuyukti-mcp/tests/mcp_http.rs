@@ -135,6 +135,7 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
         .collect();
     for required in [
         "list_workspaces",
+        "list_workspace_files",
         "summarize_local_sales",
         "list_normalized_sales",
         "get_menu_heatmaps",
@@ -149,6 +150,26 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
     assert!(
         workspaces["workspace_count"].as_u64().unwrap_or(0) >= 1,
         "tool=list_workspaces unexpected payload={workspaces}"
+    );
+
+    let workspace_files = tool_payload(
+        server.addr,
+        "list_workspace_files",
+        json!({"path": "demo-cafe-july-2026"}),
+    );
+    assert!(
+        workspace_files["file_count"].as_u64().unwrap_or(0) >= 3,
+        "tool=list_workspace_files unexpected payload={workspace_files}"
+    );
+    let file_paths: Vec<&str> = workspace_files["files"]
+        .as_array()
+        .expect("files array")
+        .iter()
+        .filter_map(|f| f["path"].as_str())
+        .collect();
+    assert!(
+        file_paths.contains(&"demo-cafe-july-2026/workspace.json"),
+        "tool=list_workspace_files missing workspace.json; files={file_paths:?}"
     );
 
     let summary = tool_payload(

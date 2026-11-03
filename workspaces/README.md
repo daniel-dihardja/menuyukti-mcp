@@ -26,7 +26,7 @@ Use the sales path in MCP tools:
 
 1. Create a subdirectory (for example `my-venue-aug-2026/`) and drop Excel files into it.
 2. Copy [`workspace.example.json`](../workspace.example.json) in as `workspace.json` and set the `files` roles.
-3. Call `list_workspaces`, then pass a relative path such as `{"path": "my-venue-aug-2026/sales.xlsx"}`.
+3. Call `list_workspaces` (or `list_workspace_files` with `{"path": "my-venue-aug-2026"}`), then pass a relative path such as `{"path": "my-venue-aug-2026/sales.xlsx"}`.
 4. For unsupported POS layouts, see [Custom POS columns](../docs/howtos/custom-pos-columns.md).
 
 Personal uploads in this folder are gitignored. Only the default demo workspace above is committed.

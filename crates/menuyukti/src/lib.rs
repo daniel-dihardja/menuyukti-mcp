@@ -26,7 +26,8 @@ pub use line_item::{LineItem, REQUIRED_COLUMNS};
 pub use load::{load_normalized_sales, LoadError, NormalizedSales};
 pub use normalize::{detect_and_normalize, normalize_for_pos, NormalizeError};
 pub use paths::{
-    get_data_dir, list_workspaces, resolve_allowed_path, PathNotAllowedError, ResolvePathError,
-    WorkspaceEntry, WorkspaceFileEntry, WorkspaceList, DATA_DIR_ENV,
+    get_data_dir, list_workspace_files, list_workspaces, resolve_allowed_dir, resolve_allowed_path,
+    PathNotAllowedError, ResolvePathError, WorkspaceEntry, WorkspaceFileEntry, WorkspaceFilesList,
+    WorkspaceList, DATA_DIR_ENV,
 };
 pub use pos::{detect_from_a1, detect_pos_from_excel_bytes};

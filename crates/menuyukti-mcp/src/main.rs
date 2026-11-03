@@ -25,15 +25,22 @@ const MCP_PATH: &str = "/mcp";
 const INSTRUCTIONS: &str = concat!(
     "Local Menuyukti sales analytics for restaurant POS Excel files. ",
     "Call list_workspaces to see analysis workspaces and their Excel files, ",
-    "summarize_local_sales for aggregates, list_normalized_sales ",
-    "for plain normalized line items, or get_menu_heatmaps for per-menu ",
-    "daily/weekly demand patterns. Paths must be under MENUYUKTI_DATA_DIR. ",
-    "Files stay on the local machine."
+    "list_workspace_files to see all files in one workspace folder ",
+    "(including workspace.json and notes), summarize_local_sales for aggregates, ",
+    "list_normalized_sales for plain normalized line items, or get_menu_heatmaps ",
+    "for per-menu daily/weekly demand patterns. Paths must be under ",
+    "MENUYUKTI_DATA_DIR. Files stay on the local machine."
 );
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 struct PathArgs {
     /// Relative or absolute path to a POS Excel file under MENUYUKTI_DATA_DIR.
+    path: String,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+struct WorkspacePathArgs {
+    /// Relative or absolute path to a workspace directory under MENUYUKTI_DATA_DIR.
     path: String,
 }
 
@@ -75,6 +82,19 @@ impl MenuyuktiMcp {
     )]
     async fn list_workspaces(&self) -> Result<CallToolResult, McpError> {
         match menuyukti::list_workspaces(None) {
+            Ok(listed) => Ok(text_json(listed)),
+            Err(err) => Ok(error_json(err.to_string())),
+        }
+    }
+
+    #[tool(
+        description = "List all files in one workspace directory under MENUYUKTI_DATA_DIR (Excel, workspace.json, notes, and other docs). Path must be a workspace folder (for example demo-cafe-july-2026). Skips Excel lock files (~$*)."
+    )]
+    async fn list_workspace_files(
+        &self,
+        Parameters(WorkspacePathArgs { path }): Parameters<WorkspacePathArgs>,
+    ) -> Result<CallToolResult, McpError> {
+        match menuyukti::list_workspace_files(&path, None) {
             Ok(listed) => Ok(text_json(listed)),
             Err(err) => Ok(error_json(err.to_string())),
         }

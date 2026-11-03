@@ -49,6 +49,16 @@ pub struct WorkspaceList {
     pub workspaces: Vec<WorkspaceEntry>,
 }
 
+/// All regular files under one workspace directory (not Excel-only).
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct WorkspaceFilesList {
+    pub data_dir: String,
+    /// Relative workspace folder under the data dir (`"."` for the data dir itself).
+    pub workspace: String,
+    pub file_count: usize,
+    pub files: Vec<WorkspaceFileEntry>,
+}
+
 /// Resolve `MENUYUKTI_DATA_DIR` to an absolute path.
 pub fn get_data_dir() -> Result<PathBuf, PathNotAllowedError> {
     let raw = std::env::var(DATA_DIR_ENV).unwrap_or_default();
@@ -108,7 +118,57 @@ pub fn resolve_allowed_path(
     Ok(resolved)
 }
 
-/// Errors from [`resolve_allowed_path`].
+/// Resolve `path` to a directory inside the configured data directory.
+///
+/// Empty path and `"."` resolve to the data directory itself. Rejects traversal
+/// and paths outside the sandbox. Returns [`std::io::Error`] with kind
+/// [`NotFound`](std::io::ErrorKind::NotFound) when the path is inside the
+/// sandbox but is not a directory.
+pub fn resolve_allowed_dir(
+    path: &str,
+    data_dir: Option<&Path>,
+) -> Result<PathBuf, ResolvePathError> {
+    let root = match data_dir {
+        Some(p) => expand_user(p),
+        None => get_data_dir()?,
+    };
+    let root = root
+        .canonicalize()
+        .unwrap_or_else(|_| normalize_lexical(&root));
+
+    let trimmed = path.trim();
+    let candidate = if trimmed.is_empty() || trimmed == "." {
+        root.clone()
+    } else {
+        let p = expand_user(Path::new(trimmed));
+        if p.is_absolute() {
+            p
+        } else {
+            root.join(p)
+        }
+    };
+    let resolved = candidate
+        .canonicalize()
+        .unwrap_or_else(|_| normalize_lexical(&candidate));
+
+    if !resolved.starts_with(&root) {
+        return Err(ResolvePathError::NotAllowed(
+            PathNotAllowedError::OutsideDataDir {
+                root,
+                path: path.to_string(),
+            },
+        ));
+    }
+    if !resolved.is_dir() {
+        return Err(ResolvePathError::Io(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("Workspace directory not found: {}", resolved.display()),
+        )));
+    }
+    Ok(resolved)
+}
+
+/// Errors from [`resolve_allowed_path`] / [`resolve_allowed_dir`].
 #[derive(Debug, Error)]
 pub enum ResolvePathError {
     #[error(transparent)]
@@ -167,9 +227,58 @@ pub fn list_workspaces(data_dir: Option<&Path>) -> Result<WorkspaceList, PathNot
     })
 }
 
+/// List all regular files under a workspace directory inside the data dir.
+///
+/// Unlike [`list_workspaces`], this includes non-Excel files (for example
+/// `workspace.json` and notes). Excel lock files (`~$*`) are skipped.
+/// Paths in the result are relative to the data directory.
+pub fn list_workspace_files(
+    workspace: &str,
+    data_dir: Option<&Path>,
+) -> Result<WorkspaceFilesList, ResolvePathError> {
+    let root = match data_dir {
+        Some(p) => expand_user(p),
+        None => get_data_dir()?,
+    };
+    let root = root
+        .canonicalize()
+        .unwrap_or_else(|_| normalize_lexical(&root));
+    if !root.is_dir() {
+        return Err(PathNotAllowedError::NotADirectory(root).into());
+    }
+
+    let dir = resolve_allowed_dir(workspace, Some(&root))?;
+    let mut files = Vec::new();
+    collect_files(&root, &dir, false, &mut files)?;
+    files.sort_by(|a, b| a.path.cmp(&b.path));
+
+    let trimmed = workspace.trim();
+    let workspace_label = if trimmed.is_empty() || trimmed == "." {
+        ".".to_string()
+    } else {
+        trimmed.replace('\\', "/")
+    };
+
+    Ok(WorkspaceFilesList {
+        data_dir: root.display().to_string(),
+        workspace: workspace_label,
+        file_count: files.len(),
+        files,
+    })
+}
+
 fn collect_excel_files(
     root: &Path,
     dir: &Path,
+    out: &mut Vec<WorkspaceFileEntry>,
+) -> Result<(), PathNotAllowedError> {
+    collect_files(root, dir, true, out)
+}
+
+fn collect_files(
+    root: &Path,
+    dir: &Path,
+    excel_only: bool,
     out: &mut Vec<WorkspaceFileEntry>,
 ) -> Result<(), PathNotAllowedError> {
     let entries = match fs::read_dir(dir) {
@@ -181,7 +290,7 @@ fn collect_excel_files(
     for entry in entries.flatten() {
         let path = entry.path();
         if path.is_dir() {
-            collect_excel_files(root, &path, out)?;
+            collect_files(root, &path, excel_only, out)?;
             continue;
         }
         if !path.is_file() {
@@ -193,13 +302,15 @@ fn collect_excel_files(
         if name.starts_with("~$") {
             continue;
         }
-        let suffix = path
-            .extension()
-            .and_then(|e| e.to_str())
-            .map(|e| format!(".{}", e.to_ascii_lowercase()))
-            .unwrap_or_default();
-        if !EXCEL_SUFFIXES.contains(&suffix.as_str()) {
-            continue;
+        if excel_only {
+            let suffix = path
+                .extension()
+                .and_then(|e| e.to_str())
+                .map(|e| format!(".{}", e.to_ascii_lowercase()))
+                .unwrap_or_default();
+            if !EXCEL_SUFFIXES.contains(&suffix.as_str()) {
+                continue;
+            }
         }
         let rel = path
             .strip_prefix(root)
@@ -317,5 +428,49 @@ mod tests {
         let missing = tempfile::tempdir().unwrap().path().join("nope");
         let err = list_workspaces(Some(&missing)).unwrap_err();
         assert!(matches!(err, PathNotAllowedError::NotADirectory(_)));
+    }
+
+    #[test]
+    fn lists_all_files_in_workspace_including_non_excel() {
+        let _guard = env_lock().lock().unwrap();
+        let root = tempfile::tempdir().unwrap();
+        let ws = root.path().join("cafe");
+        fs::create_dir_all(ws.join("notes")).unwrap();
+        fs::write(ws.join("sales.xlsx"), b"a").unwrap();
+        fs::write(ws.join("workspace.json"), b"{}").unwrap();
+        fs::write(ws.join("notes/readme.md"), b"hi").unwrap();
+        fs::write(ws.join("~$lock.xlsx"), b"lock").unwrap();
+        fs::write(root.path().join("other.xlsx"), b"x").unwrap();
+
+        let listed = list_workspace_files("cafe", Some(root.path())).unwrap();
+        assert_eq!(listed.workspace, "cafe");
+        assert_eq!(listed.file_count, 3);
+        let paths: Vec<&str> = listed.files.iter().map(|f| f.path.as_str()).collect();
+        assert_eq!(
+            paths,
+            vec![
+                "cafe/notes/readme.md",
+                "cafe/sales.xlsx",
+                "cafe/workspace.json"
+            ]
+        );
+    }
+
+    #[test]
+    fn list_workspace_files_rejects_traversal() {
+        let _guard = env_lock().lock().unwrap();
+        let root = tempfile::tempdir().unwrap();
+        fs::create_dir_all(root.path().join("cafe")).unwrap();
+
+        let err = list_workspace_files("../etc", Some(root.path())).unwrap_err();
+        assert!(matches!(err, ResolvePathError::NotAllowed(_)));
+    }
+
+    #[test]
+    fn list_workspace_files_missing_dir() {
+        let _guard = env_lock().lock().unwrap();
+        let root = tempfile::tempdir().unwrap();
+        let err = list_workspace_files("missing", Some(root.path())).unwrap_err();
+        assert!(matches!(err, ResolvePathError::Io(_)));
     }
 }
