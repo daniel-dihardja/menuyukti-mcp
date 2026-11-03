@@ -8,8 +8,6 @@ Licensed under the [MIT License](LICENSE).
 
 - [Rust](https://rustup.rs/) (stable toolchain with Cargo)
 
-Python is **not** required for the normal Excel → MCP workflow.
-
 ## Run the local server
 
 1. Put POS Excel exports in [`sales-reports/`](sales-reports/) (a demo file is included).
