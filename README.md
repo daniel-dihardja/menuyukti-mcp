@@ -10,10 +10,10 @@ Licensed under the [MIT License](LICENSE).
 uv sync --group dev
 ```
 
-Analytics live in this repo under [`packages/menuyukti`](packages/menuyukti). By default the inspect script points at the bundled POS demo fixtures. Override if your exports live elsewhere:
+Analytics live in this repo under [`packages/menuyukti`](packages/menuyukti). By default the inspect script sets `MENUYUKTI_DATA_DIR` to the repo root so both local exports under `sales-reports/` (gitignored) and the committed fixtures are allowed. Narrow it if you want a smaller sandbox:
 
 ```bash
-export MENUYUKTI_DATA_DIR="$(pwd)/packages/menuyukti/fixtures/pos-sales-reports"
+export MENUYUKTI_DATA_DIR="$(pwd)/sales-reports"
 ```
 
 ## Debug with MCP Inspector (recommended)
@@ -34,7 +34,15 @@ In Inspector:
 
 ```json
 {
-  "path": "esb/SalesRecapitulationDetailReport_DEMO.xlsx"
+  "path": "sales-reports/SalesRecapitulationDetailReport_JUL_2026.xlsx"
+}
+```
+
+Demo fixture (same `MENUYUKTI_DATA_DIR`):
+
+```json
+{
+  "path": "packages/menuyukti/fixtures/pos-sales-reports/esb/SalesRecapitulationDetailReport_DEMO.xlsx"
 }
 ```
 
@@ -43,7 +51,7 @@ Stopping Inspector (Ctrl+C) also stops the MCP server.
 ## Run the MCP server alone
 
 ```bash
-export MENUYUKTI_DATA_DIR="$(pwd)/packages/menuyukti/fixtures/pos-sales-reports"
+export MENUYUKTI_DATA_DIR="$(pwd)"
 npm run mcp
 ```
 

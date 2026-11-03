@@ -1,10 +1,12 @@
-"""Local POS sales summarization for the Menuyukti GPT MCP server."""
+"""Local POS sales loading and summarization for the Menuyukti GPT MCP server."""
 
 from __future__ import annotations
 
 import os
 from pathlib import Path
 from typing import Any, TypedDict
+
+import pandas as pd
 
 from menuyukti.core.analytics import (
     calculate_sales_analytics,
@@ -30,6 +32,13 @@ class SalesSummary(TypedDict):
     total_revenue: float
     total_items_sold: int
     top_items: list[TopItem]
+
+
+class NormalizedSales(TypedDict):
+    """Gated POS Excel load: detected system and normalized line-item frame."""
+
+    pos: str
+    frame: pd.DataFrame
 
 
 class PathNotAllowedError(ValueError):
@@ -67,6 +76,30 @@ def resolve_allowed_path(path: str, *, data_dir: Path | None = None) -> Path:
     return resolved
 
 
+def load_normalized_sales(
+    path: str, *, data_dir: Path | None = None
+) -> NormalizedSales:
+    """Gate ``path``, detect POS, and return a normalized line-item DataFrame.
+
+    Reads the file only after ``resolve_allowed_path`` succeeds. Uses the
+    menuyukti POS registry (detect → normalizer → optional column rename).
+    """
+    allowed = resolve_allowed_path(path, data_dir=data_dir)
+    payload = allowed.read_bytes()
+
+    pos = detect_pos_from_excel_bytes(payload) or "unknown"
+    normalizer = get_normalizer(pos)
+    if normalizer is None:
+        raise ValueError(f"Unsupported POS system detected: {pos}")
+
+    skip_rows, rename_map = get_config(pos)
+    df = normalizer(payload, skiprows=skip_rows)
+    if rename_map:
+        df = df.rename(columns=rename_map)
+
+    return NormalizedSales(pos=pos, frame=df)
+
+
 def _top_items(popularity_index: list[dict[str, object]]) -> list[TopItem]:
     items: list[TopItem] = []
     for row in popularity_index[:TOP_ITEMS_LIMIT]:
@@ -82,27 +115,15 @@ def _top_items(popularity_index: list[dict[str, object]]) -> list[TopItem]:
 
 def summarize_local_sales(path: str, *, data_dir: Path | None = None) -> SalesSummary:
     """Load a local POS Excel export and return a capped aggregate summary."""
-    allowed = resolve_allowed_path(path, data_dir=data_dir)
-    payload = allowed.read_bytes()
-
-    pos = detect_pos_from_excel_bytes(payload) or "unknown"
-    normalizer = get_normalizer(pos)
-    if normalizer is None:
-        raise ValueError(f"Unsupported POS system detected: {pos}")
-
-    skip_rows, rename_map = get_config(pos)
-    df = normalizer(payload, skiprows=skip_rows)
-    if rename_map:
-        df = df.rename(columns=rename_map)
-
-    analytics = calculate_sales_analytics(df)
+    loaded = load_normalized_sales(path, data_dir=data_dir)
+    analytics = calculate_sales_analytics(loaded["frame"])
     fundamentals = analytics["fundamental_signals"]
     datetime_signals = analytics["additional_signals"]["datetime_signals"]
     period_start = datetime_signals["period_start"] if datetime_signals else None
     period_end = datetime_signals["period_end"] if datetime_signals else None
 
     return SalesSummary(
-        pos=pos,
+        pos=loaded["pos"],
         period_start=period_start,
         period_end=period_end,
         total_revenue=float(fundamentals["total_revenue"]),

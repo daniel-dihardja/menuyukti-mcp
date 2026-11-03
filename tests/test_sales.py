@@ -1,16 +1,17 @@
-"""Unit tests for local sales path gate and aggregate summary."""
+"""Unit tests for local sales path gate, normalization, and aggregate summary."""
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
+from menuyukti.core.models.pos_transaction import POSTransactionLineItem
 from menuyukti_gpt.sales import (
     DATA_DIR_ENV,
     PathNotAllowedError,
+    load_normalized_sales,
     summarize_local_sales,
 )
 
@@ -22,6 +23,7 @@ FIXTURES = (
     / "pos-sales-reports"
 )
 ESB_DEMO = FIXTURES / "esb" / "SalesRecapitulationDetailReport_DEMO.xlsx"
+ESB_REL = "esb/SalesRecapitulationDetailReport_DEMO.xlsx"
 
 
 @pytest.fixture
@@ -38,14 +40,14 @@ def test_rejects_path_outside_data_dir_without_reading(
 
     with patch("pathlib.Path.read_bytes") as read_bytes:
         with pytest.raises(PathNotAllowedError, match="outside"):
-            summarize_local_sales(str(outside), data_dir=data_dir)
+            load_normalized_sales(str(outside), data_dir=data_dir)
         read_bytes.assert_not_called()
 
 
 def test_rejects_traversal_without_reading(data_dir: Path) -> None:
     with patch("pathlib.Path.read_bytes") as read_bytes:
         with pytest.raises(PathNotAllowedError, match="outside"):
-            summarize_local_sales("../README.md", data_dir=data_dir)
+            load_normalized_sales("../README.md", data_dir=data_dir)
         read_bytes.assert_not_called()
 
 
@@ -53,16 +55,24 @@ def test_requires_data_dir_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv(DATA_DIR_ENV, raising=False)
     with patch("pathlib.Path.read_bytes") as read_bytes:
         with pytest.raises(PathNotAllowedError, match=DATA_DIR_ENV):
-            summarize_local_sales("esb/SalesRecapitulationDetailReport_DEMO.xlsx")
+            load_normalized_sales(ESB_REL)
         read_bytes.assert_not_called()
+
+
+def test_esb_fixture_load_normalized_sales(data_dir: Path) -> None:
+    assert ESB_DEMO.is_file()
+    loaded = load_normalized_sales(ESB_REL, data_dir=data_dir)
+
+    assert loaded["pos"] == "esb"
+    frame = loaded["frame"]
+    assert not frame.empty
+    for column in POSTransactionLineItem.get_required_columns():
+        assert column in frame.columns
 
 
 def test_esb_fixture_summary_shape(data_dir: Path) -> None:
     assert ESB_DEMO.is_file()
-    summary = summarize_local_sales(
-        "esb/SalesRecapitulationDetailReport_DEMO.xlsx",
-        data_dir=data_dir,
-    )
+    summary = summarize_local_sales(ESB_REL, data_dir=data_dir)
 
     assert summary["pos"] == "esb"
     assert summary["period_start"] is not None
