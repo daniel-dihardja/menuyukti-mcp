@@ -28,4 +28,4 @@ std::fs::read(path)?;
 - Do not log full sales row contents, PII, or spreadsheet cell dumps at info/default levels
 - Prefer paths relative to `MENUYUKTI_DATA_DIR` in tool results and logs
 - Do not add network upload, telemetry, or remote storage of POS files
-- Auth/secrets (tunnel keys, API keys) never belong in the repo or fixtures
+- Auth/secrets (API keys) never belong in the repo or fixtures

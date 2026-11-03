@@ -47,5 +47,4 @@ make mcp-inspect
 
 - Put sales files in a [workspace](./workspaces.md).
 - In **ChatGPT Desktop** settings, add Gastro MCP as an MCP server at `http://127.0.0.1:8787/mcp`, then use it in chat.
-- Browser ChatGPT: connect with a [Secure MCP Tunnel](./connect-chatgpt-tunnel.md).
 - If your POS export isn’t recognized, see [Custom POS columns](./custom-pos-columns.md).
