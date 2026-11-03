@@ -6,7 +6,7 @@ Menuyukti reads files from here by default (`MENUYUKTI_DATA_DIR=sales-reports`).
 
 ## Default sample
 
-[`demo-cafe-sales-july-2026.xlsx`](./demo-cafe-sales-july-2026.xlsx) — anonymized cafe month with real prices. Use this path in MCP tools:
+[`demo-cafe-sales-july-2026.xlsx`](./demo-cafe-sales-july-2026.xlsx) — anonymized cafe month with real data. Use this path in MCP tools:
 
 ```json
 {

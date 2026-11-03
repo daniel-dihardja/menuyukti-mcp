@@ -10,7 +10,7 @@ Put your POS Excel exports in [`sales-reports/`](sales-reports/).
 
 That folder is the default data directory for the local MCP server. A sample file is included:
 
-- [`sales-reports/demo-cafe-sales-july-2026.xlsx`](sales-reports/demo-cafe-sales-july-2026.xlsx) — anonymized cafe month with real prices
+- [`sales-reports/demo-cafe-sales-july-2026.xlsx`](sales-reports/demo-cafe-sales-july-2026.xlsx) — anonymized cafe month with real data
 
 Example tool argument:
 
