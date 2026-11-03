@@ -1,8 +1,10 @@
 # Workspaces
 
-Put venue/period analysis folders here. Each folder can hold sales exports, COGS, notes, and later AI knowledge.
+Put venue/period folders here. Each folder can hold sales exports, COGS, notes, and later AI knowledge.
 
-Menuyukti reads files from here by default (`MENUYUKTI_DATA_DIR=workspaces`).
+Gastro MCP reads files from here by default (`MENUYUKTI_DATA_DIR=workspaces`).
+
+For the full guide, see **[Workspaces howto](../docs/howtos/workspaces.md)**.
 
 ## Default demo workspace
 
@@ -19,12 +21,10 @@ Use the sales path in MCP tools:
 }
 ```
 
-The COGS sheet is `Menu` + `COGS` (unit cost in IDR). Replace values with your real recipe costs when you have them.
-
 ## Your own workspaces
 
 1. Create a subdirectory (for example `my-venue-aug-2026/`) and drop Excel files into it.
-2. Call `list_workspaces` to see available folders and files, then other tools with the relative path, for example `{"path": "my-venue-aug-2026/sales.xlsx"}`.
-3. For unsupported POS column layouts, add `pos-column-mapping.json` under `workspaces/` (see the root README).
+2. Call `list_workspaces`, then pass a relative path such as `{"path": "my-venue-aug-2026/sales.xlsx"}`.
+3. For unsupported POS layouts, see [Custom POS columns](../docs/howtos/custom-pos-columns.md).
 
 Personal uploads in this folder are gitignored. Only the default demo workspace above is committed.

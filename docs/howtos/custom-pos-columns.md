@@ -1,0 +1,36 @@
+# Custom POS columns
+
+Built-in support covers known POS exports (ESB, Moka, Quino). If your export uses different column names, add a mapping file so Gastro MCP can normalize it locally.
+
+## Steps
+
+1. Copy [`pos-column-mapping.example.json`](../../pos-column-mapping.example.json) into your data folder (`workspaces/` or the folder you set as `MENUYUKTI_DATA_DIR`).
+2. Rename it to `pos-column-mapping.json`.
+3. Replace every `<YOUR_…_COLUMN>` placeholder with the exact header text from your spreadsheet.
+
+```json
+{
+  "name": "my-pos",
+  "skip_rows": 0,
+  "columns": {
+    "bill_number": "<YOUR_ORDER_ID_COLUMN>",
+    "menu": "<YOUR_ITEM_NAME_COLUMN>",
+    "qty": "<YOUR_QTY_COLUMN>",
+    "price": "<YOUR_UNIT_PRICE_COLUMN>",
+    "total_after_bill_discount": "<YOUR_NET_SALES_COLUMN>",
+    "order_time": "<YOUR_SOLD_AT_COLUMN>",
+    "menu_category": "<YOUR_CATEGORY_COLUMN>",
+    "menu_category_detail": "<YOUR_SUBCATEGORY_COLUMN>"
+  }
+}
+```
+
+Example: if your sheet calls the order id `Bill No.`, set `"bill_number": "Bill No."`.
+
+## Notes
+
+- All eight fields above are required — leave no `<YOUR_…_COLUMN>` placeholders.
+- `skip_rows` is how many rows to skip before the header row (use `0` when the first row is headers).
+- `name` is an optional label shown in tool results (defaults to `custom`).
+- Optional override: set `MENUYUKTI_COLUMN_MAPPING` to a full path if the file lives elsewhere.
+- Known POS formats still use their built-in normalizers; this mapping is used when the export is unrecognized.
