@@ -10,6 +10,7 @@ For the full guide, see **[Workspaces howto](../docs/howtos/workspaces.md)**.
 
 | Path | Purpose |
 | --- | --- |
+| [`demo-cafe-july-2026/workspace.json`](./demo-cafe-july-2026/workspace.json) | Declares which file is sales vs COGS |
 | [`demo-cafe-july-2026/sales.xlsx`](./demo-cafe-july-2026/sales.xlsx) | Anonymized cafe month with real sales data |
 | [`demo-cafe-july-2026/cogs.xlsx`](./demo-cafe-july-2026/cogs.xlsx) | Matching menu COGS (hospitality starter estimates) |
 
@@ -24,7 +25,8 @@ Use the sales path in MCP tools:
 ## Your own workspaces
 
 1. Create a subdirectory (for example `my-venue-aug-2026/`) and drop Excel files into it.
-2. Call `list_workspaces`, then pass a relative path such as `{"path": "my-venue-aug-2026/sales.xlsx"}`.
-3. For unsupported POS layouts, see [Custom POS columns](../docs/howtos/custom-pos-columns.md).
+2. Copy [`workspace.example.json`](../workspace.example.json) in as `workspace.json` and set the `files` roles.
+3. Call `list_workspaces`, then pass a relative path such as `{"path": "my-venue-aug-2026/sales.xlsx"}`.
+4. For unsupported POS layouts, see [Custom POS columns](../docs/howtos/custom-pos-columns.md).
 
 Personal uploads in this folder are gitignored. Only the default demo workspace above is committed.

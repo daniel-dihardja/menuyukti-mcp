@@ -8,16 +8,39 @@ In the source checkout, use [`workspaces/`](../../workspaces/). That folder is t
 
 With a prebuilt binary, use any folder and set `MENUYUKTI_DATA_DIR` to it — see [Install and run](./install-and-run.md).
 
+## Workspace config (`workspace.json`)
+
+Every workspace should include a `workspace.json` that says what each file is. Copy [`workspace.example.json`](../../workspace.example.json) into your folder and edit it.
+
+| Field | Purpose |
+| --- | --- |
+| `name` | Human label for this analysis (shown to you and ChatGPT) |
+| `venue` | Restaurant / cafe name |
+| `period` | Optional `label`, `start`, and `end` dates |
+| `currency` | Optional currency code (for example `IDR`) |
+| `files` | Map of **roles** → file path + short description |
+
+Known file roles today:
+
+| Role | Meaning |
+| --- | --- |
+| `sales` | POS sales export (required for analytics tools) |
+| `cogs` | Menu / recipe unit costs |
+| `knowledge` | Optional notes or AI insights markdown |
+
+Paths in `files.*.path` are relative to the workspace folder.
+
 ## Demo workspace
 
 This repo includes a sample you can try immediately:
 
 | Path | Purpose |
 | --- | --- |
+| [`workspaces/demo-cafe-july-2026/workspace.json`](../../workspaces/demo-cafe-july-2026/workspace.json) | Declares sales + COGS roles |
 | [`workspaces/demo-cafe-july-2026/sales.xlsx`](../../workspaces/demo-cafe-july-2026/sales.xlsx) | Anonymized cafe month with real sales data |
 | [`workspaces/demo-cafe-july-2026/cogs.xlsx`](../../workspaces/demo-cafe-july-2026/cogs.xlsx) | Matching menu COGS (`Menu` + `COGS`, unit cost in IDR) |
 
-Example tool argument:
+Example tool argument (still the sales file path for now):
 
 ```json
 {
@@ -29,7 +52,8 @@ Example tool argument:
 
 1. Create a subdirectory under your data folder, for example `my-venue-aug-2026/`.
 2. Drop your POS Excel export in (and optional COGS / notes).
-3. In ChatGPT or MCP Inspector, call `list_workspaces`, then pass a relative path such as `my-venue-aug-2026/sales.xlsx` to the analytics tools.
+3. Add a `workspace.json` (start from [`workspace.example.json`](../../workspace.example.json)).
+4. In ChatGPT or MCP Inspector, call `list_workspaces`, then pass a relative path such as `my-venue-aug-2026/sales.xlsx` to the analytics tools.
 
 Personal uploads under `workspaces/` are gitignored. Only the demo workspace is committed.
 

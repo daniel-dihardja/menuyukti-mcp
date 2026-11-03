@@ -13,7 +13,7 @@ Licensed under the [MIT License](LICENSE).
 ## Quick start
 
 1. **Install and start** Gastro MCP on your machine → [Install and run](docs/howtos/install-and-run.md)
-2. **Add your sales file** to a workspace folder → [Workspaces](docs/howtos/workspaces.md)
+2. **Add your sales file** (and a small `workspace.json`) to a workspace folder → [Workspaces](docs/howtos/workspaces.md)
 3. **Connect ChatGPT** with OpenAI’s secure tunnel → [Connect ChatGPT](docs/howtos/connect-chatgpt-tunnel.md)
 4. In ChatGPT, `@` Gastro MCP and try: *list my workspaces*, then *summarize demo-cafe-july-2026/sales.xlsx*
 
