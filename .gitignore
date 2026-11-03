@@ -9,8 +9,9 @@
 __pycache__/
 .pytest_cache/
 
-# Local POS exports for owners/devs (keep the default demos + folder README)
-sales-reports/*
-!sales-reports/README.md
-!sales-reports/demo-cafe-sales-july-2026.xlsx
-!sales-reports/demo-cafe-cogs-july-2026.xlsx
+# Local analysis workspaces (keep the default demo + folder README)
+workspaces/*
+!workspaces/README.md
+!workspaces/demo-cafe-july-2026/
+!workspaces/demo-cafe-july-2026/sales.xlsx
+!workspaces/demo-cafe-july-2026/cogs.xlsx

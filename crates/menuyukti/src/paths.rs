@@ -1,21 +1,22 @@
-//! Path gating for local POS Excel files under `MENUYUKTI_DATA_DIR`.
+//! Path gating for local workspace files under `MENUYUKTI_DATA_DIR`.
 
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use serde::Serialize;
 use thiserror::Error;
 
-/// Environment variable naming the sandboxed sales data directory.
+/// Environment variable naming the sandboxed workspace directory.
 pub const DATA_DIR_ENV: &str = "MENUYUKTI_DATA_DIR";
 
 const EXCEL_SUFFIXES: &[&str] = &[".xlsx", ".xls"];
 
-/// Raised when a sales path is outside the configured data directory, or the
+/// Raised when a path is outside the configured data directory, or the
 /// data directory itself is missing/invalid.
 #[derive(Debug, Error)]
 pub enum PathNotAllowedError {
-    #[error("{DATA_DIR_ENV} is not set. Set it to the directory that holds POS Excel files.")]
+    #[error("{DATA_DIR_ENV} is not set. Set it to the directory that holds analysis workspaces.")]
     MissingDataDir,
 
     #[error("{DATA_DIR_ENV} is not a directory: {0}")]
@@ -26,17 +27,26 @@ pub enum PathNotAllowedError {
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
-pub struct SalesReportEntry {
+pub struct WorkspaceFileEntry {
     pub path: String,
     pub name: String,
     pub size_bytes: u64,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
-pub struct SalesReportList {
+pub struct WorkspaceEntry {
+    /// Relative workspace folder under the data dir (`"."` for files at the root).
+    pub path: String,
+    pub name: String,
+    pub file_count: usize,
+    pub files: Vec<WorkspaceFileEntry>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct WorkspaceList {
     pub data_dir: String,
-    pub report_count: usize,
-    pub reports: Vec<SalesReportEntry>,
+    pub workspace_count: usize,
+    pub workspaces: Vec<WorkspaceEntry>,
 }
 
 /// Resolve `MENUYUKTI_DATA_DIR` to an absolute path.
@@ -92,7 +102,7 @@ pub fn resolve_allowed_path(
     if !resolved.is_file() {
         return Err(ResolvePathError::Io(std::io::Error::new(
             std::io::ErrorKind::NotFound,
-            format!("Sales file not found: {}", resolved.display()),
+            format!("Workspace file not found: {}", resolved.display()),
         )));
     }
     Ok(resolved)
@@ -107,8 +117,11 @@ pub enum ResolvePathError {
     Io(#[from] std::io::Error),
 }
 
-/// List Excel sales reports under the data directory as relative paths.
-pub fn list_sales_reports(data_dir: Option<&Path>) -> Result<SalesReportList, PathNotAllowedError> {
+/// List analysis workspaces under the data directory, grouped by folder.
+///
+/// Each immediate subdirectory that contains Excel files becomes a workspace.
+/// Excel files placed directly in the data directory are grouped under `"."`.
+pub fn list_workspaces(data_dir: Option<&Path>) -> Result<WorkspaceList, PathNotAllowedError> {
     let root = match data_dir {
         Some(p) => p.to_path_buf(),
         None => get_data_dir()?,
@@ -117,21 +130,47 @@ pub fn list_sales_reports(data_dir: Option<&Path>) -> Result<SalesReportList, Pa
         return Err(PathNotAllowedError::NotADirectory(root));
     }
 
-    let mut reports = Vec::new();
-    collect_excel_files(&root, &root, &mut reports)?;
-    reports.sort_by(|a, b| a.path.cmp(&b.path));
+    let mut files = Vec::new();
+    collect_excel_files(&root, &root, &mut files)?;
+    files.sort_by(|a, b| a.path.cmp(&b.path));
 
-    Ok(SalesReportList {
+    let mut grouped: BTreeMap<String, Vec<WorkspaceFileEntry>> = BTreeMap::new();
+    for file in files {
+        let workspace_path = match file.path.split_once('/') {
+            Some((dir, _)) => dir.to_string(),
+            None => ".".to_string(),
+        };
+        grouped.entry(workspace_path).or_default().push(file);
+    }
+
+    let workspaces: Vec<WorkspaceEntry> = grouped
+        .into_iter()
+        .map(|(path, files)| {
+            let name = if path == "." {
+                ".".to_string()
+            } else {
+                path.clone()
+            };
+            WorkspaceEntry {
+                file_count: files.len(),
+                path,
+                name,
+                files,
+            }
+        })
+        .collect();
+
+    Ok(WorkspaceList {
         data_dir: root.display().to_string(),
-        report_count: reports.len(),
-        reports,
+        workspace_count: workspaces.len(),
+        workspaces,
     })
 }
 
 fn collect_excel_files(
     root: &Path,
     dir: &Path,
-    out: &mut Vec<SalesReportEntry>,
+    out: &mut Vec<WorkspaceFileEntry>,
 ) -> Result<(), PathNotAllowedError> {
     let entries = match fs::read_dir(dir) {
         Ok(entries) => entries,
@@ -168,7 +207,7 @@ fn collect_excel_files(
             .to_string_lossy()
             .replace('\\', "/");
         let size_bytes = entry.metadata().map(|m| m.len()).unwrap_or(0);
-        out.push(SalesReportEntry {
+        out.push(WorkspaceFileEntry {
             path: rel,
             name: name.to_string(),
             size_bytes,
@@ -254,7 +293,7 @@ mod tests {
     }
 
     #[test]
-    fn lists_excel_files_as_relative_paths() {
+    fn lists_workspaces_grouped_by_folder() {
         let _guard = env_lock().lock().unwrap();
         let root = tempfile::tempdir().unwrap();
         fs::create_dir_all(root.path().join("nested")).unwrap();
@@ -263,19 +302,20 @@ mod tests {
         fs::write(root.path().join("skip.txt"), b"no").unwrap();
         fs::write(root.path().join("~$lock.xlsx"), b"lock").unwrap();
 
-        let listed = list_sales_reports(Some(root.path())).unwrap();
-        assert_eq!(listed.report_count, 2);
-        let paths: Vec<_> = listed.reports.iter().map(|r| r.path.as_str()).collect();
-        assert_eq!(paths, vec!["a.xlsx", "nested/b.xls"]);
-        assert_eq!(listed.reports[0].name, "a.xlsx");
-        assert_eq!(listed.reports[1].size_bytes, 1);
+        let listed = list_workspaces(Some(root.path())).unwrap();
+        assert_eq!(listed.workspace_count, 2);
+        assert_eq!(listed.workspaces[0].path, ".");
+        assert_eq!(listed.workspaces[0].files[0].path, "a.xlsx");
+        assert_eq!(listed.workspaces[1].path, "nested");
+        assert_eq!(listed.workspaces[1].files[0].path, "nested/b.xls");
+        assert_eq!(listed.workspaces[1].files[0].size_bytes, 1);
     }
 
     #[test]
     fn missing_data_dir_is_not_a_directory() {
         let _guard = env_lock().lock().unwrap();
         let missing = tempfile::tempdir().unwrap().path().join("nope");
-        let err = list_sales_reports(Some(&missing)).unwrap_err();
+        let err = list_workspaces(Some(&missing)).unwrap_err();
         assert!(matches!(err, PathNotAllowedError::NotADirectory(_)));
     }
 }

@@ -1,7 +1,7 @@
 # Menuyukti MCP — local developer commands (no Node/npm required for the product path).
 .PHONY: help mcp mcp-inspect backlog test check fmt clippy
 
-MENUYUKTI_DATA_DIR ?= $(CURDIR)/sales-reports
+MENUYUKTI_DATA_DIR ?= $(CURDIR)/workspaces
 export MENUYUKTI_DATA_DIR
 
 help:

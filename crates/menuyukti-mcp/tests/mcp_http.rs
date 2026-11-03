@@ -120,7 +120,7 @@ fn tool_payload(addr: SocketAddr, name: &str, arguments: Value) -> Value {
 
 #[test]
 fn mcp_http_lists_tools_and_summarizes_demo() {
-    let data_dir = repo_root().join("sales-reports");
+    let data_dir = repo_root().join("workspaces");
     let server = start_server(&data_dir);
 
     let listed_tools = http_post_json(
@@ -134,7 +134,7 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
         .filter_map(|t| t["name"].as_str())
         .collect();
     for required in [
-        "list_sales_reports",
+        "list_workspaces",
         "summarize_local_sales",
         "list_normalized_sales",
         "get_menu_heatmaps",
@@ -145,16 +145,16 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
         );
     }
 
-    let reports = tool_payload(server.addr, "list_sales_reports", json!({}));
+    let workspaces = tool_payload(server.addr, "list_workspaces", json!({}));
     assert!(
-        reports["report_count"].as_u64().unwrap_or(0) >= 1,
-        "tool=list_sales_reports unexpected payload={reports}"
+        workspaces["workspace_count"].as_u64().unwrap_or(0) >= 1,
+        "tool=list_workspaces unexpected payload={workspaces}"
     );
 
     let summary = tool_payload(
         server.addr,
         "summarize_local_sales",
-        json!({"path": "demo-cafe-sales-july-2026.xlsx"}),
+        json!({"path": "demo-cafe-july-2026/sales.xlsx"}),
     );
     assert_eq!(
         summary["pos"], "esb",

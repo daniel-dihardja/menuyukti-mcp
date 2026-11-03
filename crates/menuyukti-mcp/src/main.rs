@@ -24,7 +24,7 @@ const MCP_PATH: &str = "/mcp";
 
 const INSTRUCTIONS: &str = concat!(
     "Local Menuyukti sales analytics for restaurant POS Excel files. ",
-    "Call list_sales_reports to see available Excel files, ",
+    "Call list_workspaces to see analysis workspaces and their Excel files, ",
     "summarize_local_sales for aggregates, list_normalized_sales ",
     "for plain normalized line items, or get_menu_heatmaps for per-menu ",
     "daily/weekly demand patterns. Paths must be under MENUYUKTI_DATA_DIR. ",
@@ -71,10 +71,10 @@ fn load_or_error(path: &str) -> Result<menuyukti::NormalizedSales, CallToolResul
 #[tool_router]
 impl MenuyuktiMcp {
     #[tool(
-        description = "List Excel sales report files available under MENUYUKTI_DATA_DIR (typically sales-reports/). Returns relative paths you can pass to the other sales tools. Ignores non-Excel files."
+        description = "List analysis workspaces under MENUYUKTI_DATA_DIR (typically workspaces/). Groups Excel files by workspace folder and returns relative file paths you can pass to the other sales tools. Ignores non-Excel files."
     )]
-    async fn list_sales_reports(&self) -> Result<CallToolResult, McpError> {
-        match menuyukti::list_sales_reports(None) {
+    async fn list_workspaces(&self) -> Result<CallToolResult, McpError> {
+        match menuyukti::list_workspaces(None) {
             Ok(listed) => Ok(text_json(listed)),
             Err(err) => Ok(error_json(err.to_string())),
         }

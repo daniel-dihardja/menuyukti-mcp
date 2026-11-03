@@ -126,10 +126,10 @@ fn build_unknown_xlsx() -> Vec<u8> {
 #[test]
 fn load_demo_cafe_sales_reports_esb() {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../sales-reports")
+        .join("../../workspaces")
         .canonicalize()
-        .expect("sales-reports");
-    let loaded = load_normalized_sales("demo-cafe-sales-july-2026.xlsx", Some(&root)).unwrap();
+        .expect("workspaces");
+    let loaded = load_normalized_sales("demo-cafe-july-2026/sales.xlsx", Some(&root)).unwrap();
     assert_eq!(loaded.pos, "esb");
     assert!(loaded.rows.len() > 1000, "got {}", loaded.rows.len());
 }

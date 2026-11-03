@@ -6,9 +6,9 @@ use menuyukti::{
 
 fn sales_reports() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../sales-reports")
+        .join("../../workspaces")
         .canonicalize()
-        .expect("sales-reports")
+        .expect("workspaces")
 }
 
 fn fixtures() -> PathBuf {
@@ -20,7 +20,7 @@ fn fixtures() -> PathBuf {
 
 #[test]
 fn summarizes_demo_cafe_sales() {
-    let fixture = "demo-cafe-sales-july-2026.xlsx";
+    let fixture = "demo-cafe-july-2026/sales.xlsx";
     let loaded = load_normalized_sales(fixture, Some(&sales_reports())).unwrap_or_else(|err| {
         panic!("fixture={fixture} tool=load_normalized_sales error={err}");
     });

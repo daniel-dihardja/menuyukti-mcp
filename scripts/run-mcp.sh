@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-export MENUYUKTI_DATA_DIR="${MENUYUKTI_DATA_DIR:-$ROOT/sales-reports}"
+export MENUYUKTI_DATA_DIR="${MENUYUKTI_DATA_DIR:-$ROOT/workspaces}"
 MCP_URL="${MCP_URL:-http://127.0.0.1:8787/mcp}"
 
 echo "MENUYUKTI_DATA_DIR=$MENUYUKTI_DATA_DIR"

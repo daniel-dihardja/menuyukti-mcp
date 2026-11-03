@@ -5,8 +5,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-# Default to sales-reports/ so tool paths are just filenames (e.g. demo-cafe-sales-july-2026.xlsx).
-export MENUYUKTI_DATA_DIR="${MENUYUKTI_DATA_DIR:-$ROOT/sales-reports}"
+# Default to workspaces/ so tool paths are relative (e.g. demo-cafe-july-2026/sales.xlsx).
+export MENUYUKTI_DATA_DIR="${MENUYUKTI_DATA_DIR:-$ROOT/workspaces}"
 MCP_URL="${MCP_URL:-http://127.0.0.1:8787/mcp}"
 
 echo "MENUYUKTI_DATA_DIR=$MENUYUKTI_DATA_DIR"

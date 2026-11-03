@@ -42,7 +42,7 @@ New shared behavior → library first, thin MCP wrapper second.
 2. Prefer workspace dependencies (`foo.workspace = true`).
 3. Add or update tests:
    - Path/security: `paths` unit tests or load-gate tests
-   - POS/normalize: fixtures under `crates/menuyukti/tests` + `sales-reports/` demos when relevant
+   - POS/normalize: fixtures under `crates/menuyukti/tests` + `workspaces/` demos when relevant
    - MCP: HTTP integration in `crates/menuyukti-mcp/tests` when tool surface changes
 4. Run `make check`; fix failures before finishing.
 5. Keep README/`make help` in sync if you add developer commands.
