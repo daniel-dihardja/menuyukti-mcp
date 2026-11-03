@@ -1,6 +1,6 @@
 # Custom POS columns
 
-Built-in support covers known POS exports (ESB, Moka, Quino). If your export uses different column names, add a mapping file so Gastro MCP can normalize it locally.
+Built-in support covers known POS exports (ESB, Moka, Quino). If your export uses different column names, add a mapping file so Menuyukti MCP can normalize it locally.
 
 ## Steps
 

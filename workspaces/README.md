@@ -2,7 +2,7 @@
 
 Put venue/period folders here. Each folder can hold sales exports, COGS, notes, and later AI knowledge.
 
-Gastro MCP reads files from here by default (`MENUYUKTI_DATA_DIR=workspaces`).
+Menuyukti MCP reads files from here by default (`MENUYUKTI_DATA_DIR=workspaces`).
 
 For the full guide, see **[Workspaces howto](../docs/howtos/workspaces.md)**.
 
@@ -25,7 +25,7 @@ Owners only drop Excel files; ChatGPT writes `workspace.yaml`. Summarize with th
 ## Your own workspaces
 
 1. Create a subdirectory (for example `my-venue-aug-2026/`) and drop **sales** + optional **COGS** Excel into it.
-2. In ChatGPT, ask Gastro MCP to set up the workspace (it writes `workspace.yaml` — you do not edit that file).
+2. In ChatGPT, ask Menuyukti MCP to set up the workspace (it writes `workspace.yaml` — you do not edit that file).
 3. Ask it to summarize `my-venue-aug-2026`.
 4. For unsupported POS layouts, see [Custom POS columns](../docs/howtos/custom-pos-columns.md).
 

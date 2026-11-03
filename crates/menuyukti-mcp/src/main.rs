@@ -23,7 +23,7 @@ const DEFAULT_PORT: u16 = 8787;
 const MCP_PATH: &str = "/mcp";
 
 const INSTRUCTIONS: &str = concat!(
-    "Local Gastro MCP sales analytics for restaurant POS Excel files. ",
+    "Local Menuyukti MCP sales analytics for restaurant POS Excel files. ",
     "Onboarding: when an owner drops sales (+ optional COGS) Excel into a new ",
     "workspace folder, call list_workspace_files, infer file roles, confirm if ",
     "unclear, then write_workspace_config (workspace.yaml). After that, call ",

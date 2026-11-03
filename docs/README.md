@@ -1,6 +1,6 @@
-# Gastro MCP documentation
+# Menuyukti MCP documentation
 
-Guides for setting up Gastro MCP with ChatGPT Desktop and working with your sales files.
+Guides for setting up Menuyukti MCP with ChatGPT Desktop and working with your sales files.
 
 ## Howtos
 
@@ -14,5 +14,5 @@ Guides for setting up Gastro MCP with ChatGPT Desktop and working with your sale
 ## Start here
 
 1. Restaurant owners: read the [project README](../README.md), then [Install and run](./howtos/install-and-run.md).
-2. In **ChatGPT Desktop** settings, add `http://127.0.0.1:8787/mcp` and use Gastro MCP in chat.
+2. In **ChatGPT Desktop** settings, add `http://127.0.0.1:8787/mcp` and use Menuyukti MCP in chat.
 3. Drop your Excel files into a [workspace](./howtos/workspaces.md) and ask ChatGPT to write the `workspace.yaml` config.

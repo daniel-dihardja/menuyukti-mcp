@@ -14,10 +14,10 @@ You do **not** need to edit config by hand:
 
 1. Create a subdirectory under your data folder, for example `my-venue-aug-2026/`.
 2. Copy your **sales** Excel and optional **COGS** Excel into that folder.
-3. In ChatGPT, `@` Gastro MCP and ask it to **set up the new workspace**.
+3. In ChatGPT, `@` Menuyukti MCP and ask it to **set up the new workspace**.
 4. Ask for a summary of `my-venue-aug-2026` (the folder path is enough).
 
-Gastro MCP lists the files, writes `workspace.yaml`, then can analyze using the sales role.
+Menuyukti MCP lists the files, writes `workspace.yaml`, then can analyze using the sales role.
 
 ## Workspace config (`workspace.yaml`)
 
@@ -63,7 +63,7 @@ Personal uploads under `workspaces/` are gitignored. Only the demo workspace is 
 
 ## What the tools can do
 
-- `list_workspaces` — see folders and Excel files Gastro MCP can read
+- `list_workspaces` — see folders and Excel files Menuyukti MCP can read
 - `list_workspace_files` — see every file in one workspace folder
 - `write_workspace_config` — create/update `workspace.yaml` (LLM onboarding)
 - `summarize_local_sales` — totals and top items (folder or Excel path)

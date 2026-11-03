@@ -1,6 +1,6 @@
 # Develop
 
-Contributor workflow for building Gastro MCP from source.
+Contributor workflow for building Menuyukti MCP from source.
 
 ## Commands
 

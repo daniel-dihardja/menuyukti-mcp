@@ -1,12 +1,12 @@
 # Install and run
 
-Gastro MCP runs on your computer. ChatGPT (or another MCP client) talks to it locally — your sales files are not uploaded to Gastro.
+Menuyukti MCP runs on your computer. ChatGPT (or another MCP client) talks to it locally — your sales files are not uploaded to Menuyukti.
 
 ## Option A — Prebuilt binary (recommended for owners)
 
 Tagged releases publish archives for Windows (x64), macOS (Apple Silicon + Intel), and Linux (x64 + ARM64). No Rust install.
 
-1. Download the archive for your OS from [GitHub Releases](https://github.com/daniel-dihardja/gastro-mcp/releases).
+1. Download the archive for your OS from [GitHub Releases](https://github.com/daniel-dihardja/menuyukti-mcp/releases).
 2. Extract it. Inside you’ll find `menuyukti-mcp` (or `menuyukti-mcp.exe` on Windows), plus `LICENSE` and `README.md`.
 3. Create a folder for your analysis workspaces (any path you like).
 4. Start the server:
@@ -46,5 +46,5 @@ make mcp-inspect
 ## Next steps
 
 - Put sales files in a [workspace](./workspaces.md).
-- In **ChatGPT Desktop** settings, add Gastro MCP as an MCP server at `http://127.0.0.1:8787/mcp`, then use it in chat.
+- In **ChatGPT Desktop** settings, add Menuyukti MCP as an MCP server at `http://127.0.0.1:8787/mcp`, then use it in chat.
 - If your POS export isn’t recognized, see [Custom POS columns](./custom-pos-columns.md).
