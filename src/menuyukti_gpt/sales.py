@@ -18,8 +18,15 @@ from menuyukti.core.analytics import (
 )
 from menuyukti.core.models.pos_mapping import get_config
 
+from menuyukti_gpt.column_mapping import (
+    ColumnMappingError,
+    normalize_mapped_excel,
+    try_load_mapping_for_data_dir,
+)
+
 DATA_DIR_ENV = "MENUYUKTI_DATA_DIR"
 TOP_ITEMS_LIMIT = 10
+EXCEL_SUFFIXES = {".xlsx", ".xls"}
 
 
 class TopItem(TypedDict):
@@ -60,6 +67,20 @@ class MenuHeatmapsResult(TypedDict):
     heatmaps: list[MenuHeatmapPayload]
 
 
+class SalesReportEntry(TypedDict):
+    path: str
+    name: str
+    size_bytes: int
+
+
+class SalesReportList(TypedDict):
+    """Excel sales reports available under the configured data directory."""
+
+    data_dir: str
+    report_count: int
+    reports: list[SalesReportEntry]
+
+
 class PathNotAllowedError(ValueError):
     """Raised when a sales path is outside the configured data directory."""
 
@@ -95,6 +116,38 @@ def resolve_allowed_path(path: str, *, data_dir: Path | None = None) -> Path:
     return resolved
 
 
+def list_sales_reports(*, data_dir: Path | None = None) -> SalesReportList:
+    """List Excel sales reports under ``MENUYUKTI_DATA_DIR`` as relative paths."""
+    root = data_dir if data_dir is not None else get_data_dir()
+    if not root.is_dir():
+        raise PathNotAllowedError(
+            f"{DATA_DIR_ENV} is not a directory: {root}"
+        )
+
+    reports: list[SalesReportEntry] = []
+    for candidate in sorted(root.rglob("*")):
+        if not candidate.is_file():
+            continue
+        if candidate.suffix.lower() not in EXCEL_SUFFIXES:
+            continue
+        if candidate.name.startswith("~$"):
+            continue
+        rel = candidate.relative_to(root).as_posix()
+        reports.append(
+            SalesReportEntry(
+                path=rel,
+                name=candidate.name,
+                size_bytes=candidate.stat().st_size,
+            )
+        )
+
+    return SalesReportList(
+        data_dir=str(root),
+        report_count=len(reports),
+        reports=reports,
+    )
+
+
 def load_normalized_sales(
     path: str, *, data_dir: Path | None = None
 ) -> NormalizedSales:
@@ -102,21 +155,40 @@ def load_normalized_sales(
 
     Reads the file only after ``resolve_allowed_path`` succeeds. Uses the
     menuyukti POS registry (detect → normalizer → optional column rename).
+    For unrecognized or unsupported POS exports, falls back to an owner
+    column-mapping config under the data directory when present.
     """
-    allowed = resolve_allowed_path(path, data_dir=data_dir)
+    root = data_dir if data_dir is not None else get_data_dir()
+    allowed = resolve_allowed_path(path, data_dir=root)
     payload = allowed.read_bytes()
 
     pos = detect_pos_from_excel_bytes(payload) or "unknown"
     normalizer = get_normalizer(pos)
-    if normalizer is None:
-        raise ValueError(f"Unsupported POS system detected: {pos}")
+    if normalizer is not None:
+        skip_rows, rename_map = get_config(pos)
+        df = normalizer(payload, skiprows=skip_rows)
+        if rename_map:
+            df = df.rename(columns=rename_map)
+        return NormalizedSales(pos=pos, frame=df)
 
-    skip_rows, rename_map = get_config(pos)
-    df = normalizer(payload, skiprows=skip_rows)
-    if rename_map:
-        df = df.rename(columns=rename_map)
+    try:
+        mapping = try_load_mapping_for_data_dir(root)
+    except ColumnMappingError as exc:
+        raise ValueError(str(exc)) from exc
 
-    return NormalizedSales(pos=pos, frame=df)
+    if mapping is None:
+        raise ValueError(
+            f"Unsupported POS system detected: {pos}. "
+            "Add a pos-column-mapping.json under MENUYUKTI_DATA_DIR "
+            "(or set MENUYUKTI_COLUMN_MAPPING) to map your export columns."
+        )
+
+    try:
+        df = normalize_mapped_excel(payload, mapping)
+    except ColumnMappingError as exc:
+        raise ValueError(str(exc)) from exc
+
+    return NormalizedSales(pos=mapping["name"], frame=df)
 
 
 def _top_items(popularity_index: list[dict[str, object]]) -> list[TopItem]:
@@ -233,5 +305,21 @@ def menu_heatmaps_as_dict(result: MenuHeatmapsResult) -> dict[str, Any]:
                 "reporting_period": item["reporting_period"],
             }
             for item in result["heatmaps"]
+        ],
+    }
+
+
+def sales_report_list_as_dict(listed: SalesReportList) -> dict[str, Any]:
+    """Plain dict for MCP structured content / JSON responses."""
+    return {
+        "data_dir": listed["data_dir"],
+        "report_count": listed["report_count"],
+        "reports": [
+            {
+                "path": item["path"],
+                "name": item["name"],
+                "size_bytes": item["size_bytes"],
+            }
+            for item in listed["reports"]
         ],
     }

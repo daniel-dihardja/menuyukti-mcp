@@ -9,5 +9,7 @@ dist/
 .DS_Store
 packages/**/src/*.egg-info/
 
-# Local POS exports for manual/dev testing (do not commit)
-sales-reports/
+# Local POS exports for owners/devs (keep the default demo + folder README)
+sales-reports/*
+!sales-reports/README.md
+!sales-reports/demo-cafe-sales-july-2026.xlsx

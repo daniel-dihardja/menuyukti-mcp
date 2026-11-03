@@ -10,8 +10,10 @@ from menuyukti_gpt.sales import (
     PathNotAllowedError,
     get_menu_heatmaps,
     list_normalized_sales,
+    list_sales_reports,
     menu_heatmaps_as_dict,
     normalized_list_as_dict,
+    sales_report_list_as_dict,
     summary_as_dict,
     summarize_local_sales,
 )
@@ -25,12 +27,31 @@ mcp = MCPServer(
     version="0.1.0",
     instructions=(
         "Local Menuyukti sales analytics for restaurant POS Excel files. "
-        "Call summarize_local_sales for aggregates, list_normalized_sales "
+        "Call list_sales_reports to see available Excel files, "
+        "summarize_local_sales for aggregates, list_normalized_sales "
         "for plain normalized line items, or get_menu_heatmaps for per-menu "
         "daily/weekly demand patterns. Paths must be under MENUYUKTI_DATA_DIR. "
         "Files stay on the local machine."
     ),
 )
+
+
+@mcp.tool(
+    name="list_sales_reports",
+    description=(
+        "List Excel sales report files available under MENUYUKTI_DATA_DIR "
+        "(typically sales-reports/). Returns relative paths you can pass to "
+        "the other sales tools. Ignores non-Excel files."
+    ),
+)
+def list_sales_reports_tool() -> str:
+    """List Excel sales reports under MENUYUKTI_DATA_DIR."""
+    try:
+        listed = list_sales_reports()
+    except PathNotAllowedError as exc:
+        return json.dumps({"error": str(exc)})
+
+    return json.dumps(sales_report_list_as_dict(listed))
 
 
 @mcp.tool(

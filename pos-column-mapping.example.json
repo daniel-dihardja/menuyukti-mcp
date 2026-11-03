@@ -1,0 +1,14 @@
+{
+  "name": "my-pos",
+  "skip_rows": 0,
+  "columns": {
+    "bill_number": "Order ID",
+    "menu": "Item Name",
+    "qty": "Qty",
+    "price": "Unit Price",
+    "total_after_bill_discount": "Net Sales",
+    "order_time": "Sold At",
+    "menu_category": "Category",
+    "menu_category_detail": "Subcategory"
+  }
+}

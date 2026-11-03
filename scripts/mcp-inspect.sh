@@ -5,8 +5,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-# Repo root so relative tool paths like sales-reports/... and packages/.../fixtures/... both work.
-export MENUYUKTI_DATA_DIR="${MENUYUKTI_DATA_DIR:-$ROOT}"
+# Default to sales-reports/ so tool paths are just filenames (e.g. demo-cafe-sales-july-2026.xlsx).
+export MENUYUKTI_DATA_DIR="${MENUYUKTI_DATA_DIR:-$ROOT/sales-reports}"
 MCP_URL="${MCP_URL:-http://127.0.0.1:8787/mcp}"
 
 echo "MENUYUKTI_DATA_DIR=$MENUYUKTI_DATA_DIR"

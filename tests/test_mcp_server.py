@@ -60,6 +60,9 @@ async def test_summarize_local_sales_over_streamable_http(
             assert "summarize_local_sales" in tool_names
             assert "list_normalized_sales" in tool_names
             assert "get_menu_heatmaps" in tool_names
+            assert "list_sales_reports" in tool_names
+
+            available = await client.call_tool("list_sales_reports", {})
 
             result = await client.call_tool(
                 "summarize_local_sales",
@@ -80,6 +83,18 @@ async def test_summarize_local_sales_over_streamable_http(
                 "get_menu_heatmaps",
                 {"path": "/tmp/outside.xlsx"},
             )
+
+        assert available.is_error is False
+        available_blocks = [
+            block
+            for block in available.content
+            if getattr(block, "type", None) == "text"
+        ]
+        assert available_blocks
+        available_payload = json.loads(available_blocks[0].text)
+        assert available_payload["report_count"] >= 1
+        available_paths = [item["path"] for item in available_payload["reports"]]
+        assert "esb/SalesRecapitulationDetailReport_DEMO.xlsx" in available_paths
 
         assert result.is_error is False
         assert result.content

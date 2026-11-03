@@ -10,9 +10,15 @@ Every POS workbook encodes the same line items from [`shared/demo-dataset.json`]
 | `moka`  | Yes (Moka **Export Item Details**)         | [`moka/ItemDetails_DEMO.xlsx`](./moka/ItemDetails_DEMO.xlsx)                                       |
 | `quino` | Yes                                        | Use a live dump under `/reports/quino/` (not committed here)                                       |
 
+The default owner-facing sample lives at repo-root [`sales-reports/demo-cafe-sales-july-2026.xlsx`](../../../../sales-reports/demo-cafe-sales-july-2026.xlsx) (anonymized cafe month, real prices). Regenerate it from a local export with:
+
+```bash
+uv run python packages/menuyukti/fixtures/pos-sales-reports/scripts/anonymize_esb_sales_report.py
+```
+
 Moka columns mirror Backoffice **Export Item Details** (payment + line-item fields). Shared `menu_category_detail` is stored in **Variant Name** so ESB and Moka demos keep identical analytics data. Detection: A1 contains `item details`; header row 4 (`skiprows=3`).
 
-Large real vendor dumps stay local under gitignored `/reports/` — do not commit them here.
+Personal POS dumps belong under gitignored files in repo-root `sales-reports/` — do not commit them here.
 
 ## Regenerate
 

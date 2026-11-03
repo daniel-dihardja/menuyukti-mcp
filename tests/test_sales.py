@@ -14,25 +14,36 @@ from menuyukti_gpt.sales import (
     PathNotAllowedError,
     get_menu_heatmaps,
     list_normalized_sales,
+    list_sales_reports,
     load_normalized_sales,
     summarize_local_sales,
 )
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = (
-    Path(__file__).resolve().parents[1]
+    REPO_ROOT
     / "packages"
     / "menuyukti"
     / "fixtures"
     / "pos-sales-reports"
 )
+SALES_REPORTS = REPO_ROOT / "sales-reports"
 ESB_DEMO = FIXTURES / "esb" / "SalesRecapitulationDetailReport_DEMO.xlsx"
 ESB_REL = "esb/SalesRecapitulationDetailReport_DEMO.xlsx"
+DEMO_CAFE = SALES_REPORTS / "demo-cafe-sales-july-2026.xlsx"
+DEMO_CAFE_REL = "demo-cafe-sales-july-2026.xlsx"
 
 
 @pytest.fixture
 def data_dir(monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setenv(DATA_DIR_ENV, str(FIXTURES))
     return FIXTURES.resolve()
+
+
+@pytest.fixture
+def sales_reports_dir(monkeypatch: pytest.MonkeyPatch) -> Path:
+    monkeypatch.setenv(DATA_DIR_ENV, str(SALES_REPORTS))
+    return SALES_REPORTS.resolve()
 
 
 def test_rejects_path_outside_data_dir_without_reading(
@@ -71,6 +82,41 @@ def test_esb_fixture_load_normalized_sales(data_dir: Path) -> None:
     assert not frame.empty
     for column in POSTransactionLineItem.get_required_columns():
         assert column in frame.columns
+
+
+def test_demo_cafe_sales_fixture_load_normalized_sales(
+    sales_reports_dir: Path,
+) -> None:
+    assert DEMO_CAFE.is_file()
+    loaded = load_normalized_sales(DEMO_CAFE_REL, data_dir=sales_reports_dir)
+
+    assert loaded["pos"] == "esb"
+    frame = loaded["frame"]
+    assert len(frame) > 1000
+    assert frame["menu"].nunique() > 50
+    assert float(frame["total_after_bill_discount"].sum()) > 0
+    blob = " ".join(map(str, frame["menu"].unique()))
+    assert "Snabb" not in blob
+    assert "Es Kopi Susu Aren" not in blob
+
+
+def test_list_sales_reports_finds_demo_and_skips_non_excel(
+    sales_reports_dir: Path,
+) -> None:
+    listed = list_sales_reports(data_dir=sales_reports_dir)
+    paths = [item["path"] for item in listed["reports"]]
+
+    assert listed["report_count"] == len(paths)
+    assert DEMO_CAFE_REL in paths
+    assert "README.md" not in paths
+    assert all(path.endswith((".xlsx", ".xls")) for path in paths)
+
+
+def test_list_sales_reports_empty_dir(tmp_path: Path) -> None:
+    listed = list_sales_reports(data_dir=tmp_path)
+    assert listed["report_count"] == 0
+    assert listed["reports"] == []
+    assert listed["data_dir"] == str(tmp_path.resolve())
 
 
 def test_esb_fixture_summary_shape(data_dir: Path) -> None:
