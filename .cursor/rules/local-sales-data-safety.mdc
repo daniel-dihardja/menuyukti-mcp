@@ -1,0 +1,31 @@
+---
+description: Local POS sales data safety — path gating and privacy
+globs: "crates/**/*.rs"
+alwaysApply: false
+---
+
+# Local sales data safety
+
+Sales Excel files stay on the owner’s machine. Treat path handling as a security boundary.
+
+## Path gating
+
+- Resolve user-supplied paths only via `resolve_allowed_path` / `MENUYUKTI_DATA_DIR`
+- Reject traversal and paths outside the data dir (see `crates/menuyukti/src/paths.rs`)
+- Never open arbitrary absolute paths from tool arguments without that gate
+
+```rust
+// ❌ BAD — trust client path
+std::fs::read(user_path)?;
+
+// ✅ GOOD — gate then read
+let path = resolve_allowed_path(user_path, None)?;
+std::fs::read(path)?;
+```
+
+## Privacy
+
+- Do not log full sales row contents, PII, or spreadsheet cell dumps at info/default levels
+- Prefer paths relative to `MENUYUKTI_DATA_DIR` in tool results and logs
+- Do not add network upload, telemetry, or remote storage of POS files
+- Auth/secrets (tunnel keys, API keys) never belong in the repo or fixtures

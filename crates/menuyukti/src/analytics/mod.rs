@@ -4,8 +4,8 @@ mod heatmaps;
 mod summary;
 
 pub use heatmaps::{
-    DailyHeatmapRow, MenuHeatmapPayload, WeeklyHeatmapRow, calculate_menu_heatmaps,
+    calculate_menu_heatmaps, DailyHeatmapRow, MenuHeatmapPayload, WeeklyHeatmapRow,
 };
 pub use summary::{
-    NormalizedSalesList, SalesSummary, TopItem, list_normalized_rows, summarize_sales,
+    list_normalized_rows, summarize_sales, NormalizedSalesList, SalesSummary, TopItem,
 };

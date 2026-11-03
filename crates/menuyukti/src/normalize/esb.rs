@@ -27,7 +27,9 @@ pub fn normalize_esb_excel(data: &[u8], skip_rows: usize) -> Result<Vec<LineItem
 }
 
 fn try_line_item(row: &std::collections::HashMap<String, Data>) -> Option<LineItem> {
-    let bill_number = cell_as_string(get_cell(row, "bill_number")?)?.trim().to_string();
+    let bill_number = cell_as_string(get_cell(row, "bill_number")?)?
+        .trim()
+        .to_string();
     let menu = cell_as_string(get_cell(row, "menu")?)?.trim().to_string();
     if bill_number.is_empty() || menu.is_empty() {
         return None;

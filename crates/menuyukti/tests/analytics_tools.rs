@@ -33,7 +33,7 @@ fn summarizes_demo_cafe_sales() {
         "fixture={fixture} field=total_items_sold"
     );
     assert!(
-        (summary.total_revenue - 29_795_300.0002).abs() < 0.01,
+        (summary.total_revenue - 29_795_300.000_2).abs() < 0.01,
         "fixture={fixture} field=total_revenue got={}",
         summary.total_revenue
     );
@@ -47,7 +47,11 @@ fn summarizes_demo_cafe_sales() {
         Some("2026-07-31"),
         "fixture={fixture} field=period_end"
     );
-    assert_eq!(summary.top_items.len(), 10, "fixture={fixture} field=top_items");
+    assert_eq!(
+        summary.top_items.len(),
+        10,
+        "fixture={fixture} field=top_items"
+    );
     assert_eq!(
         summary.top_items[0].menu, "Iced Milk Coffee Aren",
         "fixture={fixture} field=top_items[0].menu"

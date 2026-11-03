@@ -189,6 +189,7 @@ Notes:
 ## Develop
 
 ```bash
+make check     # fmt --check + clippy + tests
 make test
 # or: cargo test -p menuyukti && cargo test -p menuyukti-mcp
 make mcp

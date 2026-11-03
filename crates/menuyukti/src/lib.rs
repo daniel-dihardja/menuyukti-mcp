@@ -15,18 +15,18 @@ pub mod pos;
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub use analytics::{
-    DailyHeatmapRow, MenuHeatmapPayload, NormalizedSalesList, SalesSummary, TopItem,
-    WeeklyHeatmapRow, calculate_menu_heatmaps, list_normalized_rows, summarize_sales,
+    calculate_menu_heatmaps, list_normalized_rows, summarize_sales, DailyHeatmapRow,
+    MenuHeatmapPayload, NormalizedSalesList, SalesSummary, TopItem, WeeklyHeatmapRow,
 };
 pub use column_mapping::{
-    COLUMN_MAPPING_ENV, ColumnMappingConfig, ColumnMappingError, load_column_mapping,
-    normalize_mapped_excel, try_load_mapping_for_data_dir,
+    load_column_mapping, normalize_mapped_excel, try_load_mapping_for_data_dir,
+    ColumnMappingConfig, ColumnMappingError, COLUMN_MAPPING_ENV,
 };
 pub use line_item::{LineItem, REQUIRED_COLUMNS};
-pub use load::{LoadError, NormalizedSales, load_normalized_sales};
-pub use normalize::{NormalizeError, detect_and_normalize, normalize_for_pos};
+pub use load::{load_normalized_sales, LoadError, NormalizedSales};
+pub use normalize::{detect_and_normalize, normalize_for_pos, NormalizeError};
 pub use paths::{
-    DATA_DIR_ENV, PathNotAllowedError, ResolvePathError, SalesReportEntry, SalesReportList,
-    get_data_dir, list_sales_reports, resolve_allowed_path,
+    get_data_dir, list_sales_reports, resolve_allowed_path, PathNotAllowedError, ResolvePathError,
+    SalesReportEntry, SalesReportList, DATA_DIR_ENV,
 };
-pub use pos::{detect_pos_from_excel_bytes, detect_from_a1};
+pub use pos::{detect_from_a1, detect_pos_from_excel_bytes};

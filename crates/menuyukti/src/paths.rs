@@ -63,7 +63,9 @@ pub fn resolve_allowed_path(
         Some(p) => expand_user(p),
         None => get_data_dir()?,
     };
-    let root = root.canonicalize().unwrap_or_else(|_| normalize_lexical(&root));
+    let root = root
+        .canonicalize()
+        .unwrap_or_else(|_| normalize_lexical(&root));
 
     let candidate = {
         let p = expand_user(Path::new(path));
@@ -106,9 +108,7 @@ pub enum ResolvePathError {
 }
 
 /// List Excel sales reports under the data directory as relative paths.
-pub fn list_sales_reports(
-    data_dir: Option<&Path>,
-) -> Result<SalesReportList, PathNotAllowedError> {
+pub fn list_sales_reports(data_dir: Option<&Path>) -> Result<SalesReportList, PathNotAllowedError> {
     let root = match data_dir {
         Some(p) => p.to_path_buf(),
         None => get_data_dir()?,

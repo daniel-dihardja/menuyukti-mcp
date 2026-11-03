@@ -1,8 +1,6 @@
 use std::fs;
 
-use menuyukti::{
-    load_column_mapping, load_normalized_sales, normalize_mapped_excel,
-};
+use menuyukti::{load_column_mapping, load_normalized_sales, normalize_mapped_excel};
 use rust_xlsxwriter::Workbook;
 use serde_json::json;
 

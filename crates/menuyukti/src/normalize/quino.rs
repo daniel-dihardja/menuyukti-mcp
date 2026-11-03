@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use calamine::Data;
 
-use super::NormalizeError;
 use super::category::{harmonize_categories, normalize_category};
+use super::NormalizeError;
 use crate::excel::{
     cell_as_datetime, cell_as_f64, cell_as_i64, cell_as_string, get_cell, read_table,
 };
@@ -47,7 +47,9 @@ pub fn normalize_quino_excel(
 }
 
 fn try_line_item(row: &HashMap<String, Data>) -> Option<LineItem> {
-    let bill_number = cell_as_string(get_cell(row, "inv_no.")?)?.trim().to_string();
+    let bill_number = cell_as_string(get_cell(row, "inv_no.")?)?
+        .trim()
+        .to_string();
     let menu = cell_as_string(get_cell(row, "name")?)?.trim().to_string();
     if bill_number.is_empty() || menu.is_empty() {
         return None;
@@ -74,7 +76,9 @@ fn try_line_item(row: &HashMap<String, Data>) -> Option<LineItem> {
         "OTHER",
     );
     let menu_category_detail = normalize_category(
-        get_cell(row, "category").and_then(cell_as_string).as_deref(),
+        get_cell(row, "category")
+            .and_then(cell_as_string)
+            .as_deref(),
         "UNCATEGORIZED",
     );
     Some(LineItem {

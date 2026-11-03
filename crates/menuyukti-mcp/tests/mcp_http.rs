@@ -5,7 +5,7 @@ use std::process::{Child, Command, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 
 fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -52,7 +52,7 @@ fn start_server(data_dir: &PathBuf) -> RunningServer {
     let _ = free_port(); // keep helper used for future flexible bind
 
     let bin = env!("CARGO_BIN_EXE_menuyukti-mcp");
-    let child = Command::new(bin)
+    let mut child = Command::new(bin)
         .env("MENUYUKTI_DATA_DIR", data_dir)
         .env("RUST_LOG", "error")
         .stdout(Stdio::null())
@@ -67,6 +67,8 @@ fn start_server(data_dir: &PathBuf) -> RunningServer {
         }
         thread::sleep(Duration::from_millis(50));
     }
+    let _ = child.kill();
+    let _ = child.wait();
     panic!("menuyukti-mcp failed to listen on {addr}");
 }
 

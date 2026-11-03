@@ -1,8 +1,6 @@
 use std::path::PathBuf;
 
-use menuyukti::{
-    detect_and_normalize, detect_pos_from_excel_bytes, load_normalized_sales,
-};
+use menuyukti::{detect_and_normalize, detect_pos_from_excel_bytes, load_normalized_sales};
 use rust_xlsxwriter::Workbook;
 
 fn fixtures_root() -> PathBuf {
@@ -34,7 +32,9 @@ fn detects_and_normalizes_moka_demo() {
     let (pos, rows) = detect_and_normalize(&bytes).unwrap();
     assert_eq!(pos, "moka");
     assert!(rows.len() >= 5, "expected Moka rows, got {}", rows.len());
-    assert!(rows.iter().all(|r| r.qty > 0 && r.total_after_bill_discount > 0.0));
+    assert!(rows
+        .iter()
+        .all(|r| r.qty > 0 && r.total_after_bill_discount > 0.0));
 }
 
 #[test]
@@ -73,7 +73,9 @@ fn load_normalized_sales_gates_and_loads_esb() {
 fn build_quino_xlsx() -> Vec<u8> {
     let mut workbook = Workbook::new();
     let sheet = workbook.add_worksheet();
-    sheet.write_string(0, 0, "Transaction Item Detail Report").unwrap();
+    sheet
+        .write_string(0, 0, "Transaction Item Detail Report")
+        .unwrap();
     sheet.write_string(1, 0, "Demo").unwrap();
     sheet.write_string(2, 0, "meta").unwrap();
     let headers = [

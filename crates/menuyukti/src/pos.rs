@@ -1,6 +1,6 @@
 //! POS detection and registry metadata.
 
-use crate::excel::{ExcelError, read_a1_string};
+use crate::excel::{read_a1_string, ExcelError};
 
 /// Known POS systems and their Excel title / skip_rows configuration.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

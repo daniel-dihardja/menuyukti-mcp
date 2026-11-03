@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use calamine::Data;
 
-use super::NormalizeError;
 use super::category::{harmonize_categories, normalize_category};
+use super::NormalizeError;
 use crate::excel::{
     cell_as_datetime, cell_as_f64, cell_as_i64, cell_as_string, get_cell, read_table,
 };
@@ -20,7 +20,10 @@ const MOKA_SOURCE_COLUMNS: &[&str] = &[
     "variant_name",
 ];
 
-pub fn normalize_moka_excel(data: &[u8], skip_rows: usize) -> Result<Vec<LineItem>, NormalizeError> {
+pub fn normalize_moka_excel(
+    data: &[u8],
+    skip_rows: usize,
+) -> Result<Vec<LineItem>, NormalizeError> {
     let (headers, rows) = read_table(data, skip_rows)?;
     for col in MOKA_SOURCE_COLUMNS {
         if !headers.iter().any(|h| h == col) {
@@ -46,8 +49,12 @@ pub fn normalize_moka_excel(data: &[u8], skip_rows: usize) -> Result<Vec<LineIte
 }
 
 fn try_line_item(row: &HashMap<String, Data>) -> Option<LineItem> {
-    let bill_number = cell_as_string(get_cell(row, "payment_no")?)?.trim().to_string();
-    let menu = cell_as_string(get_cell(row, "item_name")?)?.trim().to_string();
+    let bill_number = cell_as_string(get_cell(row, "payment_no")?)?
+        .trim()
+        .to_string();
+    let menu = cell_as_string(get_cell(row, "item_name")?)?
+        .trim()
+        .to_string();
     if bill_number.is_empty() || menu.is_empty() {
         return None;
     }
@@ -59,7 +66,9 @@ fn try_line_item(row: &HashMap<String, Data>) -> Option<LineItem> {
     }
     let order_time = cell_as_datetime(get_cell(row, "created_at")?)?;
     let menu_category = normalize_category(
-        get_cell(row, "category").and_then(cell_as_string).as_deref(),
+        get_cell(row, "category")
+            .and_then(cell_as_string)
+            .as_deref(),
         "OTHER",
     );
     let menu_category_detail = normalize_category(

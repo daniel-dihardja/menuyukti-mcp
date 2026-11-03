@@ -137,9 +137,8 @@ pub fn normalize_mapped_excel(
     data: &[u8],
     config: &ColumnMappingConfig,
 ) -> Result<Vec<LineItem>, ColumnMappingError> {
-    let (headers, rows) = read_table(data, config.skip_rows).map_err(|e| {
-        ColumnMappingError::Message(e.to_string())
-    })?;
+    let (headers, rows) = read_table(data, config.skip_rows)
+        .map_err(|e| ColumnMappingError::Message(e.to_string()))?;
 
     let mut rename: HashMap<String, String> = HashMap::new();
     let mut missing_headers = Vec::new();
@@ -179,7 +178,9 @@ pub fn normalize_mapped_excel(
 }
 
 fn try_mapped_line_item(row: &HashMap<String, calamine::Data>) -> Option<LineItem> {
-    let bill_number = cell_as_string(get_cell(row, "bill_number")?)?.trim().to_string();
+    let bill_number = cell_as_string(get_cell(row, "bill_number")?)?
+        .trim()
+        .to_string();
     let menu = cell_as_string(get_cell(row, "menu")?)?.trim().to_string();
     if bill_number.is_empty() || menu.is_empty() {
         return None;

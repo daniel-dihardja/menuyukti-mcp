@@ -1,0 +1,31 @@
+---
+description: Menuyukti Rust workspace conventions (crates, deps, errors)
+globs: "**/*.{rs,toml}"
+alwaysApply: false
+---
+
+# Rust conventions
+
+## Crate layout
+
+- `crates/menuyukti` — library: Excel normalize, path gating, analytics
+- `crates/menuyukti-mcp` — binary: streamable HTTP MCP server only
+- Put reusable logic in `menuyukti`; keep MCP wiring thin in `menuyukti-mcp`
+
+## Dependencies
+
+- Add shared deps under `[workspace.dependencies]` in the root `Cargo.toml`
+- Crate manifests should use `dependency.workspace = true`
+- Prefer stable, well-known crates already in the workspace graph
+
+## Errors and APIs
+
+- Library: typed errors (`thiserror`) for recoverable/domain failures
+- Binary/`main`: `anyhow` for top-level context is fine
+- Public tool payloads: `serde` + clear field names; keep MCP schemas in sync
+
+## Style
+
+- Let `rustfmt` own formatting; do not hand-fight layout
+- Clippy warnings are errors in this repo (`-D warnings`)
+- Prefer tests next to behavior: unit in modules, fixtures under `crates/*/tests`

@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use std::io::Cursor;
 
-use calamine::{Data, DataType, Reader, Xlsx, open_workbook_from_rs};
+use calamine::{open_workbook_from_rs, Data, DataType, Reader, Xlsx};
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use thiserror::Error;
 
@@ -188,7 +188,7 @@ fn parse_flexible_datetime(raw: &str) -> Option<NaiveDateTime> {
             return Some(dt);
         }
         if let Ok(d) = NaiveDate::parse_from_str(s, fmt) {
-            return Some(d.and_hms_opt(0, 0, 0)?);
+            return d.and_hms_opt(0, 0, 0);
         }
     }
     None

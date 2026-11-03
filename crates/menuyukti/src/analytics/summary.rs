@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use serde::Serialize;
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 
 use crate::line_item::LineItem;
 
@@ -52,9 +52,13 @@ pub fn summarize_sales(pos: impl Into<String>, rows: &[LineItem]) -> Result<Sale
         rows.iter().map(|r| r.order_time.date()).max(),
     ) {
         // Quino-style sentinel: single 1970-01-01 means no real datetime.
-        let all_epoch = rows
-            .iter()
-            .all(|r| r.order_time == chrono::NaiveDate::from_ymd_opt(1970, 1, 1).unwrap().and_hms_opt(0, 0, 0).unwrap());
+        let all_epoch = rows.iter().all(|r| {
+            r.order_time
+                == chrono::NaiveDate::from_ymd_opt(1970, 1, 1)
+                    .unwrap()
+                    .and_hms_opt(0, 0, 0)
+                    .unwrap()
+        });
         if !all_epoch {
             period_start = Some(min.format("%Y-%m-%d").to_string());
             period_end = Some(max.format("%Y-%m-%d").to_string());

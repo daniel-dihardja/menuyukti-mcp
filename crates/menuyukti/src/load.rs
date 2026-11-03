@@ -6,11 +6,11 @@ use std::path::Path;
 use thiserror::Error;
 
 use crate::column_mapping::{
-    ColumnMappingError, normalize_mapped_excel, try_load_mapping_for_data_dir,
+    normalize_mapped_excel, try_load_mapping_for_data_dir, ColumnMappingError,
 };
 use crate::line_item::LineItem;
-use crate::normalize::{NormalizeError, normalize_for_pos};
-use crate::paths::{ResolvePathError, get_data_dir, resolve_allowed_path};
+use crate::normalize::{normalize_for_pos, NormalizeError};
+use crate::paths::{get_data_dir, resolve_allowed_path, ResolvePathError};
 use crate::pos::{config_for, detect_pos_from_excel_bytes};
 
 #[derive(Debug, Clone)]
