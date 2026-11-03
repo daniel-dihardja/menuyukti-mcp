@@ -10,6 +10,8 @@ from typing import Any, TypedDict
 import pandas as pd
 
 from menuyukti.core.analytics import (
+    MenuHeatmapPayload,
+    calculate_menu_heatmaps,
     calculate_sales_analytics,
     detect_pos_from_excel_bytes,
     get_normalizer,
@@ -48,6 +50,14 @@ class NormalizedSalesList(TypedDict):
     pos: str
     rows: list[dict[str, Any]]
     row_count: int
+
+
+class MenuHeatmapsResult(TypedDict):
+    """Detected POS and per-menu daily/weekly heatmap payloads."""
+
+    pos: str
+    menu_count: int
+    heatmaps: list[MenuHeatmapPayload]
 
 
 class PathNotAllowedError(ValueError):
@@ -161,6 +171,19 @@ def list_normalized_sales(
     )
 
 
+def get_menu_heatmaps(
+    path: str, *, data_dir: Path | None = None
+) -> MenuHeatmapsResult:
+    """Load a local POS Excel export and return per-menu daily/weekly heatmaps."""
+    loaded = load_normalized_sales(path, data_dir=data_dir)
+    heatmaps = calculate_menu_heatmaps(loaded["frame"])
+    return MenuHeatmapsResult(
+        pos=loaded["pos"],
+        menu_count=len(heatmaps),
+        heatmaps=heatmaps,
+    )
+
+
 def summary_as_dict(summary: SalesSummary) -> dict[str, Any]:
     """Plain dict for MCP structured content / JSON responses."""
     return {
@@ -186,4 +209,29 @@ def normalized_list_as_dict(listed: NormalizedSalesList) -> dict[str, Any]:
         "pos": listed["pos"],
         "row_count": listed["row_count"],
         "rows": listed["rows"],
+    }
+
+
+def menu_heatmaps_as_dict(result: MenuHeatmapsResult) -> dict[str, Any]:
+    """Plain dict for MCP structured content / JSON responses."""
+    return {
+        "pos": result["pos"],
+        "menu_count": result["menu_count"],
+        "heatmaps": [
+            {
+                "menu": item["menu"],
+                "menu_category": item["menu_category"],
+                "menu_category_detail": item["menu_category_detail"],
+                "daily_heatmap": [
+                    {"hour": row["hour"], "quantity": row["quantity"]}
+                    for row in item["daily_heatmap"]
+                ],
+                "weekly_heatmap": [
+                    {"day": row["day"], "quantity": row["quantity"]}
+                    for row in item["weekly_heatmap"]
+                ],
+                "reporting_period": item["reporting_period"],
+            }
+            for item in result["heatmaps"]
+        ],
     }

@@ -8,9 +8,11 @@ from unittest.mock import patch
 import pytest
 
 from menuyukti.core.models.pos_transaction import POSTransactionLineItem
+from menuyukti.core.analytics import WEEKDAY_ORDER
 from menuyukti_gpt.sales import (
     DATA_DIR_ENV,
     PathNotAllowedError,
+    get_menu_heatmaps,
     list_normalized_sales,
     load_normalized_sales,
     summarize_local_sales,
@@ -130,4 +132,42 @@ def test_list_normalized_sales_rejects_path_outside_data_dir(
     with patch("pathlib.Path.read_bytes") as read_bytes:
         with pytest.raises(PathNotAllowedError, match="outside"):
             list_normalized_sales(str(outside), data_dir=data_dir)
+        read_bytes.assert_not_called()
+
+
+def test_esb_fixture_get_menu_heatmaps(data_dir: Path) -> None:
+    assert ESB_DEMO.is_file()
+    result = get_menu_heatmaps(ESB_REL, data_dir=data_dir)
+
+    assert result["pos"] == "esb"
+    assert result["menu_count"] == len(result["heatmaps"])
+    assert result["menu_count"] > 0
+    assert set(result.keys()) == {"pos", "menu_count", "heatmaps"}
+
+    first = result["heatmaps"][0]
+    assert set(first.keys()) == {
+        "menu",
+        "menu_category",
+        "menu_category_detail",
+        "daily_heatmap",
+        "weekly_heatmap",
+        "reporting_period",
+    }
+    assert first["menu"]
+    assert len(first["daily_heatmap"]) == 24
+    assert [row["hour"] for row in first["daily_heatmap"]] == list(range(24))
+    assert [row["day"] for row in first["weekly_heatmap"]] == list(WEEKDAY_ORDER)
+    assert first["reporting_period"]
+    assert "bill_number" not in str(result)
+
+
+def test_get_menu_heatmaps_rejects_path_outside_data_dir(
+    data_dir: Path, tmp_path: Path
+) -> None:
+    outside = tmp_path / "secret.xlsx"
+    outside.write_bytes(b"not-excel")
+
+    with patch("pathlib.Path.read_bytes") as read_bytes:
+        with pytest.raises(PathNotAllowedError, match="outside"):
+            get_menu_heatmaps(str(outside), data_dir=data_dir)
         read_bytes.assert_not_called()

@@ -8,7 +8,9 @@ from mcp.server.mcpserver import MCPServer
 
 from menuyukti_gpt.sales import (
     PathNotAllowedError,
+    get_menu_heatmaps,
     list_normalized_sales,
+    menu_heatmaps_as_dict,
     normalized_list_as_dict,
     summary_as_dict,
     summarize_local_sales,
@@ -23,8 +25,9 @@ mcp = MCPServer(
     version="0.1.0",
     instructions=(
         "Local Menuyukti sales analytics for restaurant POS Excel files. "
-        "Call summarize_local_sales for aggregates, or list_normalized_sales "
-        "for plain normalized line items. Paths must be under MENUYUKTI_DATA_DIR. "
+        "Call summarize_local_sales for aggregates, list_normalized_sales "
+        "for plain normalized line items, or get_menu_heatmaps for per-menu "
+        "daily/weekly demand patterns. Paths must be under MENUYUKTI_DATA_DIR. "
         "Files stay on the local machine."
     ),
 )
@@ -72,6 +75,28 @@ def list_normalized_sales_tool(path: str) -> str:
         return json.dumps({"error": str(exc)})
 
     return json.dumps(normalized_list_as_dict(listed))
+
+
+@mcp.tool(
+    name="get_menu_heatmaps",
+    description=(
+        "Return per-menu daily (hourly) and weekly demand heatmaps from a local "
+        "POS Excel sales export. Reads the file only when path resolves inside "
+        "MENUYUKTI_DATA_DIR. Useful for when each dish sells most."
+    ),
+)
+def get_menu_heatmaps_tool(path: str) -> str:
+    """Return menu heatmaps for a local POS Excel export under MENUYUKTI_DATA_DIR."""
+    try:
+        result = get_menu_heatmaps(path)
+    except PathNotAllowedError as exc:
+        return json.dumps({"error": str(exc)})
+    except FileNotFoundError as exc:
+        return json.dumps({"error": str(exc)})
+    except ValueError as exc:
+        return json.dumps({"error": str(exc)})
+
+    return json.dumps(menu_heatmaps_as_dict(result))
 
 
 def create_server() -> MCPServer:

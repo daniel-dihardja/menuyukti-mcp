@@ -59,6 +59,7 @@ async def test_summarize_local_sales_over_streamable_http(
             tool_names = {tool.name for tool in tools.tools}
             assert "summarize_local_sales" in tool_names
             assert "list_normalized_sales" in tool_names
+            assert "get_menu_heatmaps" in tool_names
 
             result = await client.call_tool(
                 "summarize_local_sales",
@@ -70,8 +71,13 @@ async def test_summarize_local_sales_over_streamable_http(
                 {"path": "esb/SalesRecapitulationDetailReport_DEMO.xlsx"},
             )
 
+            heatmaps = await client.call_tool(
+                "get_menu_heatmaps",
+                {"path": "esb/SalesRecapitulationDetailReport_DEMO.xlsx"},
+            )
+
             blocked = await client.call_tool(
-                "list_normalized_sales",
+                "get_menu_heatmaps",
                 {"path": "/tmp/outside.xlsx"},
             )
 
@@ -98,6 +104,22 @@ async def test_summarize_local_sales_over_streamable_http(
         assert listed_payload["row_count"] == len(listed_payload["rows"])
         assert listed_payload["row_count"] > 0
         assert "bill_number" in listed_payload["rows"][0]
+
+        assert heatmaps.is_error is False
+        heatmap_blocks = [
+            block
+            for block in heatmaps.content
+            if getattr(block, "type", None) == "text"
+        ]
+        assert heatmap_blocks
+        heatmap_payload = json.loads(heatmap_blocks[0].text)
+        assert heatmap_payload["pos"] == "esb"
+        assert heatmap_payload["menu_count"] == len(heatmap_payload["heatmaps"])
+        assert heatmap_payload["menu_count"] > 0
+        first_menu = heatmap_payload["heatmaps"][0]
+        assert len(first_menu["daily_heatmap"]) == 24
+        assert len(first_menu["weekly_heatmap"]) == 7
+        assert "bill_number" not in json.dumps(heatmap_payload)
 
         assert blocked.is_error is False
         blocked_blocks = [
