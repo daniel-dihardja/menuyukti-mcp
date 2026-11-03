@@ -6,9 +6,28 @@ Licensed under the [MIT License](LICENSE).
 
 ## Requirements
 
-- [Rust](https://rustup.rs/) (stable toolchain with Cargo)
+- A prebuilt binary from [GitHub Releases](https://github.com/daniel-dihardja/menuyukti-mcp/releases) (no Rust install), **or**
+- [Rust](https://rustup.rs/) (stable toolchain with Cargo) to build from source
 
-## Run the local server
+## Prebuilt binaries
+
+Tagged releases (`v*`) publish archives for Windows (x64), macOS (Apple Silicon + Intel), and Linux (x64 + ARM64).
+
+1. Download the archive for your OS from [Releases](https://github.com/daniel-dihardja/menuyukti-mcp/releases).
+2. Extract it (the archive contains a folder with `menuyukti-mcp` / `menuyukti-mcp.exe`, `LICENSE`, and `README.md`).
+3. Put POS Excel exports in a folder (or use this repo’s [`sales-reports/`](sales-reports/)).
+4. Run the binary with that folder as the data dir:
+
+```bash
+# macOS / Linux
+MENUYUKTI_DATA_DIR="/path/to/sales-reports" ./menuyukti-mcp
+
+# Windows (PowerShell)
+$env:MENUYUKTI_DATA_DIR="C:\path\to\sales-reports"
+.\menuyukti-mcp.exe
+```
+
+## Run from source
 
 1. Put POS Excel exports in [`sales-reports/`](sales-reports/) (a demo file is included).
 2. Start the Rust MCP server:

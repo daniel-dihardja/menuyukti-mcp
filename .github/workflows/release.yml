@@ -1,0 +1,56 @@
+# Build menuyukti-mcp release binaries and attach them to a GitHub Release.
+# Trigger: push a version tag, e.g. git tag v0.1.0 && git push origin v0.1.0
+name: Release
+
+permissions:
+  contents: read
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.*"
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/create-gh-release-action@v1
+        with:
+          branch: main
+
+  upload-assets:
+    needs: create-release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-24.04-arm
+          - target: aarch64-apple-darwin
+            os: macos-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/upload-rust-binary-action@v1
+        with:
+          bin: menuyukti-mcp
+          package: menuyukti-mcp
+          target: ${{ matrix.target }}
+          locked: true
+          tar: unix
+          zip: windows
+          checksum: sha256
+          include: LICENSE,README.md
+          leading-dir: true
+          archive: menuyukti-mcp-$tag-$target
