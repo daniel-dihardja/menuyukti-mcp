@@ -1,0 +1,15 @@
+version: 1
+name: Demo Cafe — July 2026
+venue: Demo Cafe
+period:
+  label: July 2026
+  start: 2026-07-01
+  end: 2026-07-31
+currency: IDR
+files:
+  sales:
+    path: sales.xlsx
+    description: Anonymized POS sales export for the demo cafe month
+  cogs:
+    path: cogs.xlsx
+    description: Menu unit costs (Menu + COGS columns, IDR); hospitality starter estimates

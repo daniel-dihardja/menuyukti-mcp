@@ -10,6 +10,7 @@ pub mod load;
 pub mod normalize;
 pub mod paths;
 pub mod pos;
+pub mod workspace;
 
 /// Library crate version (mirrors package version).
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -23,7 +24,7 @@ pub use column_mapping::{
     ColumnMappingConfig, ColumnMappingError, COLUMN_MAPPING_ENV,
 };
 pub use line_item::{LineItem, REQUIRED_COLUMNS};
-pub use load::{load_normalized_sales, LoadError, NormalizedSales};
+pub use load::{load_normalized_sales, resolve_sales_path, LoadError, NormalizedSales};
 pub use normalize::{detect_and_normalize, normalize_for_pos, NormalizeError};
 pub use paths::{
     get_data_dir, list_workspace_files, list_workspaces, resolve_allowed_dir, resolve_allowed_path,
@@ -31,3 +32,8 @@ pub use paths::{
     WorkspaceList, DATA_DIR_ENV,
 };
 pub use pos::{detect_from_a1, detect_pos_from_excel_bytes};
+pub use workspace::{
+    load_workspace_config, resolve_workspace_sales_path, write_workspace_config, WorkspaceConfig,
+    WorkspaceConfigError, WorkspaceConfigLoad, WorkspaceConfigWriteResult, WorkspaceFileRole,
+    WorkspaceFiles, WorkspacePeriod, WORKSPACE_CONFIG_FILENAME,
+};

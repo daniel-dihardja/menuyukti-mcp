@@ -16,4 +16,4 @@ Guides for setting up Gastro MCP, connecting ChatGPT, and working with your sale
 
 1. Restaurant owners: read the [project README](../README.md), then [Install and run](./howtos/install-and-run.md).
 2. To use ChatGPT: follow [Connect ChatGPT](./howtos/connect-chatgpt-tunnel.md).
-3. Drop your Excel files into a [workspace](./howtos/workspaces.md) and add a `workspace.json` that labels sales, COGS, and other docs.
+3. Drop your Excel files into a [workspace](./howtos/workspaces.md) and ask ChatGPT to write the `workspace.yaml` config.

@@ -8,9 +8,20 @@ In the source checkout, use [`workspaces/`](../../workspaces/). That folder is t
 
 With a prebuilt binary, use any folder and set `MENUYUKTI_DATA_DIR` to it — see [Install and run](./install-and-run.md).
 
-## Workspace config (`workspace.json`)
+## Owner flow (drop two files)
 
-Every workspace should include a `workspace.json` that says what each file is. Copy [`workspace.example.json`](../../workspace.example.json) into your folder and edit it.
+You do **not** need to edit config by hand:
+
+1. Create a subdirectory under your data folder, for example `my-venue-aug-2026/`.
+2. Copy your **sales** Excel and optional **COGS** Excel into that folder.
+3. In ChatGPT, `@` Gastro MCP and ask it to **set up the new workspace**.
+4. Ask for a summary of `my-venue-aug-2026` (the folder path is enough).
+
+Gastro MCP lists the files, writes `workspace.yaml`, then can analyze using the sales role.
+
+## Workspace config (`workspace.yaml`)
+
+`workspace.yaml` maps which file is sales vs COGS (and optional notes). **ChatGPT writes and updates it** via `write_workspace_config`. Owners normally never edit this file. The schema is in [`workspace.example.yaml`](../../workspace.example.yaml) for reference.
 
 | Field | Purpose |
 | --- | --- |
@@ -36,31 +47,25 @@ This repo includes a sample you can try immediately:
 
 | Path | Purpose |
 | --- | --- |
-| [`workspaces/demo-cafe-july-2026/workspace.json`](../../workspaces/demo-cafe-july-2026/workspace.json) | Declares sales + COGS roles |
+| [`workspaces/demo-cafe-july-2026/workspace.yaml`](../../workspaces/demo-cafe-july-2026/workspace.yaml) | Declares sales + COGS roles |
 | [`workspaces/demo-cafe-july-2026/sales.xlsx`](../../workspaces/demo-cafe-july-2026/sales.xlsx) | Anonymized cafe month with real sales data |
 | [`workspaces/demo-cafe-july-2026/cogs.xlsx`](../../workspaces/demo-cafe-july-2026/cogs.xlsx) | Matching menu COGS (`Menu` + `COGS`, unit cost in IDR) |
 
-Example tool argument (still the sales file path for now):
+Example tool argument (workspace folder or Excel file):
 
 ```json
 {
-  "path": "demo-cafe-july-2026/sales.xlsx"
+  "path": "demo-cafe-july-2026"
 }
 ```
-
-## Your own workspace
-
-1. Create a subdirectory under your data folder, for example `my-venue-aug-2026/`.
-2. Drop your POS Excel export in (and optional COGS / notes).
-3. Add a `workspace.json` (start from [`workspace.example.json`](../../workspace.example.json)).
-4. In ChatGPT or MCP Inspector, call `list_workspaces` (or `list_workspace_files` on a folder), then pass a relative path such as `my-venue-aug-2026/sales.xlsx` to the analytics tools.
 
 Personal uploads under `workspaces/` are gitignored. Only the demo workspace is committed.
 
 ## What the tools can do
 
 - `list_workspaces` — see folders and Excel files Gastro MCP can read
-- `list_workspace_files` — see every file in one workspace folder (`workspace.json`, Excel, notes, …)
-- `summarize_local_sales` — totals and top items
+- `list_workspace_files` — see every file in one workspace folder
+- `write_workspace_config` — create/update `workspace.yaml` (LLM onboarding)
+- `summarize_local_sales` — totals and top items (folder or Excel path)
 - `list_normalized_sales` — cleaned line items
 - `get_menu_heatmaps` — when each dish sells during the day / week

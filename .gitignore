@@ -15,4 +15,4 @@ workspaces/*
 !workspaces/demo-cafe-july-2026/
 !workspaces/demo-cafe-july-2026/sales.xlsx
 !workspaces/demo-cafe-july-2026/cogs.xlsx
-!workspaces/demo-cafe-july-2026/workspace.json
+!workspaces/demo-cafe-july-2026/workspace.yaml

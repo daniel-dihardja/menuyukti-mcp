@@ -12,6 +12,7 @@ use crate::line_item::LineItem;
 use crate::normalize::{normalize_for_pos, NormalizeError};
 use crate::paths::{get_data_dir, resolve_allowed_path, ResolvePathError};
 use crate::pos::{config_for, detect_pos_from_excel_bytes};
+use crate::workspace::{resolve_workspace_sales_path, WorkspaceConfigError};
 
 #[derive(Debug, Clone)]
 pub struct NormalizedSales {
@@ -24,6 +25,8 @@ pub enum LoadError {
     #[error(transparent)]
     Path(#[from] ResolvePathError),
     #[error(transparent)]
+    Workspace(#[from] WorkspaceConfigError),
+    #[error(transparent)]
     Normalize(#[from] NormalizeError),
     #[error(transparent)]
     Mapping(#[from] ColumnMappingError),
@@ -31,7 +34,21 @@ pub enum LoadError {
     Io(#[from] std::io::Error),
 }
 
+/// Resolve a sales Excel path: either an explicit `.xlsx`/`.xls` file, or a
+/// workspace folder that has `workspace.yaml` with `files.sales`.
+pub fn resolve_sales_path(path: &str, data_dir: Option<&Path>) -> Result<String, LoadError> {
+    let trimmed = path.trim();
+    let lower = trimmed.to_ascii_lowercase();
+    if lower.ends_with(".xlsx") || lower.ends_with(".xls") {
+        return Ok(trimmed.to_string());
+    }
+    Ok(resolve_workspace_sales_path(trimmed, data_dir)?)
+}
+
 /// Gate `path`, detect POS, and return normalized line items.
+///
+/// `path` may be an Excel file under `MENUYUKTI_DATA_DIR`, or a workspace
+/// folder whose `workspace.yaml` declares `files.sales`.
 ///
 /// Falls back to owner column-mapping when the POS is unrecognized.
 pub fn load_normalized_sales(
@@ -42,7 +59,8 @@ pub fn load_normalized_sales(
         Some(p) => p.to_path_buf(),
         None => get_data_dir().map_err(|e| LoadError::Path(e.into()))?,
     };
-    let allowed = resolve_allowed_path(path, Some(&root))?;
+    let sales_path = resolve_sales_path(path, Some(&root))?;
+    let allowed = resolve_allowed_path(&sales_path, Some(&root))?;
     let payload = fs::read(&allowed)?;
 
     let detected = detect_pos_from_excel_bytes(&payload)

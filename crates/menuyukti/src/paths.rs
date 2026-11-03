@@ -230,7 +230,7 @@ pub fn list_workspaces(data_dir: Option<&Path>) -> Result<WorkspaceList, PathNot
 /// List all regular files under a workspace directory inside the data dir.
 ///
 /// Unlike [`list_workspaces`], this includes non-Excel files (for example
-/// `workspace.json` and notes). Excel lock files (`~$*`) are skipped.
+/// `workspace.yaml` and notes). Excel lock files (`~$*`) are skipped.
 /// Paths in the result are relative to the data directory.
 pub fn list_workspace_files(
     workspace: &str,

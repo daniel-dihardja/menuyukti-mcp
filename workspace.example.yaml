@@ -1,0 +1,18 @@
+version: 1
+name: My Venue — Month Year
+venue: My Venue
+period:
+  label: Month Year
+  start: YYYY-MM-DD
+  end: YYYY-MM-DD
+currency: IDR
+files:
+  sales:
+    path: sales.xlsx
+    description: POS sales export for this period
+  cogs:
+    path: cogs.xlsx
+    description: Optional menu COGS / recipe costs
+  knowledge:
+    path: knowledge.md
+    description: Optional notes and AI insights for this workspace

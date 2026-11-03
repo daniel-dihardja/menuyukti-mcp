@@ -1,11 +1,18 @@
+use std::fs;
 use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
+use std::sync::{Mutex, OnceLock};
 use std::thread;
 use std::time::{Duration, Instant};
 
 use serde_json::{json, Value};
+
+fn port_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+}
 
 fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -35,25 +42,13 @@ impl Drop for RunningServer {
 }
 
 fn start_server(data_dir: &PathBuf) -> RunningServer {
-    // The binary hardcodes 8787; pick a free port by temporarily binding then
-    // requiring the default only when free. If 8787 is busy, skip.
-    let listener = TcpListener::bind("127.0.0.1:8787");
-    let addr = match listener {
-        Ok(l) => {
-            let addr = l.local_addr().unwrap();
-            drop(l);
-            addr
-        }
-        Err(_) => {
-            // Fall back: still try default; test will fail clearly if busy.
-            "127.0.0.1:8787".parse().unwrap()
-        }
-    };
-    let _ = free_port(); // keep helper used for future flexible bind
+    let port = free_port();
+    let addr: SocketAddr = format!("127.0.0.1:{port}").parse().unwrap();
 
     let bin = env!("CARGO_BIN_EXE_menuyukti-mcp");
     let mut child = Command::new(bin)
         .env("MENUYUKTI_DATA_DIR", data_dir)
+        .env("MENUYUKTI_MCP_PORT", port.to_string())
         .env("RUST_LOG", "error")
         .stdout(Stdio::null())
         .stderr(Stdio::null())
@@ -120,6 +115,7 @@ fn tool_payload(addr: SocketAddr, name: &str, arguments: Value) -> Value {
 
 #[test]
 fn mcp_http_lists_tools_and_summarizes_demo() {
+    let _guard = port_lock().lock().unwrap();
     let data_dir = repo_root().join("workspaces");
     let server = start_server(&data_dir);
 
@@ -136,6 +132,7 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
     for required in [
         "list_workspaces",
         "list_workspace_files",
+        "write_workspace_config",
         "summarize_local_sales",
         "list_normalized_sales",
         "get_menu_heatmaps",
@@ -168,8 +165,8 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
         .filter_map(|f| f["path"].as_str())
         .collect();
     assert!(
-        file_paths.contains(&"demo-cafe-july-2026/workspace.json"),
-        "tool=list_workspace_files missing workspace.json; files={file_paths:?}"
+        file_paths.contains(&"demo-cafe-july-2026/workspace.yaml"),
+        "tool=list_workspace_files missing workspace.yaml; files={file_paths:?}"
     );
 
     let summary = tool_payload(
@@ -184,5 +181,69 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
     assert_eq!(
         summary["total_items_sold"], 1748,
         "tool=summarize_local_sales fixture=demo-cafe field=total_items_sold payload={summary}"
+    );
+
+    let summary_via_workspace = tool_payload(
+        server.addr,
+        "summarize_local_sales",
+        json!({"path": "demo-cafe-july-2026"}),
+    );
+    assert_eq!(
+        summary_via_workspace["pos"], "esb",
+        "tool=summarize_local_sales workspace folder payload={summary_via_workspace}"
+    );
+}
+
+#[test]
+fn mcp_http_writes_workspace_config() {
+    let _guard = port_lock().lock().unwrap();
+    let tmp = tempfile::tempdir().unwrap();
+    fs::create_dir_all(tmp.path().join("new-cafe")).unwrap();
+    fs::write(tmp.path().join("new-cafe/sales.xlsx"), b"x").unwrap();
+    fs::write(tmp.path().join("new-cafe/cogs.xlsx"), b"y").unwrap();
+
+    let server = start_server(&tmp.path().to_path_buf());
+    let written = tool_payload(
+        server.addr,
+        "write_workspace_config",
+        json!({
+            "path": "new-cafe",
+            "config": {
+                "version": 1,
+                "name": "New Cafe — Test",
+                "venue": "New Cafe",
+                "currency": "IDR",
+                "files": {
+                    "sales": {"path": "sales.xlsx", "description": "POS export"},
+                    "cogs": {"path": "cogs.xlsx", "description": "COGS"}
+                }
+            }
+        }),
+    );
+    assert_eq!(
+        written["config_path"], "new-cafe/workspace.yaml",
+        "tool=write_workspace_config payload={written}"
+    );
+    assert!(
+        tmp.path().join("new-cafe/workspace.yaml").is_file(),
+        "workspace.yaml was not written"
+    );
+
+    let rejected = tool_payload(
+        server.addr,
+        "write_workspace_config",
+        json!({
+            "path": "../outside",
+            "config": {
+                "version": 1,
+                "name": "Nope",
+                "venue": "Nope",
+                "files": {"sales": {"path": "sales.xlsx"}}
+            }
+        }),
+    );
+    assert!(
+        rejected.get("error").is_some(),
+        "expected outside-sandbox error, got {rejected}"
     );
 }

@@ -51,7 +51,7 @@ tunnel-client run
 3. Select your tunnel (or paste the `tunnel_id`).
 4. Authentication: Gastro MCP does not require auth today — choose **No authentication** (or the equivalent option in the UI).
 5. Accept the risk warning and **Create as a plugin**, then install/enable it.
-6. In a chat, `@` the plugin and ask something like: list my workspaces, then summarize `demo-cafe-july-2026/sales.xlsx`.
+6. In a chat, `@` the plugin and ask something like: list my workspaces, then summarize `demo-cafe-july-2026`.
 
 ## Troubleshooting
 

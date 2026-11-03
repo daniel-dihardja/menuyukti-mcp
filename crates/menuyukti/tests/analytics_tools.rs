@@ -32,6 +32,13 @@ fn summarizes_demo_cafe_sales() {
         summary.total_items_sold, 1748,
         "fixture={fixture} field=total_items_sold"
     );
+
+    let via_workspace = load_normalized_sales("demo-cafe-july-2026", Some(&sales_reports()))
+        .unwrap_or_else(|err| {
+            panic!("fixture=demo-cafe-july-2026 tool=load_normalized_sales error={err}");
+        });
+    assert_eq!(via_workspace.pos, "esb");
+    assert_eq!(via_workspace.rows.len(), loaded.rows.len());
     assert!(
         (summary.total_revenue - 29_795_300.000_2).abs() < 0.01,
         "fixture={fixture} field=total_revenue got={}",
@@ -108,5 +115,18 @@ fn summarize_rejects_outside_path() {
     assert!(
         err.contains("outside") || err.contains("MENUYUKTI_DATA_DIR"),
         "tool=summarize_local_sales unexpected error={err}"
+    );
+}
+
+#[test]
+fn workspace_folder_without_config_errors_clearly() {
+    let tmp = tempfile::tempdir().unwrap();
+    std::fs::create_dir_all(tmp.path().join("empty-cafe")).unwrap();
+    let err = load_normalized_sales("empty-cafe", Some(tmp.path()))
+        .unwrap_err()
+        .to_string();
+    assert!(
+        err.contains("Workspace config not found") || err.contains("workspace.yaml"),
+        "unexpected error={err}"
     );
 }

@@ -24,17 +24,18 @@ const MCP_PATH: &str = "/mcp";
 
 const INSTRUCTIONS: &str = concat!(
     "Local Menuyukti sales analytics for restaurant POS Excel files. ",
-    "Call list_workspaces to see analysis workspaces and their Excel files, ",
-    "list_workspace_files to see all files in one workspace folder ",
-    "(including workspace.json and notes), summarize_local_sales for aggregates, ",
-    "list_normalized_sales for plain normalized line items, or get_menu_heatmaps ",
-    "for per-menu daily/weekly demand patterns. Paths must be under ",
-    "MENUYUKTI_DATA_DIR. Files stay on the local machine."
+    "Onboarding: when an owner drops sales (+ optional COGS) Excel into a new ",
+    "workspace folder, call list_workspace_files, infer file roles, confirm if ",
+    "unclear, then write_workspace_config (workspace.yaml). After that, call ",
+    "summarize_local_sales with the workspace folder path. ",
+    "Also available: list_workspaces for Excel inventory, list_normalized_sales ",
+    "for cleaned line items, get_menu_heatmaps for demand patterns. ",
+    "Paths must stay under MENUYUKTI_DATA_DIR. Files stay on the local machine."
 );
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 struct PathArgs {
-    /// Relative or absolute path to a POS Excel file under MENUYUKTI_DATA_DIR.
+    /// Workspace folder (uses workspace.yaml sales role) or Excel file under MENUYUKTI_DATA_DIR.
     path: String,
 }
 
@@ -42,6 +43,53 @@ struct PathArgs {
 struct WorkspacePathArgs {
     /// Relative or absolute path to a workspace directory under MENUYUKTI_DATA_DIR.
     path: String,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+struct WorkspacePeriodArgs {
+    #[serde(default)]
+    label: Option<String>,
+    #[serde(default)]
+    start: Option<String>,
+    #[serde(default)]
+    end: Option<String>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+struct WorkspaceFileRoleArgs {
+    /// Path relative to the workspace folder (for example sales.xlsx).
+    path: String,
+    #[serde(default)]
+    description: Option<String>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+struct WorkspaceFilesArgs {
+    sales: WorkspaceFileRoleArgs,
+    #[serde(default)]
+    cogs: Option<WorkspaceFileRoleArgs>,
+    #[serde(default)]
+    knowledge: Option<WorkspaceFileRoleArgs>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+struct WorkspaceConfigArgs {
+    /// Config schema version (must be 1).
+    version: u32,
+    name: String,
+    venue: String,
+    #[serde(default)]
+    period: Option<WorkspacePeriodArgs>,
+    #[serde(default)]
+    currency: Option<String>,
+    files: WorkspaceFilesArgs,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+struct WriteWorkspaceConfigArgs {
+    /// Workspace folder under MENUYUKTI_DATA_DIR (for example my-venue-aug-2026).
+    path: String,
+    config: WorkspaceConfigArgs,
 }
 
 #[derive(Clone)]
@@ -75,6 +123,32 @@ fn load_or_error(path: &str) -> Result<menuyukti::NormalizedSales, CallToolResul
     menuyukti::load_normalized_sales(path, None).map_err(|err| error_json(err.to_string()))
 }
 
+fn role_from_args(role: WorkspaceFileRoleArgs) -> menuyukti::WorkspaceFileRole {
+    menuyukti::WorkspaceFileRole {
+        path: role.path,
+        description: role.description,
+    }
+}
+
+fn config_from_args(args: WorkspaceConfigArgs) -> menuyukti::WorkspaceConfig {
+    menuyukti::WorkspaceConfig {
+        version: args.version,
+        name: args.name,
+        venue: args.venue,
+        period: args.period.map(|p| menuyukti::WorkspacePeriod {
+            label: p.label,
+            start: p.start,
+            end: p.end,
+        }),
+        currency: args.currency,
+        files: menuyukti::WorkspaceFiles {
+            sales: role_from_args(args.files.sales),
+            cogs: args.files.cogs.map(role_from_args),
+            knowledge: args.files.knowledge.map(role_from_args),
+        },
+    }
+}
+
 #[tool_router]
 impl MenuyuktiMcp {
     #[tool(
@@ -88,7 +162,7 @@ impl MenuyuktiMcp {
     }
 
     #[tool(
-        description = "List all files in one workspace directory under MENUYUKTI_DATA_DIR (Excel, workspace.json, notes, and other docs). Path must be a workspace folder (for example demo-cafe-july-2026). Skips Excel lock files (~$*)."
+        description = "List all files in one workspace directory under MENUYUKTI_DATA_DIR (Excel, workspace.yaml, notes, and other docs). Path must be a workspace folder (for example demo-cafe-july-2026). Skips Excel lock files (~$*). Use this first when onboarding a new folder."
     )]
     async fn list_workspace_files(
         &self,
@@ -101,7 +175,21 @@ impl MenuyuktiMcp {
     }
 
     #[tool(
-        description = "Summarize a local POS Excel sales export. Reads the file only when path resolves inside MENUYUKTI_DATA_DIR. Returns detected POS, period, revenue, quantity, and a capped top-item list."
+        description = "Write workspace.yaml for a workspace folder under MENUYUKTI_DATA_DIR. Use after list_workspace_files when onboarding: set sales/cogs roles, venue, period, and currency. Overwrites an existing config. Role paths must be relative to the workspace folder."
+    )]
+    async fn write_workspace_config(
+        &self,
+        Parameters(WriteWorkspaceConfigArgs { path, config }): Parameters<WriteWorkspaceConfigArgs>,
+    ) -> Result<CallToolResult, McpError> {
+        let config = config_from_args(config);
+        match menuyukti::write_workspace_config(&path, &config, None) {
+            Ok(written) => Ok(text_json(written)),
+            Err(err) => Ok(error_json(err.to_string())),
+        }
+    }
+
+    #[tool(
+        description = "Summarize local POS sales. Path may be a workspace folder (reads files.sales from workspace.yaml) or an Excel file under MENUYUKTI_DATA_DIR. Returns detected POS, period, revenue, quantity, and a capped top-item list."
     )]
     async fn summarize_local_sales(
         &self,
@@ -118,7 +206,7 @@ impl MenuyuktiMcp {
     }
 
     #[tool(
-        description = "List plain normalized line items from a local POS Excel sales export. Reads the file only when path resolves inside MENUYUKTI_DATA_DIR. Returns detected POS and the full cleaned row list (no aggregates)."
+        description = "List plain normalized line items from local POS sales. Path may be a workspace folder (workspace.yaml sales role) or an Excel file under MENUYUKTI_DATA_DIR. Returns detected POS and the full cleaned row list (no aggregates)."
     )]
     async fn list_normalized_sales(
         &self,
@@ -135,7 +223,7 @@ impl MenuyuktiMcp {
     }
 
     #[tool(
-        description = "Return per-menu daily (hourly) and weekly demand heatmaps from a local POS Excel sales export. Reads the file only when path resolves inside MENUYUKTI_DATA_DIR. Useful for when each dish sells most."
+        description = "Return per-menu daily (hourly) and weekly demand heatmaps from local POS sales. Path may be a workspace folder (workspace.yaml sales role) or an Excel file under MENUYUKTI_DATA_DIR. Useful for when each dish sells most."
     )]
     async fn get_menu_heatmaps(
         &self,
@@ -190,12 +278,16 @@ async fn main() -> anyhow::Result<()> {
         config,
     );
 
+    let port = std::env::var("MENUYUKTI_MCP_PORT")
+        .ok()
+        .and_then(|raw| raw.trim().parse::<u16>().ok())
+        .unwrap_or(DEFAULT_PORT);
     let router = axum::Router::new().nest_service(MCP_PATH, service);
-    let addr = SocketAddr::from(([127, 0, 0, 1], DEFAULT_PORT));
+    let addr = SocketAddr::from(([127, 0, 0, 1], port));
     let listener = tokio::net::TcpListener::bind(addr).await?;
 
     tracing::info!(
-        "menuyukti-mcp MCP listening at http://{DEFAULT_HOST}:{DEFAULT_PORT}{MCP_PATH} (menuyukti {})",
+        "menuyukti-mcp MCP listening at http://{DEFAULT_HOST}:{port}{MCP_PATH} (menuyukti {})",
         menuyukti::VERSION
     );
 
