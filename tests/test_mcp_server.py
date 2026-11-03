@@ -58,10 +58,21 @@ async def test_summarize_local_sales_over_streamable_http(
             tools = await client.list_tools()
             tool_names = {tool.name for tool in tools.tools}
             assert "summarize_local_sales" in tool_names
+            assert "list_normalized_sales" in tool_names
 
             result = await client.call_tool(
                 "summarize_local_sales",
                 {"path": "esb/SalesRecapitulationDetailReport_DEMO.xlsx"},
+            )
+
+            listed = await client.call_tool(
+                "list_normalized_sales",
+                {"path": "esb/SalesRecapitulationDetailReport_DEMO.xlsx"},
+            )
+
+            blocked = await client.call_tool(
+                "list_normalized_sales",
+                {"path": "/tmp/outside.xlsx"},
             )
 
         assert result.is_error is False
@@ -76,6 +87,26 @@ async def test_summarize_local_sales_over_streamable_http(
         assert payload["total_items_sold"] > 0
         assert 1 <= len(payload["top_items"]) <= 10
         assert "bill_number" not in json.dumps(payload)
+
+        assert listed.is_error is False
+        listed_blocks = [
+            block for block in listed.content if getattr(block, "type", None) == "text"
+        ]
+        assert listed_blocks
+        listed_payload = json.loads(listed_blocks[0].text)
+        assert listed_payload["pos"] == "esb"
+        assert listed_payload["row_count"] == len(listed_payload["rows"])
+        assert listed_payload["row_count"] > 0
+        assert "bill_number" in listed_payload["rows"][0]
+
+        assert blocked.is_error is False
+        blocked_blocks = [
+            block for block in blocked.content if getattr(block, "type", None) == "text"
+        ]
+        assert blocked_blocks
+        blocked_payload = json.loads(blocked_blocks[0].text)
+        assert "error" in blocked_payload
+        assert "outside" in blocked_payload["error"].lower()
     finally:
         http_server.should_exit = True
         await serve_task

@@ -8,6 +8,8 @@ from mcp.server.mcpserver import MCPServer
 
 from menuyukti_gpt.sales import (
     PathNotAllowedError,
+    list_normalized_sales,
+    normalized_list_as_dict,
     summary_as_dict,
     summarize_local_sales,
 )
@@ -21,8 +23,9 @@ mcp = MCPServer(
     version="0.1.0",
     instructions=(
         "Local Menuyukti sales analytics for restaurant POS Excel files. "
-        "Call summarize_local_sales with a path under MENUYUKTI_DATA_DIR. "
-        "Results are aggregates only; raw tickets stay on the local machine."
+        "Call summarize_local_sales for aggregates, or list_normalized_sales "
+        "for plain normalized line items. Paths must be under MENUYUKTI_DATA_DIR. "
+        "Files stay on the local machine."
     ),
 )
 
@@ -47,6 +50,28 @@ def summarize_local_sales_tool(path: str) -> str:
         return json.dumps({"error": str(exc)})
 
     return json.dumps(summary_as_dict(summary))
+
+
+@mcp.tool(
+    name="list_normalized_sales",
+    description=(
+        "List plain normalized line items from a local POS Excel sales export. "
+        "Reads the file only when path resolves inside MENUYUKTI_DATA_DIR. "
+        "Returns detected POS and the full cleaned row list (no aggregates)."
+    ),
+)
+def list_normalized_sales_tool(path: str) -> str:
+    """List plain normalized rows from a local POS Excel export under MENUYUKTI_DATA_DIR."""
+    try:
+        listed = list_normalized_sales(path)
+    except PathNotAllowedError as exc:
+        return json.dumps({"error": str(exc)})
+    except FileNotFoundError as exc:
+        return json.dumps({"error": str(exc)})
+    except ValueError as exc:
+        return json.dumps({"error": str(exc)})
+
+    return json.dumps(normalized_list_as_dict(listed))
 
 
 def create_server() -> MCPServer:

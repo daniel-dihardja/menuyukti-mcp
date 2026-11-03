@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 from typing import Any, TypedDict
@@ -39,6 +40,14 @@ class NormalizedSales(TypedDict):
 
     pos: str
     frame: pd.DataFrame
+
+
+class NormalizedSalesList(TypedDict):
+    """Detected POS and plain normalized line-item rows."""
+
+    pos: str
+    rows: list[dict[str, Any]]
+    row_count: int
 
 
 class PathNotAllowedError(ValueError):
@@ -132,6 +141,26 @@ def summarize_local_sales(path: str, *, data_dir: Path | None = None) -> SalesSu
     )
 
 
+def _frame_to_plain_rows(frame: pd.DataFrame) -> list[dict[str, Any]]:
+    """Serialize a normalized frame to JSON-friendly row dicts."""
+    if frame.empty:
+        return []
+    return json.loads(frame.to_json(orient="records", date_format="iso"))
+
+
+def list_normalized_sales(
+    path: str, *, data_dir: Path | None = None
+) -> NormalizedSalesList:
+    """Load a local POS Excel export and return plain normalized line items."""
+    loaded = load_normalized_sales(path, data_dir=data_dir)
+    rows = _frame_to_plain_rows(loaded["frame"])
+    return NormalizedSalesList(
+        pos=loaded["pos"],
+        rows=rows,
+        row_count=len(rows),
+    )
+
+
 def summary_as_dict(summary: SalesSummary) -> dict[str, Any]:
     """Plain dict for MCP structured content / JSON responses."""
     return {
@@ -148,4 +177,13 @@ def summary_as_dict(summary: SalesSummary) -> dict[str, Any]:
             }
             for item in summary["top_items"]
         ],
+    }
+
+
+def normalized_list_as_dict(listed: NormalizedSalesList) -> dict[str, Any]:
+    """Plain dict for MCP structured content / JSON responses."""
+    return {
+        "pos": listed["pos"],
+        "row_count": listed["row_count"],
+        "rows": listed["rows"],
     }

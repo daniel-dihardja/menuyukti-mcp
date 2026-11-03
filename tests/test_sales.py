@@ -11,6 +11,7 @@ from menuyukti.core.models.pos_transaction import POSTransactionLineItem
 from menuyukti_gpt.sales import (
     DATA_DIR_ENV,
     PathNotAllowedError,
+    list_normalized_sales,
     load_normalized_sales,
     summarize_local_sales,
 )
@@ -100,3 +101,33 @@ def test_esb_fixture_summary_shape(data_dir: Path) -> None:
     blob = str(summary)
     assert "bill_number" not in blob
     assert "total_after_bill_discount" not in blob
+
+
+def test_esb_fixture_list_normalized_sales(data_dir: Path) -> None:
+    assert ESB_DEMO.is_file()
+    listed = list_normalized_sales(ESB_REL, data_dir=data_dir)
+
+    assert listed["pos"] == "esb"
+    assert listed["row_count"] == len(listed["rows"])
+    assert listed["row_count"] > 0
+    assert set(listed.keys()) == {"pos", "rows", "row_count"}
+
+    required = set(POSTransactionLineItem.get_required_columns())
+    first = listed["rows"][0]
+    assert required.issubset(first.keys())
+    assert first["bill_number"]
+    assert first["menu"]
+    assert first["qty"] > 0
+    assert isinstance(first["order_time"], str)
+
+
+def test_list_normalized_sales_rejects_path_outside_data_dir(
+    data_dir: Path, tmp_path: Path
+) -> None:
+    outside = tmp_path / "secret.xlsx"
+    outside.write_bytes(b"not-excel")
+
+    with patch("pathlib.Path.read_bytes") as read_bytes:
+        with pytest.raises(PathNotAllowedError, match="outside"):
+            list_normalized_sales(str(outside), data_dir=data_dir)
+        read_bytes.assert_not_called()
