@@ -8,3 +8,6 @@ dist/
 *.egg-info/
 .DS_Store
 packages/**/src/*.egg-info/
+
+# Local POS exports for manual/dev testing (do not commit)
+sales-reports/
