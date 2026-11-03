@@ -1,13 +1,13 @@
 [package]
-name = "gastro-mcp"
+name = "menuyukti-mcp"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "Local Gastro MCP server for sales analytics"
+description = "Local Menuyukti MCP server for sales analytics"
 readme = "../../README.md"
 
 [[bin]]
-name = "gastro-mcp"
+name = "menuyukti-mcp"
 path = "src/main.rs"
 
 [dependencies]

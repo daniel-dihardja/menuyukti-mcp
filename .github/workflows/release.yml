@@ -1,4 +1,4 @@
-# Build gastro-mcp release binaries and attach them to a GitHub Release.
+# Build menuyukti-mcp release binaries and attach them to a GitHub Release.
 # Trigger: push a version tag, e.g. git tag v0.1.0 && git push origin v0.1.0
 name: Release
 
@@ -44,8 +44,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: taiki-e/upload-rust-binary-action@v1
         with:
-          bin: gastro-mcp
-          package: gastro-mcp
+          bin: menuyukti-mcp
+          package: menuyukti-mcp
           target: ${{ matrix.target }}
           locked: true
           tar: unix
@@ -53,4 +53,4 @@ jobs:
           checksum: sha256
           include: LICENSE,README.md
           leading-dir: true
-          archive: gastro-mcp-$tag-$target
+          archive: menuyukti-mcp-$tag-$target

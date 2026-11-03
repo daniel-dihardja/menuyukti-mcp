@@ -7,7 +7,7 @@ Contributor workflow for building Gastro MCP from source.
 ```bash
 make check     # fmt --check + clippy + tests
 make test
-# or: cargo test -p menuyukti && cargo test -p gastro-mcp
+# or: cargo test -p menuyukti && cargo test -p menuyukti-mcp
 make mcp
 make mcp-inspect
 make backlog   # Backlog.md board (optional)
@@ -16,7 +16,7 @@ make backlog   # Backlog.md board (optional)
 ## Crate layout
 
 - `crates/menuyukti` — Excel normalize + analytics library
-- `crates/gastro-mcp` — MCP HTTP binary
+- `crates/menuyukti-mcp` — MCP HTTP binary
 
 ## Local data
 

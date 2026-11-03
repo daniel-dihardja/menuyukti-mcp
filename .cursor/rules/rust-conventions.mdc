@@ -9,8 +9,8 @@ alwaysApply: false
 ## Crate layout
 
 - `crates/menuyukti` — library: Excel normalize, path gating, analytics
-- `crates/gastro-mcp` — binary: streamable HTTP MCP server only
-- Put reusable logic in `menuyukti`; keep MCP wiring thin in `gastro-mcp`
+- `crates/menuyukti-mcp` — binary: streamable HTTP MCP server only
+- Put reusable logic in `menuyukti`; keep MCP wiring thin in `menuyukti-mcp`
 
 ## Dependencies
 

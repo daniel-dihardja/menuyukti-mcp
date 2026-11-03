@@ -1,4 +1,4 @@
-//! Gastro MCP server entrypoint (streamable HTTP).
+//! Menuyukti MCP server entrypoint (streamable HTTP).
 
 use std::net::SocketAddr;
 
@@ -93,13 +93,13 @@ struct WriteWorkspaceConfigArgs {
 }
 
 #[derive(Clone)]
-struct GastroMcp {
+struct MenuyuktiMcp {
     // Populated by `#[tool_router]`; read by generated `ServerHandler` glue.
     #[allow(dead_code)]
     tool_router: ToolRouter<Self>,
 }
 
-impl GastroMcp {
+impl MenuyuktiMcp {
     fn new() -> Self {
         Self {
             tool_router: Self::tool_router(),
@@ -150,7 +150,7 @@ fn config_from_args(args: WorkspaceConfigArgs) -> menuyukti::WorkspaceConfig {
 }
 
 #[tool_router]
-impl GastroMcp {
+impl MenuyuktiMcp {
     #[tool(
         description = "List analysis workspaces under MENUYUKTI_DATA_DIR (typically workspaces/). Groups Excel files by workspace folder and returns relative file paths you can pass to the other sales tools. Ignores non-Excel files."
     )]
@@ -245,10 +245,13 @@ impl GastroMcp {
 }
 
 #[tool_handler]
-impl ServerHandler for GastroMcp {
+impl ServerHandler for MenuyuktiMcp {
     fn get_info(&self) -> ServerConfig {
         ServerConfig::new(ServerCapabilities::builder().enable_tools().build())
-            .with_server_info(Implementation::new("gastro-mcp", env!("CARGO_PKG_VERSION")))
+            .with_server_info(Implementation::new(
+                "menuyukti-mcp",
+                env!("CARGO_PKG_VERSION"),
+            ))
             .with_protocol_version(ProtocolVersion::default())
             .with_instructions(INSTRUCTIONS.to_string())
     }
@@ -270,7 +273,7 @@ async fn main() -> anyhow::Result<()> {
         .with_cancellation_token(ct.child_token());
 
     let service = StreamableHttpService::new(
-        || Ok(GastroMcp::new()),
+        || Ok(MenuyuktiMcp::new()),
         LocalSessionManager::default().into(),
         config,
     );
@@ -284,7 +287,7 @@ async fn main() -> anyhow::Result<()> {
     let listener = tokio::net::TcpListener::bind(addr).await?;
 
     tracing::info!(
-        "gastro-mcp listening at http://{DEFAULT_HOST}:{port}{MCP_PATH} (menuyukti {})",
+        "menuyukti-mcp MCP listening at http://{DEFAULT_HOST}:{port}{MCP_PATH} (menuyukti {})",
         menuyukti::VERSION
     );
 
