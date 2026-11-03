@@ -4,19 +4,34 @@ Local MCP server for restaurant POS sales analytics. Connect it to your personal
 
 Licensed under the [MIT License](LICENSE).
 
-## Requirements
+## Choose how to run
 
-- A prebuilt binary from [GitHub Releases](https://github.com/daniel-dihardja/menuyukti-mcp/releases) (no Rust install), **or**
-- [Rust](https://rustup.rs/) (stable toolchain with Cargo) to build from source
+| | **Prebuilt binary** | **From source** |
+| --- | --- | --- |
+| Best for | Owners who just want to run the server | Contributors / local development |
+| Install | Download a release archive | Install [Rust](https://rustup.rs/) (Cargo) |
+| Start | Run `menuyukti-mcp` / `menuyukti-mcp.exe` | `make mcp` or `cargo run -p menuyukti-mcp` |
+| Needs Make / Git clone | No | Yes (clone this repo) |
 
-## Prebuilt binaries
+Both modes listen at **`http://127.0.0.1:8787/mcp`** (streamable HTTP). Point ChatGPT or another MCP client at that URL. Tools:
 
-Tagged releases (`v*`) publish archives for Windows (x64), macOS (Apple Silicon + Intel), and Linux (x64 + ARM64).
+- `list_sales_reports`
+- `summarize_local_sales`
+- `list_normalized_sales`
+- `get_menu_heatmaps`
 
-1. Download the archive for your OS from [Releases](https://github.com/daniel-dihardja/menuyukti-mcp/releases).
-2. Extract it (the archive contains a folder with `menuyukti-mcp` / `menuyukti-mcp.exe`, `LICENSE`, and `README.md`).
-3. Put POS Excel exports in a folder (or use this repo’s [`sales-reports/`](sales-reports/)).
-4. Run the binary with that folder as the data dir:
+Put POS Excel files in a data folder and set `MENUYUKTI_DATA_DIR` to that folder (see [Sales reports folder](#sales-reports-folder)).
+
+---
+
+### Option A — Prebuilt binary
+
+Tagged releases (`v*`) publish archives for Windows (x64), macOS (Apple Silicon + Intel), and Linux (x64 + ARM64). No Rust install.
+
+1. Download the archive for your OS from [GitHub Releases](https://github.com/daniel-dihardja/menuyukti-mcp/releases).
+2. Extract it. Inside you’ll find `menuyukti-mcp` (or `menuyukti-mcp.exe` on Windows), plus `LICENSE` and `README.md`.
+3. Create a folder for Excel exports (any path you like).
+4. Start the server:
 
 ```bash
 # macOS / Linux
@@ -27,10 +42,18 @@ $env:MENUYUKTI_DATA_DIR="C:\path\to\sales-reports"
 .\menuyukti-mcp.exe
 ```
 
-## Run from source
+Keep that terminal open while ChatGPT / your MCP client is connected.
 
-1. Put POS Excel exports in [`sales-reports/`](sales-reports/) (a demo file is included).
-2. Start the Rust MCP server:
+---
+
+### Option B — From source
+
+Use this when you are developing or prefer to build locally.
+
+1. Install [Rust](https://rustup.rs/) (stable toolchain with Cargo).
+2. Clone this repository and open a terminal in the repo root.
+3. Put POS Excel exports in [`sales-reports/`](sales-reports/) (a demo file is included), or point `MENUYUKTI_DATA_DIR` elsewhere.
+4. Start the server:
 
 ```bash
 make mcp
@@ -38,26 +61,23 @@ make mcp
 # or: MENUYUKTI_DATA_DIR="$PWD/sales-reports" cargo run -p menuyukti-mcp
 ```
 
-The server listens at `http://127.0.0.1:8787/mcp` (streamable HTTP).
-
-Optional Inspector (needs Node/`npx` for the Inspector UI only):
+Optional: open [MCP Inspector](https://modelcontextprotocol.io/) against the running server (needs Node / `npx`):
 
 ```bash
 make mcp-inspect
 ```
 
-Point ChatGPT / MCP clients at that URL. Tools:
+For contributor workflow (`make test`, crate layout), see [Develop](#develop).
 
-- `list_sales_reports`
-- `summarize_local_sales`
-- `list_normalized_sales`
-- `get_menu_heatmaps`
+---
 
 ## Sales reports folder
 
-Put your POS Excel exports in [`sales-reports/`](sales-reports/).
+In the source checkout, put POS Excel exports in [`sales-reports/`](sales-reports/). That folder is the default `MENUYUKTI_DATA_DIR` when you use `make mcp`.
 
-That folder is the default data directory for the local MCP server. A sample file is included:
+With a prebuilt binary, use any folder and set `MENUYUKTI_DATA_DIR` to it (see Option A).
+
+A sample file is included in this repo:
 
 - [`sales-reports/demo-cafe-sales-july-2026.xlsx`](sales-reports/demo-cafe-sales-july-2026.xlsx) — anonymized cafe month with real data
 
@@ -73,7 +93,7 @@ Example tool argument:
 
 Built-in support covers known POS exports (ESB, Moka, Quino). If your export uses different column names, add a mapping file so Menuyukti can normalize it locally.
 
-1. Copy [`pos-column-mapping.example.json`](pos-column-mapping.example.json) into [`sales-reports/`](sales-reports/).
+1. Copy [`pos-column-mapping.example.json`](pos-column-mapping.example.json) into your data folder (`sales-reports/` or the folder you set as `MENUYUKTI_DATA_DIR`).
 2. Rename it to `pos-column-mapping.json`.
 3. Replace every `<YOUR_…_COLUMN>` placeholder with the exact header text from your spreadsheet.
 
@@ -117,4 +137,3 @@ Workspace layout:
 
 - `crates/menuyukti` — Excel normalize + analytics library
 - `crates/menuyukti-mcp` — MCP HTTP binary
-
