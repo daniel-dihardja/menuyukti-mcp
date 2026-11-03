@@ -10,10 +10,10 @@ Licensed under the [MIT License](LICENSE).
 uv sync --group dev
 ```
 
-By default the inspect script points at the v3 POS demo fixtures. Override if your exports live elsewhere:
+Analytics live in this repo under [`packages/menuyukti`](packages/menuyukti). By default the inspect script points at the bundled POS demo fixtures. Override if your exports live elsewhere:
 
 ```bash
-export MENUYUKTI_DATA_DIR="$(pwd)/../v3/packages/menuyukti/fixtures/pos-sales-reports"
+export MENUYUKTI_DATA_DIR="$(pwd)/packages/menuyukti/fixtures/pos-sales-reports"
 ```
 
 ## Debug with MCP Inspector (recommended)
@@ -43,7 +43,7 @@ Stopping Inspector (Ctrl+C) also stops the MCP server.
 ## Run the MCP server alone
 
 ```bash
-export MENUYUKTI_DATA_DIR="$(pwd)/../v3/packages/menuyukti/fixtures/pos-sales-reports"
+export MENUYUKTI_DATA_DIR="$(pwd)/packages/menuyukti/fixtures/pos-sales-reports"
 npm run mcp
 ```
 
