@@ -1,0 +1,93 @@
+"""Unit tests for local sales path gate and aggregate summary."""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
+from menuyukti_gpt.sales import (
+    DATA_DIR_ENV,
+    PathNotAllowedError,
+    summarize_local_sales,
+)
+
+FIXTURES = (
+    Path(__file__).resolve().parents[2]
+    / "v3"
+    / "packages"
+    / "menuyukti"
+    / "fixtures"
+    / "pos-sales-reports"
+)
+ESB_DEMO = FIXTURES / "esb" / "SalesRecapitulationDetailReport_DEMO.xlsx"
+
+
+@pytest.fixture
+def data_dir(monkeypatch: pytest.MonkeyPatch) -> Path:
+    monkeypatch.setenv(DATA_DIR_ENV, str(FIXTURES))
+    return FIXTURES.resolve()
+
+
+def test_rejects_path_outside_data_dir_without_reading(
+    data_dir: Path, tmp_path: Path
+) -> None:
+    outside = tmp_path / "secret.xlsx"
+    outside.write_bytes(b"not-excel")
+
+    with patch("pathlib.Path.read_bytes") as read_bytes:
+        with pytest.raises(PathNotAllowedError, match="outside"):
+            summarize_local_sales(str(outside), data_dir=data_dir)
+        read_bytes.assert_not_called()
+
+
+def test_rejects_traversal_without_reading(data_dir: Path) -> None:
+    with patch("pathlib.Path.read_bytes") as read_bytes:
+        with pytest.raises(PathNotAllowedError, match="outside"):
+            summarize_local_sales("../README.md", data_dir=data_dir)
+        read_bytes.assert_not_called()
+
+
+def test_requires_data_dir_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv(DATA_DIR_ENV, raising=False)
+    with patch("pathlib.Path.read_bytes") as read_bytes:
+        with pytest.raises(PathNotAllowedError, match=DATA_DIR_ENV):
+            summarize_local_sales("esb/SalesRecapitulationDetailReport_DEMO.xlsx")
+        read_bytes.assert_not_called()
+
+
+def test_esb_fixture_summary_shape(data_dir: Path) -> None:
+    assert ESB_DEMO.is_file()
+    summary = summarize_local_sales(
+        "esb/SalesRecapitulationDetailReport_DEMO.xlsx",
+        data_dir=data_dir,
+    )
+
+    assert summary["pos"] == "esb"
+    assert summary["period_start"] is not None
+    assert summary["period_end"] is not None
+    assert summary["total_revenue"] > 0
+    assert summary["total_items_sold"] > 0
+    assert 1 <= len(summary["top_items"]) <= 10
+
+    allowed_keys = {
+        "pos",
+        "period_start",
+        "period_end",
+        "total_revenue",
+        "total_items_sold",
+        "top_items",
+    }
+    assert set(summary.keys()) == allowed_keys
+
+    for item in summary["top_items"]:
+        assert set(item.keys()) == {"menu", "popularity", "quantity"}
+        assert "bill_number" not in item
+        assert "order_time" not in item
+
+    # Ensure raw ticket fields did not leak into the summary.
+    blob = str(summary)
+    assert "bill_number" not in blob
+    assert "total_after_bill_discount" not in blob

@@ -1,0 +1,70 @@
+# Menuyukti GPT Plugin
+
+Local MCP server that runs Menuyukti sales analytics on POS Excel files that stay on the restaurant owner's machine.
+
+## Setup
+
+```bash
+uv sync --group dev
+```
+
+By default the inspect script points at the v3 POS demo fixtures. Override if your exports live elsewhere:
+
+```bash
+export MENUYUKTI_DATA_DIR="$(pwd)/../v3/packages/menuyukti/fixtures/pos-sales-reports"
+```
+
+## Debug with MCP Inspector (recommended)
+
+Starts the MCP server and opens Inspector already pointed at it:
+
+```bash
+npm run mcp:inspect
+```
+
+Inspector opens against [http://127.0.0.1:8787/mcp](http://127.0.0.1:8787/mcp) (Streamable HTTP). Server logs stay in the same terminal so you can debug tool calls and errors.
+
+In Inspector:
+
+1. Confirm the connection to `http://127.0.0.1:8787/mcp`
+2. Open **Tools** → `summarize_local_sales`
+3. Call with a path under `MENUYUKTI_DATA_DIR`, for example:
+
+```json
+{
+  "path": "esb/SalesRecapitulationDetailReport_DEMO.xlsx"
+}
+```
+
+Stopping Inspector (Ctrl+C) also stops the MCP server.
+
+## Run the MCP server alone
+
+```bash
+export MENUYUKTI_DATA_DIR="$(pwd)/../v3/packages/menuyukti/fixtures/pos-sales-reports"
+npm run mcp
+```
+
+The server listens at [http://localhost:8787/mcp](http://localhost:8787/mcp).
+
+Then in another terminal you can open Inspector manually:
+
+```bash
+npx @modelcontextprotocol/inspector@latest --web \
+  --transport http \
+  --server-url http://127.0.0.1:8787/mcp
+```
+
+## Backlog board
+
+```bash
+npm run dev
+```
+
+Opens the Backlog.md UI at [http://127.0.0.1:6421](http://127.0.0.1:6421).
+
+## Tests
+
+```bash
+uv run pytest
+```

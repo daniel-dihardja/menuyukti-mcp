@@ -1,0 +1,82 @@
+"""HTTP integration test for the Menuyukti GPT MCP server."""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import socket
+from pathlib import Path
+
+import pytest
+import uvicorn
+from mcp.client.client import Client
+
+from menuyukti_gpt.sales import DATA_DIR_ENV
+from menuyukti_gpt.server import MCP_PATH, create_server
+
+FIXTURES = (
+    Path(__file__).resolve().parents[2]
+    / "v3"
+    / "packages"
+    / "menuyukti"
+    / "fixtures"
+    / "pos-sales-reports"
+)
+
+
+def _free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        return int(sock.getsockname()[1])
+
+
+@pytest.mark.asyncio
+async def test_summarize_local_sales_over_streamable_http(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(DATA_DIR_ENV, str(FIXTURES))
+    port = _free_port()
+    mcp_server = create_server()
+    app = mcp_server.streamable_http_app(
+        streamable_http_path=MCP_PATH,
+        json_response=True,
+        stateless_http=True,
+        host="127.0.0.1",
+    )
+    config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning")
+    http_server = uvicorn.Server(config)
+    serve_task = asyncio.create_task(http_server.serve())
+
+    try:
+        for _ in range(100):
+            if http_server.started:
+                break
+            await asyncio.sleep(0.05)
+        assert http_server.started, "MCP HTTP server failed to start"
+
+        url = f"http://127.0.0.1:{port}{MCP_PATH}"
+        async with Client(url) as client:
+            tools = await client.list_tools()
+            tool_names = {tool.name for tool in tools.tools}
+            assert "summarize_local_sales" in tool_names
+
+            result = await client.call_tool(
+                "summarize_local_sales",
+                {"path": "esb/SalesRecapitulationDetailReport_DEMO.xlsx"},
+            )
+
+        assert result.is_error is False
+        assert result.content
+        text_blocks = [
+            block for block in result.content if getattr(block, "type", None) == "text"
+        ]
+        assert text_blocks
+        payload = json.loads(text_blocks[0].text)
+        assert payload["pos"] == "esb"
+        assert payload["total_revenue"] > 0
+        assert payload["total_items_sold"] > 0
+        assert 1 <= len(payload["top_items"]) <= 10
+        assert "bill_number" not in json.dumps(payload)
+    finally:
+        http_server.should_exit = True
+        await serve_task
