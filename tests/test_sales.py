@@ -15,8 +15,7 @@ from menuyukti_gpt.sales import (
 )
 
 FIXTURES = (
-    Path(__file__).resolve().parents[2]
-    / "v3"
+    Path(__file__).resolve().parents[1]
     / "packages"
     / "menuyukti"
     / "fixtures"

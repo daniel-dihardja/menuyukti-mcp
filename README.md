@@ -2,6 +2,8 @@
 
 Local MCP server that runs Menuyukti sales analytics on POS Excel files that stay on the restaurant owner's machine.
 
+Licensed under the [MIT License](LICENSE).
+
 ## Setup
 
 ```bash

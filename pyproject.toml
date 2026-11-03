@@ -3,6 +3,8 @@ name = "menuyukti-gpt"
 version = "0.1.0"
 description = "Local Menuyukti ChatGPT plugin MCP server for sales analytics"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.12"
 dependencies = [
     "mcp>=1.26.0",
@@ -23,7 +25,7 @@ packages = ["src/menuyukti_gpt"]
 package = true
 
 [tool.uv.sources]
-menuyukti = { path = "../v3/packages/menuyukti", editable = true }
+menuyukti = { path = "packages/menuyukti", editable = true }
 
 [dependency-groups]
 dev = [
