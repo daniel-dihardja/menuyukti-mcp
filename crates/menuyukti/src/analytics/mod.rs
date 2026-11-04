@@ -4,6 +4,7 @@ mod basket_affinities;
 mod heatmaps;
 mod menu_engineering;
 mod summary;
+mod weak_review;
 
 pub use basket_affinities::{
     compute_menu_basket_affinities_from_orders, BasketScope, MenuBasketAffinitiesResult,
@@ -18,4 +19,9 @@ pub use menu_engineering::{
 };
 pub use summary::{
     list_normalized_rows, summarize_sales, NormalizedSalesList, SalesSummary, TopItem,
+};
+pub use weak_review::{
+    adapt_weak_review, adapt_weak_review_from_matrix, adapt_weak_review_from_orders,
+    inclusive_calendar_days, period_from_line_items, WeakDisplayRow, WeakDistributionStats,
+    WeakPortfolioStats, WeakReviewResult,
 };

@@ -71,6 +71,7 @@ Personal uploads under `workspaces/` are gitignored. Only the demo workspace is 
 - `get_menu_heatmaps` — when each dish sells during the day / week
 - `get_pair_lift_matrix` — co-purchase lift matrix for combo / upsell ideas (**sales alone**; COGS optional)
 - `analyze_menu_engineering` — star / plow_horse / puzzle / weak matrix (**needs sales + COGS**)
+- `get_weak_items_review` — weak-quadrant depth review for reprice / improve / remove (**needs sales + COGS**)
 
 ## Pair lift index (sales alone)
 
@@ -89,3 +90,7 @@ COGS is optional here — unlike menu engineering, missing unit costs does not b
 2. `files.cogs` — unit-cost Excel with **Menu** and **COGS** columns (demo uses a sheet named `COGS`)
 
 If COGS is missing, drop a COGS Excel into the folder and ask ChatGPT to update the workspace config, then retry. Sales-only tools (`summarize_local_sales`, heatmaps, pair lift) still work without COGS.
+
+## Weak items review (needs COGS)
+
+`get_weak_items_review` returns the **weak** quadrant only, with period depth (avg qty/day) and portfolio KPIs. Use it when deciding which dishes to **reprice, improve, or remove**. Same workspace COGS requirement as menu engineering.

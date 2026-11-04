@@ -31,6 +31,8 @@ const INSTRUCTIONS: &str = concat!(
     "Menu engineering (analyze_menu_engineering) requires a workspace folder ",
     "with both files.sales and files.cogs configured; if COGS is missing, ask ",
     "the owner for a unit-cost Excel, list_workspace_files, then write_workspace_config. ",
+    "Weak items review (get_weak_items_review) also needs sales + COGS; use it for ",
+    "reprice / improve / remove decisions on low-popularity, low-margin dishes. ",
     "Pair lift (get_pair_lift_matrix) returns co-purchase lift for combo ideas; ",
     "sales alone is enough (top-by-presence focus). When files.cogs is configured ",
     "and menu engineering yields at least two stars, those stars become the focus. ",
@@ -297,6 +299,49 @@ impl MenuyuktiMcp {
                 "items": matrix.items,
                 "coverage": matrix.coverage,
             }))),
+            Err(err) => Ok(error_json(format!(
+                "{err}. Fix COGS coverage (Menu + COGS columns matching sold menu names) \
+                 or ask the owner to update unit costs."
+            ))),
+        }
+    }
+
+    #[tool(
+        description = "Return Weak items review analytics for reprice / improve / remove decisions. Workspace folder under MENUYUKTI_DATA_DIR with files.sales and files.cogs required. Filters the menu-engineering matrix to the weak quadrant and adds period depth (avg qty/day, portfolio item/margin share). If COGS is missing, list_workspace_files / write_workspace_config or ask the owner for unit costs first."
+    )]
+    async fn get_weak_items_review(
+        &self,
+        Parameters(WorkspacePathArgs { path }): Parameters<WorkspacePathArgs>,
+    ) -> Result<CallToolResult, McpError> {
+        let cogs = match menuyukti::load_workspace_cogs(&path, None) {
+            Ok(v) => v,
+            Err(err) => {
+                return Ok(error_json(format!(
+                    "{err}. Weak items review needs files.cogs on the workspace: \
+                     drop a COGS Excel, call list_workspace_files, then write_workspace_config \
+                     (or ask the owner for unit costs)."
+                )));
+            }
+        };
+        let loaded = match load_or_error(&path) {
+            Ok(v) => v,
+            Err(resp) => return Ok(resp),
+        };
+        match menuyukti::compute_menu_engineering_from_orders(&loaded.rows, &cogs.unit_costs) {
+            Ok(matrix) => {
+                let review = menuyukti::adapt_weak_review_from_orders(&matrix, &loaded.rows);
+                Ok(text_json(json!({
+                    "pos": loaded.pos,
+                    "workspace": path,
+                    "cogs_path": cogs.path,
+                    "period_start": review.period_start,
+                    "period_end": review.period_end,
+                    "stats": review.stats,
+                    "distribution_stats": review.distribution_stats,
+                    "items": review.rows,
+                    "coverage": matrix.coverage,
+                })))
+            }
             Err(err) => Ok(error_json(format!(
                 "{err}. Fix COGS coverage (Menu + COGS columns matching sold menu names) \
                  or ask the owner to update unit costs."

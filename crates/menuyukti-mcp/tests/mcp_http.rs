@@ -137,6 +137,7 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
         "list_normalized_sales",
         "get_menu_heatmaps",
         "analyze_menu_engineering",
+        "get_weak_items_review",
         "get_pair_lift_matrix",
     ] {
         assert!(
@@ -217,6 +218,35 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
             .unwrap_or(0.0)
             > 0.0,
         "tool=analyze_menu_engineering thresholds; payload={matrix}"
+    );
+
+    let weak = tool_payload(
+        server.addr,
+        "get_weak_items_review",
+        json!({"path": "demo-cafe-july-2026"}),
+    );
+    assert!(
+        weak.get("error").is_none(),
+        "tool=get_weak_items_review demo cafe error payload={weak}"
+    );
+    assert!(
+        weak["items"]
+            .as_array()
+            .map(|a| !a.is_empty())
+            .unwrap_or(false),
+        "tool=get_weak_items_review expected weak items; payload={weak}"
+    );
+    assert!(
+        weak["stats"]["item_count"].as_u64().unwrap_or(0) >= 1,
+        "tool=get_weak_items_review stats.item_count; payload={weak}"
+    );
+    assert!(
+        weak["stats"]["period_days"].as_i64().unwrap_or(0) > 0,
+        "tool=get_weak_items_review expected period_days; payload={weak}"
+    );
+    assert!(
+        weak["period_start"].as_str().is_some(),
+        "tool=get_weak_items_review period_start; payload={weak}"
     );
 
     let lift = tool_payload(
@@ -358,5 +388,20 @@ files:
     assert!(
         err.contains("cogs") || err.contains("COGS"),
         "error should mention COGS; got {err}"
+    );
+
+    let weak_missing = tool_payload(
+        server.addr,
+        "get_weak_items_review",
+        json!({"path": "sales-only"}),
+    );
+    assert!(
+        weak_missing.get("error").is_some(),
+        "expected weak-items missing-COGS error, got {weak_missing}"
+    );
+    let weak_err = weak_missing["error"].as_str().unwrap_or("");
+    assert!(
+        weak_err.contains("cogs") || weak_err.contains("COGS"),
+        "weak-items error should mention COGS; got {weak_err}"
     );
 }
