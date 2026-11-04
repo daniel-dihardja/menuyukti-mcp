@@ -31,6 +31,9 @@ const INSTRUCTIONS: &str = concat!(
     "Menu engineering (analyze_menu_engineering) requires a workspace folder ",
     "with both files.sales and files.cogs configured; if COGS is missing, ask ",
     "the owner for a unit-cost Excel, list_workspace_files, then write_workspace_config. ",
+    "Pair lift (get_pair_lift_matrix) returns co-purchase lift for combo ideas; ",
+    "sales alone is enough (top-by-presence focus). When files.cogs is configured ",
+    "and menu engineering yields at least two stars, those stars become the focus. ",
     "Also available: list_workspaces for Excel inventory, list_normalized_sales ",
     "for cleaned line items, get_menu_heatmaps for demand patterns. ",
     "Paths must stay under MENUYUKTI_DATA_DIR. Files stay on the local machine."
@@ -124,6 +127,23 @@ fn error_json(message: impl Into<String>) -> CallToolResult {
 
 fn load_or_error(path: &str) -> Result<menuyukti::NormalizedSales, CallToolResult> {
     menuyukti::load_normalized_sales(path, None).map_err(|err| error_json(err.to_string()))
+}
+
+/// Prefer menu-engineering stars as focus when workspace COGS is available.
+fn optional_star_focus(path: &str, rows: &[menuyukti::LineItem]) -> Option<Vec<String>> {
+    let cogs = menuyukti::load_workspace_cogs(path, None).ok()?;
+    let matrix = menuyukti::compute_menu_engineering_from_orders(rows, &cogs.unit_costs).ok()?;
+    let stars: Vec<String> = matrix
+        .items
+        .into_iter()
+        .filter(|item| item.category == "star")
+        .map(|item| item.menu)
+        .collect();
+    if stars.len() >= 2 {
+        Some(stars)
+    } else {
+        None
+    }
 }
 
 fn role_from_args(role: WorkspaceFileRoleArgs) -> menuyukti::WorkspaceFileRole {
@@ -282,6 +302,34 @@ impl MenuyuktiMcp {
                  or ask the owner to update unit costs."
             ))),
         }
+    }
+
+    #[tool(
+        description = "Return the pair lift matrix (co-purchase affinity) for combo and upsell ideas. Path may be a workspace folder (workspace.yaml sales role) or an Excel file under MENUYUKTI_DATA_DIR. Sales alone is enough (top menus by order presence). When the path is a workspace with files.cogs and menu engineering yields at least two stars, those stars become the focus. Returns focus_menus, matrix_lift, totals, scope, and ranked pairs."
+    )]
+    async fn get_pair_lift_matrix(
+        &self,
+        Parameters(PathArgs { path }): Parameters<PathArgs>,
+    ) -> Result<CallToolResult, McpError> {
+        let loaded = match load_or_error(&path) {
+            Ok(v) => v,
+            Err(resp) => return Ok(resp),
+        };
+        let star_focus = optional_star_focus(&path, &loaded.rows);
+        let affinities = menuyukti::compute_menu_basket_affinities_from_orders(
+            &loaded.rows,
+            star_focus.as_deref(),
+        );
+        Ok(text_json(json!({
+            "pos": loaded.pos,
+            "total_orders": affinities.total_orders,
+            "multi_item_order_count": affinities.multi_item_order_count,
+            "avg_distinct_items_per_order": affinities.avg_distinct_items_per_order,
+            "scope": affinities.scope,
+            "focus_menus": affinities.focus_menus,
+            "matrix_lift": affinities.matrix_lift,
+            "pairs": affinities.pairs,
+        })))
     }
 }
 

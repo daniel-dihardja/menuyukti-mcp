@@ -1,8 +1,9 @@
 use std::path::PathBuf;
 
 use menuyukti::{
-    calculate_menu_heatmaps, compute_menu_engineering_from_orders, list_normalized_rows,
-    load_normalized_sales, load_workspace_cogs, summarize_sales,
+    calculate_menu_heatmaps, compute_menu_basket_affinities_from_orders,
+    compute_menu_engineering_from_orders, list_normalized_rows, load_normalized_sales,
+    load_workspace_cogs, summarize_sales, BasketScope,
 };
 
 fn sales_reports() -> PathBuf {
@@ -151,4 +152,41 @@ fn menu_engineering_for_demo_cafe() {
             "demo cafe missing category {required}; got {cats:?}"
         );
     }
+}
+
+#[test]
+fn pair_lift_for_demo_cafe() {
+    let root = sales_reports();
+    let sales = load_normalized_sales("demo-cafe-july-2026", Some(&root)).unwrap();
+    let without_focus = compute_menu_basket_affinities_from_orders(&sales.rows, None);
+    assert!(
+        without_focus.focus_menus.len() >= 2,
+        "expected focus menus; got {:?}",
+        without_focus.focus_menus
+    );
+    assert_eq!(without_focus.scope, BasketScope::TopByPresence);
+    assert_eq!(
+        without_focus.matrix_lift.len(),
+        without_focus.focus_menus.len()
+    );
+    assert!(without_focus.matrix_lift[0][0].is_none());
+
+    let cogs = load_workspace_cogs("demo-cafe-july-2026", Some(&root)).unwrap();
+    let matrix = compute_menu_engineering_from_orders(&sales.rows, &cogs.unit_costs).unwrap();
+    let stars: Vec<String> = matrix
+        .items
+        .iter()
+        .filter(|i| i.category == "star")
+        .map(|i| i.menu.clone())
+        .collect();
+    assert!(
+        stars.len() >= 2,
+        "demo cafe expected >=2 stars for pair-lift focus; got {stars:?}"
+    );
+    let with_stars = compute_menu_basket_affinities_from_orders(&sales.rows, Some(&stars));
+    assert_eq!(with_stars.scope, BasketScope::Stars);
+    assert_eq!(
+        with_stars.focus_menus,
+        stars[..stars.len().min(12)].to_vec()
+    );
 }

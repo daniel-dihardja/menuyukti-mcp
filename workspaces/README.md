@@ -22,7 +22,7 @@ Owners only drop Excel files; ChatGPT writes `workspace.yaml`. Summarize or run 
 }
 ```
 
-Menu engineering (`analyze_menu_engineering`) needs both sales and COGS roles configured. Summary and heatmaps work with sales alone.
+Menu engineering (`analyze_menu_engineering`) needs both sales and COGS roles configured. Summary, heatmaps, and pair lift (`get_pair_lift_matrix`) work with sales alone; COGS only upgrades pair-lift focus to menu-engineering stars when available.
 
 ## Your own workspaces
 

@@ -17,10 +17,12 @@ pub mod workspace;
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub use analytics::{
-    calculate_menu_heatmaps, compute_menu_engineering_from_orders, list_normalized_rows,
-    summarize_sales, DailyHeatmapRow, MenuEngineeringCoverage, MenuEngineeringDistributionItem,
-    MenuEngineeringMatrixItem, MenuEngineeringMatrixResult, MenuEngineeringThresholds,
-    MenuHeatmapPayload, NormalizedSalesList, SalesSummary, TopItem, WeeklyHeatmapRow,
+    calculate_menu_heatmaps, compute_menu_basket_affinities_from_orders,
+    compute_menu_engineering_from_orders, list_normalized_rows, summarize_sales, BasketScope,
+    DailyHeatmapRow, MenuBasketAffinitiesResult, MenuBasketPair, MenuEngineeringCoverage,
+    MenuEngineeringDistributionItem, MenuEngineeringMatrixItem, MenuEngineeringMatrixResult,
+    MenuEngineeringThresholds, MenuHeatmapPayload, NormalizedSalesList, SalesSummary, TopItem,
+    WeeklyHeatmapRow, MAX_FOCUS_ITEMS, MAX_TOP_PAIRS, MIN_CO_OCCURRENCE,
 };
 pub use cogs::{load_workspace_cogs, parse_cogs_excel, resolve_cogs_path, CogsError, CogsTable};
 pub use column_mapping::{

@@ -69,7 +69,17 @@ Personal uploads under `workspaces/` are gitignored. Only the demo workspace is 
 - `summarize_local_sales` — totals and top items (folder or Excel path)
 - `list_normalized_sales` — cleaned line items
 - `get_menu_heatmaps` — when each dish sells during the day / week
+- `get_pair_lift_matrix` — co-purchase lift matrix for combo / upsell ideas (**sales alone**; COGS optional)
 - `analyze_menu_engineering` — star / plow_horse / puzzle / weak matrix (**needs sales + COGS**)
+
+## Pair lift index (sales alone)
+
+`get_pair_lift_matrix` measures how often two menu items are bought together relative to chance (lift). Use it for combo offers and upsells. It works on a workspace folder or a sales Excel path under `MENUYUKTI_DATA_DIR`.
+
+- **Sales only:** focus menus are the top items by order presence.
+- **With COGS:** if menu engineering finds at least two **stars**, those stars become the focus (same idea as the cloud pair-lift chart).
+
+COGS is optional here — unlike menu engineering, missing unit costs does not block the tool.
 
 ## Menu engineering (needs COGS)
 
@@ -78,4 +88,4 @@ Personal uploads under `workspaces/` are gitignored. Only the demo workspace is 
 1. `files.sales` — POS export
 2. `files.cogs` — unit-cost Excel with **Menu** and **COGS** columns (demo uses a sheet named `COGS`)
 
-If COGS is missing, drop a COGS Excel into the folder and ask ChatGPT to update the workspace config, then retry. Sales-only tools (`summarize_local_sales`, heatmaps) still work without COGS.
+If COGS is missing, drop a COGS Excel into the folder and ask ChatGPT to update the workspace config, then retry. Sales-only tools (`summarize_local_sales`, heatmaps, pair lift) still work without COGS.

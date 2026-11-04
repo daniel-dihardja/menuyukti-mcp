@@ -137,6 +137,7 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
         "list_normalized_sales",
         "get_menu_heatmaps",
         "analyze_menu_engineering",
+        "get_pair_lift_matrix",
     ] {
         assert!(
             names.contains(&required),
@@ -216,6 +217,57 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
             .unwrap_or(0.0)
             > 0.0,
         "tool=analyze_menu_engineering thresholds; payload={matrix}"
+    );
+
+    let lift = tool_payload(
+        server.addr,
+        "get_pair_lift_matrix",
+        json!({"path": "demo-cafe-july-2026"}),
+    );
+    assert!(
+        lift.get("error").is_none(),
+        "tool=get_pair_lift_matrix demo cafe error payload={lift}"
+    );
+    let focus = lift["focus_menus"].as_array().expect("focus_menus array");
+    assert!(
+        focus.len() >= 2,
+        "tool=get_pair_lift_matrix expected >=2 focus menus; payload={lift}"
+    );
+    let matrix_lift = lift["matrix_lift"].as_array().expect("matrix_lift array");
+    assert_eq!(
+        matrix_lift.len(),
+        focus.len(),
+        "tool=get_pair_lift_matrix matrix rows must match focus; payload={lift}"
+    );
+    assert_eq!(
+        lift["scope"].as_str(),
+        Some("stars"),
+        "tool=get_pair_lift_matrix demo cafe with COGS should use star focus; payload={lift}"
+    );
+
+    let lift_sales_only = tool_payload(
+        server.addr,
+        "get_pair_lift_matrix",
+        json!({"path": "demo-cafe-july-2026/sales.xlsx"}),
+    );
+    assert!(
+        lift_sales_only.get("error").is_none(),
+        "tool=get_pair_lift_matrix sales Excel should succeed without COGS; payload={lift_sales_only}"
+    );
+    assert_eq!(
+        lift_sales_only["scope"].as_str(),
+        Some("top_by_presence"),
+        "tool=get_pair_lift_matrix sales Excel path uses top_by_presence; payload={lift_sales_only}"
+    );
+
+    let rejected = tool_payload(
+        server.addr,
+        "get_pair_lift_matrix",
+        json!({"path": "../outside.xlsx"}),
+    );
+    assert!(
+        rejected.get("error").is_some(),
+        "tool=get_pair_lift_matrix expected path-gate error; payload={rejected}"
     );
 }
 
