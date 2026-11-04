@@ -27,10 +27,13 @@ const MCP_PATH: &str = "/mcp";
 /// MCP Apps UI resource for the hello-world smoke widget.
 /// Bump the URI when the HTML changes so ChatGPT does not keep a cached blank template.
 const HELLO_WORLD_WIDGET_URI: &str = "ui://widget/hello-world-v3.html";
+const VENUE_SLOT_STRENGTH_WIDGET_URI: &str = "ui://widget/venue-slot-strength-v1.html";
 /// ChatGPT Apps SDK examples still serve widgets as `text/html+skybridge`.
 /// Keep the MCP Apps profile MIME as a secondary compatibility note in docs/tests.
 const WIDGET_MIME_TYPE: &str = "text/html+skybridge";
 const HELLO_WORLD_WIDGET_HTML: &str = include_str!("../assets/hello_world_widget.html");
+const VENUE_SLOT_STRENGTH_WIDGET_HTML: &str =
+    include_str!("../assets/venue_slot_strength_widget.html");
 
 const INSTRUCTIONS: &str = concat!(
     "Local Menuyukti MCP sales analytics for restaurant POS Excel files. ",
@@ -46,8 +49,9 @@ const INSTRUCTIONS: &str = concat!(
     "Pair lift (get_pair_lift_matrix) returns co-purchase lift for combo ideas; ",
     "sales alone is enough (top-by-presence focus). When files.cogs is configured ",
     "and menu engineering yields at least two stars, those stars become the focus. ",
-    "Venue slot strength (get_venue_slot_strength) returns weekday × meal-period ",
-    "demand for timing/staffing; sales alone is enough. ",
+    "Venue slot strength: get_venue_slot_strength returns weekday × meal-period ",
+    "JSON for timing/staffing (sales alone). To show the heatmap widget in ChatGPT, ",
+    "call render_venue_slot_strength with the same workspace or sales path. ",
     "Location notes: keep venue facts (hours, seating, cuisine, constraints, ",
     "past decisions) in knowledge.md via read_workspace_knowledge / ",
     "write_workspace_knowledge. Read before rewriting so updates replace the ",
@@ -112,6 +116,65 @@ fn mock_hello_world_payload() -> serde_json::Value {
         "message": "Hello World",
         "source": "mock",
     })
+}
+
+fn venue_slot_strength_widget_meta() -> MetaObject {
+    let mut meta = MetaObject::new();
+    meta.insert(
+        "ui".to_string(),
+        json!({ "resourceUri": VENUE_SLOT_STRENGTH_WIDGET_URI }),
+    );
+    meta.insert(
+        "openai/outputTemplate".to_string(),
+        json!(VENUE_SLOT_STRENGTH_WIDGET_URI),
+    );
+    meta.insert("openai/widgetAccessible".to_string(), json!(true));
+    meta.insert(
+        "openai/toolInvocation/invoking".to_string(),
+        json!("Rendering venue slot strength…"),
+    );
+    meta.insert(
+        "openai/toolInvocation/invoked".to_string(),
+        json!("Venue slot strength ready."),
+    );
+    meta
+}
+
+fn venue_slot_strength_resource() -> Resource {
+    Resource::new(VENUE_SLOT_STRENGTH_WIDGET_URI, "venue-slot-strength-widget")
+        .with_title("Venue slot strength heatmap")
+        .with_description(
+            "MCP Apps widget: weekday × meal-period venue demand from slot_demand_profile.",
+        )
+        .with_mime_type(WIDGET_MIME_TYPE)
+        .with_meta(venue_slot_strength_widget_meta())
+}
+
+fn venue_slot_strength_resource_contents() -> ResourceContents {
+    ResourceContents::text(
+        VENUE_SLOT_STRENGTH_WIDGET_HTML,
+        VENUE_SLOT_STRENGTH_WIDGET_URI,
+    )
+    .with_mime_type(WIDGET_MIME_TYPE)
+    .with_meta(venue_slot_strength_widget_meta())
+}
+
+fn venue_slot_strength_tool_result(
+    pos: &str,
+    profile: &[menuyukti::SlotDemandCell],
+) -> CallToolResult {
+    let payload = json!({
+        "pos": pos,
+        "slot_count": profile.len(),
+        "slot_demand_profile": profile,
+    });
+    let mut result =
+        CallToolResult::structured(payload).with_meta(Some(venue_slot_strength_widget_meta()));
+    result.content = vec![ContentBlock::text(format!(
+        "Showing venue slot strength heatmap ({pos}, {} slots).",
+        profile.len()
+    ))];
+    result
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -513,6 +576,23 @@ impl MenuyuktiMcp {
     async fn render_hello_world_widget(&self) -> Result<CallToolResult, McpError> {
         Ok(hello_world_tool_result())
     }
+
+    #[tool(
+        description = "Render the venue slot strength heatmap widget (weekday × meal-period demand). Path may be a workspace folder (workspace.yaml sales role) or an Excel file under MENUYUKTI_DATA_DIR. Sales alone is enough. Prefer this when the owner should see the timing chart; use get_venue_slot_strength for JSON-only answers.",
+        annotations(title = "Render venue slot strength", read_only_hint = true),
+        meta = venue_slot_strength_widget_meta()
+    )]
+    async fn render_venue_slot_strength(
+        &self,
+        Parameters(PathArgs { path }): Parameters<PathArgs>,
+    ) -> Result<CallToolResult, McpError> {
+        let loaded = match load_or_error(&path) {
+            Ok(v) => v,
+            Err(resp) => return Ok(resp),
+        };
+        let profile = menuyukti::compute_slot_demand_profile_from_orders(&loaded.rows);
+        Ok(venue_slot_strength_tool_result(&loaded.pos, &profile))
+    }
 }
 
 #[tool_handler]
@@ -538,7 +618,7 @@ impl ServerHandler for MenuyuktiMcp {
         _context: rmcp::service::RequestContext<rmcp::RoleServer>,
     ) -> Result<ListResourcesResult, McpError> {
         Ok(ListResourcesResult {
-            resources: vec![hello_world_resource()],
+            resources: vec![hello_world_resource(), venue_slot_strength_resource()],
             ..Default::default()
         })
     }
@@ -548,13 +628,17 @@ impl ServerHandler for MenuyuktiMcp {
         request: ReadResourceRequestParams,
         _context: rmcp::service::RequestContext<rmcp::RoleServer>,
     ) -> Result<rmcp::model::ReadResourceResponse, McpError> {
-        if request.uri != HELLO_WORLD_WIDGET_URI {
+        let contents = if request.uri == HELLO_WORLD_WIDGET_URI {
+            hello_world_resource_contents()
+        } else if request.uri == VENUE_SLOT_STRENGTH_WIDGET_URI {
+            venue_slot_strength_resource_contents()
+        } else {
             return Err(McpError::resource_not_found(
                 format!("unknown resource URI: {}", request.uri),
                 Some(json!({ "uri": request.uri })),
             ));
-        }
-        Ok(ReadResourceResult::new(vec![hello_world_resource_contents()]).into())
+        };
+        Ok(ReadResourceResult::new(vec![contents]).into())
     }
 }
 

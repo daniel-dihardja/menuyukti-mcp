@@ -143,6 +143,7 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
         "get_weak_items_review",
         "get_pair_lift_matrix",
         "render_hello_world_widget",
+        "render_venue_slot_strength",
     ] {
         assert!(
             names.contains(&required),
@@ -166,6 +167,20 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
         hello_tool["_meta"]["openai/outputTemplate"].as_str(),
         Some("ui://widget/hello-world-v3.html"),
         "render_hello_world_widget missing openai/outputTemplate; tool={hello_tool}"
+    );
+    let venue_render = tools
+        .iter()
+        .find(|t| t["name"] == "render_venue_slot_strength")
+        .expect("render_venue_slot_strength tool entry");
+    assert_eq!(
+        venue_render["_meta"]["ui"]["resourceUri"].as_str(),
+        Some("ui://widget/venue-slot-strength-v1.html"),
+        "render_venue_slot_strength missing _meta.ui.resourceUri; tool={venue_render}"
+    );
+    assert_eq!(
+        venue_render["_meta"]["openai/outputTemplate"].as_str(),
+        Some("ui://widget/venue-slot-strength-v1.html"),
+        "render_venue_slot_strength missing openai/outputTemplate; tool={venue_render}"
     );
     for analytics in [
         "summarize_local_sales",
@@ -590,6 +605,104 @@ fn mcp_http_hello_world_widget_resource_and_structured_content() {
     assert!(
         html.contains("structuredContent") || html.contains("tool-result"),
         "widget HTML should read mock structuredContent from tool-result; html_len={}",
+        html.len()
+    );
+}
+
+#[test]
+fn mcp_http_venue_slot_strength_widget_render_and_resource() {
+    let _guard = port_lock().lock().unwrap();
+    let data_dir = repo_root().join("workspaces");
+    let server = start_server(&data_dir);
+
+    let call = http_post_json(
+        server.addr,
+        json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+                "name": "render_venue_slot_strength",
+                "arguments": { "path": "demo-cafe-july-2026" }
+            }
+        }),
+    );
+    let result = &call["result"];
+    assert!(
+        result.get("isError").and_then(|v| v.as_bool()) != Some(true),
+        "render_venue_slot_strength error; call={call}"
+    );
+    assert_eq!(
+        result["structuredContent"]["slot_count"].as_u64(),
+        Some(35),
+        "expected 35-cell structuredContent; call={call}"
+    );
+    assert_eq!(
+        result["structuredContent"]["slot_demand_profile"]
+            .as_array()
+            .map(|a| a.len()),
+        Some(35),
+        "expected 35-cell profile; call={call}"
+    );
+    assert_eq!(
+        result["_meta"]["ui"]["resourceUri"].as_str(),
+        Some("ui://widget/venue-slot-strength-v1.html"),
+        "tool result must include template URI; call={call}"
+    );
+    assert_eq!(
+        result["_meta"]["openai/outputTemplate"].as_str(),
+        Some("ui://widget/venue-slot-strength-v1.html"),
+        "tool result must include openai/outputTemplate; call={call}"
+    );
+    let text = result["content"][0]["text"]
+        .as_str()
+        .unwrap_or_else(|| panic!("missing text content; call={call}"));
+    assert!(
+        text.to_lowercase().contains("venue slot"),
+        "content text should mention venue slot; text={text}"
+    );
+
+    let listed = http_post_json(
+        server.addr,
+        json!({"jsonrpc":"2.0","id":2,"method":"resources/list","params":{}}),
+    );
+    let resources = listed["result"]["resources"]
+        .as_array()
+        .unwrap_or_else(|| panic!("resources array missing; listed={listed}"));
+    let venue = resources
+        .iter()
+        .find(|r| r["uri"] == "ui://widget/venue-slot-strength-v1.html")
+        .unwrap_or_else(|| panic!("venue slot resource missing; listed={listed}"));
+    assert_eq!(
+        venue["mimeType"].as_str(),
+        Some("text/html+skybridge"),
+        "resources/list mimeType; resource={venue}"
+    );
+
+    let read = http_post_json(
+        server.addr,
+        json!({
+            "jsonrpc": "2.0",
+            "id": 3,
+            "method": "resources/read",
+            "params": { "uri": "ui://widget/venue-slot-strength-v1.html" }
+        }),
+    );
+    let contents = read["result"]["contents"]
+        .as_array()
+        .unwrap_or_else(|| panic!("contents array missing; read={read}"));
+    assert_eq!(contents.len(), 1, "expected one content block; read={read}");
+    assert_eq!(
+        contents[0]["mimeType"].as_str(),
+        Some("text/html+skybridge"),
+        "resources/read mimeType; read={read}"
+    );
+    let html = contents[0]["text"]
+        .as_str()
+        .unwrap_or_else(|| panic!("missing HTML text; read={read}"));
+    assert!(
+        html.contains("slot_demand_profile") || html.contains("Venue slot strength"),
+        "widget HTML should render venue slot strength; html_len={}",
         html.len()
     );
 }

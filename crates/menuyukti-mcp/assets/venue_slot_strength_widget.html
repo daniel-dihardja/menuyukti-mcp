@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Venue slot strength</title>
+    <style>
+      :root {
+        color: #0f172a;
+        font-family:
+          "Segoe UI",
+          system-ui,
+          -apple-system,
+          sans-serif;
+        --venue: #0d9488;
+      }
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+      body {
+        box-sizing: border-box;
+        padding: 16px;
+        background: #f8fafc;
+      }
+      .panel {
+        box-sizing: border-box;
+        width: 100%;
+        padding: 16px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #ffffff;
+      }
+      h2 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 700;
+      }
+      .desc {
+        margin: 6px 0 0;
+        color: #64748b;
+        font-size: 0.8rem;
+        line-height: 1.4;
+      }
+      .meta {
+        margin: 10px 0 0;
+        color: #475569;
+        font-size: 0.75rem;
+      }
+      .legend {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 14px;
+        color: #64748b;
+        font-size: 0.75rem;
+      }
+      .legend-bar {
+        flex: 1;
+        min-width: 6rem;
+        height: 8px;
+        border-radius: 999px;
+        background: linear-gradient(
+          to right,
+          color-mix(in srgb, var(--venue) 12%, white),
+          color-mix(in srgb, var(--venue) 50%, white),
+          var(--venue)
+        );
+      }
+      .tiers {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+        font-size: 0.72rem;
+        color: #64748b;
+      }
+      .tier {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .tier-swatch {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        border: 1px solid #cbd5e1;
+      }
+      .scroll {
+        margin-top: 14px;
+        overflow-x: auto;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        min-width: 520px;
+        font-size: 0.72rem;
+      }
+      th,
+      td {
+        border: 1px solid #e2e8f0;
+        padding: 6px 4px;
+        text-align: center;
+      }
+      th {
+        background: #f1f5f9;
+        font-weight: 600;
+        color: #334155;
+      }
+      th.row-label,
+      td.row-label {
+        text-align: left;
+        padding-left: 8px;
+        white-space: nowrap;
+        background: #f8fafc;
+        font-weight: 600;
+        position: sticky;
+        left: 0;
+        z-index: 1;
+      }
+      td.cell {
+        font-weight: 600;
+        min-width: 3.2rem;
+      }
+      td.cell.light-text {
+        color: #f8fafc;
+      }
+      td.cell[data-relative="low"] {
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, #94a3b8 55%, transparent);
+      }
+      td.cell[data-relative="high"] {
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, #0f766e 70%, transparent);
+      }
+      .empty {
+        margin-top: 16px;
+        padding: 16px;
+        border-radius: 8px;
+        background: #fef3c7;
+        color: #92400e;
+        font-size: 0.9rem;
+      }
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="panel">
+      <h2>Venue slot strength</h2>
+      <p class="desc">
+        Weekday × meal-period demand. Index 1.0 = average traffic across all
+        slots. Use for staffing and when to promote.
+      </p>
+      <p id="meta" class="meta"></p>
+      <div id="legend" class="legend hidden">
+        <span>Low</span>
+        <div class="legend-bar" aria-hidden="true"></div>
+        <span>High</span>
+      </div>
+      <div id="tiers" class="tiers hidden">
+        <span class="tier"
+          ><span class="tier-swatch" style="background: #e2e8f0"></span> Low
+          (&lt; 0.9)</span
+        >
+        <span class="tier"
+          ><span
+            class="tier-swatch"
+            style="background: color-mix(in srgb, var(--venue) 45%, white)"
+          ></span>
+          Average</span
+        >
+        <span class="tier"
+          ><span class="tier-swatch" style="background: var(--venue)"></span> High
+          (&gt; 1.1)</span
+        >
+      </div>
+      <div id="scroll" class="scroll hidden">
+        <table>
+          <thead>
+            <tr id="head-row"></tr>
+          </thead>
+          <tbody id="body"></tbody>
+        </table>
+      </div>
+      <div id="empty" class="empty">
+        Waiting for venue slot demand data…
+      </div>
+    </div>
+    <script type="module">
+      const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+      const DAY_LABELS = {
+        mon: "Mon",
+        tue: "Tue",
+        wed: "Wed",
+        thu: "Thu",
+        fri: "Fri",
+        sat: "Sat",
+        sun: "Sun",
+      };
+      const PERIODS = [
+        "breakfast",
+        "lunch",
+        "afternoon",
+        "dinner",
+        "late_night",
+      ];
+
+      const metaEl = document.getElementById("meta");
+      const legendEl = document.getElementById("legend");
+      const tiersEl = document.getElementById("tiers");
+      const scrollEl = document.getElementById("scroll");
+      const emptyEl = document.getElementById("empty");
+      const headRow = document.getElementById("head-row");
+      const bodyEl = document.getElementById("body");
+
+      function showEmpty(message) {
+        emptyEl.textContent = message;
+        emptyEl.classList.remove("hidden");
+        legendEl.classList.add("hidden");
+        tiersEl.classList.add("hidden");
+        scrollEl.classList.add("hidden");
+        headRow.innerHTML = "";
+        bodyEl.innerHTML = "";
+      }
+
+      function showGrid() {
+        emptyEl.classList.add("hidden");
+        legendEl.classList.remove("hidden");
+        tiersEl.classList.remove("hidden");
+        scrollEl.classList.remove("hidden");
+      }
+
+      function intensity(value, min, max) {
+        const range = max - min || 1;
+        return Math.min(1, Math.max(0, (value - min) / range));
+      }
+
+      function cellBackground(t) {
+        const alpha = 0.12 + t * 0.88;
+        const pct = Math.round(alpha * 100);
+        return `color-mix(in srgb, var(--venue) ${pct}%, white)`;
+      }
+
+      function formatIndex(value) {
+        if (typeof value !== "number" || Number.isNaN(value)) return "—";
+        return value.toFixed(2);
+      }
+
+      function periodLabel(cell) {
+        if (!cell) return "";
+        const label = cell.meal_period_label || cell.mealPeriodLabel || "";
+        const hours =
+          cell.meal_period_hours_label || cell.mealPeriodHoursLabel || "";
+        if (label && hours) return `${label} (${hours})`;
+        return label || cell.meal_period || cell.mealPeriod || "";
+      }
+
+      function renderFromStructured(data) {
+        try {
+          if (!data || typeof data !== "object") {
+            showEmpty("No venue slot demand data yet.");
+            return;
+          }
+          const profile = Array.isArray(data.slot_demand_profile)
+            ? data.slot_demand_profile
+            : Array.isArray(data.slotDemandProfile)
+              ? data.slotDemandProfile
+              : null;
+
+          if (!profile) {
+            showEmpty("Missing slot_demand_profile in tool result.");
+            return;
+          }
+          if (profile.length === 0) {
+            showEmpty("No demand slots in this period (empty profile).");
+            return;
+          }
+
+          const byKey = new Map();
+          for (const cell of profile) {
+            const day = String(cell.day || "").toLowerCase();
+            const period = String(
+              cell.meal_period || cell.mealPeriod || ""
+            ).toLowerCase();
+            if (!day || !period) continue;
+            byKey.set(`${day}:${period}`, cell);
+          }
+
+          const indexes = profile
+            .map((c) => Number(c.demand_index ?? c.demandIndex))
+            .filter((n) => Number.isFinite(n));
+          const min = indexes.length ? Math.min(...indexes) : 0;
+          const max = indexes.length ? Math.max(...indexes) : 1;
+
+          const pos = data.pos ? String(data.pos) : "";
+          const slotCount =
+            data.slot_count ?? data.slotCount ?? profile.length;
+          metaEl.textContent = [
+            pos ? `POS: ${pos}` : null,
+            `${slotCount} slots`,
+            `index range ${formatIndex(min)}–${formatIndex(max)}`,
+          ]
+            .filter(Boolean)
+            .join(" · ");
+
+          headRow.innerHTML = "";
+          const corner = document.createElement("th");
+          corner.className = "row-label";
+          corner.textContent = "Meal period";
+          headRow.appendChild(corner);
+          for (const day of DAYS) {
+            const th = document.createElement("th");
+            th.textContent = DAY_LABELS[day];
+            headRow.appendChild(th);
+          }
+
+          bodyEl.innerHTML = "";
+          for (const period of PERIODS) {
+            const tr = document.createElement("tr");
+            const sample =
+              byKey.get(`mon:${period}`) ||
+              DAYS.map((d) => byKey.get(`${d}:${period}`)).find(Boolean);
+            const labelTd = document.createElement("td");
+            labelTd.className = "row-label";
+            labelTd.textContent = periodLabel(sample) || period;
+            tr.appendChild(labelTd);
+
+            for (const day of DAYS) {
+              const cell = byKey.get(`${day}:${period}`);
+              const td = document.createElement("td");
+              td.className = "cell";
+              if (!cell) {
+                td.textContent = "—";
+                tr.appendChild(td);
+                continue;
+              }
+              const index = Number(cell.demand_index ?? cell.demandIndex ?? 0);
+              const relative = String(
+                cell.relative_demand || cell.relativeDemand || "average"
+              ).toLowerCase();
+              const orders = Number(cell.order_count ?? cell.orderCount ?? 0);
+              const share = Number(cell.traffic_share ?? cell.trafficShare ?? 0);
+              const t = intensity(index, min, max);
+              td.dataset.relative = relative;
+              td.style.backgroundColor = cellBackground(t);
+              if (t > 0.75) td.classList.add("light-text");
+              td.textContent = formatIndex(index);
+              td.title = `${DAY_LABELS[day]} · ${periodLabel(cell) || period}
+Orders: ${orders}
+Traffic share: ${(share * 100).toFixed(1)}%
+Demand index: ${formatIndex(index)}
+Relative: ${relative}`;
+              tr.appendChild(td);
+            }
+            bodyEl.appendChild(tr);
+          }
+          showGrid();
+        } catch (err) {
+          showEmpty(`Could not render heatmap: ${String(err)}`);
+        }
+      }
+
+      function renderFromToolResult(params) {
+        const structured =
+          params?.structuredContent ??
+          params?.structured_content ??
+          params;
+        renderFromStructured(structured);
+      }
+
+      try {
+        if (typeof window !== "undefined" && window.openai?.toolOutput) {
+          renderFromToolResult(window.openai.toolOutput);
+        }
+        window.addEventListener(
+          "message",
+          (event) => {
+            if (event.source !== window.parent) return;
+            const message = event.data;
+            if (!message || message.jsonrpc !== "2.0") return;
+            if (message.method !== "ui/notifications/tool-result") return;
+            renderFromToolResult(message.params);
+          },
+          { passive: true }
+        );
+      } catch (err) {
+        showEmpty(`Bridge error: ${String(err)}`);
+      }
+    </script>
+  </body>
+</html>

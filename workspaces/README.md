@@ -23,7 +23,9 @@ Owners only drop Excel files; ChatGPT writes `workspace.yaml` and maintains `kno
 }
 ```
 
-Menu engineering (`analyze_menu_engineering`) and weak items review (`get_weak_items_review`) need both sales and COGS roles configured. Summary, heatmaps, venue slot strength (`get_venue_slot_strength`), and pair lift (`get_pair_lift_matrix`) work with sales alone; COGS only upgrades pair-lift focus to menu-engineering stars when available.
+Menu engineering (`analyze_menu_engineering`) and weak items review (`get_weak_items_review`) need both sales and COGS roles configured. Summary, heatmaps, venue slot strength (`get_venue_slot_strength` / `render_venue_slot_strength` for the ChatGPT heatmap), and pair lift (`get_pair_lift_matrix`) work with sales alone; COGS only upgrades pair-lift focus to menu-engineering stars when available.
+
+In ChatGPT, ask to **show venue slot strength** (or call `render_venue_slot_strength`) on `demo-cafe-july-2026` to see the weekday × meal-period demand heatmap.
 
 ## Your own workspaces
 

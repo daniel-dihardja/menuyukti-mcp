@@ -71,7 +71,8 @@ Personal uploads under `workspaces/` are gitignored. Only the demo workspace is 
 - `summarize_local_sales` — totals and top items (folder or Excel path)
 - `list_normalized_sales` — cleaned line items
 - `get_menu_heatmaps` — when each dish sells during the day / week
-- `get_venue_slot_strength` — weekday × meal-period venue demand for timing (**sales alone**)
+- `get_venue_slot_strength` — weekday × meal-period venue demand JSON for timing (**sales alone**)
+- `render_venue_slot_strength` — same demand data as a ChatGPT heatmap widget (**sales alone**)
 - `get_pair_lift_matrix` — co-purchase lift matrix for combo / upsell ideas (**sales alone**; COGS optional)
 - `analyze_menu_engineering` — star / plow_horse / puzzle / weak matrix (**needs sales + COGS**)
 - `get_weak_items_review` — weak-quadrant depth review for reprice / improve / remove (**needs sales + COGS**)
@@ -83,6 +84,8 @@ Personal uploads under `workspaces/` are gitignored. Only the demo workspace is 
 ## Venue slot strength (sales alone)
 
 `get_venue_slot_strength` summarizes how busy the venue is by weekday and meal period (breakfast through late night). Each of the 35 slots includes order count, traffic share, demand index (1.0 = average), and relative demand (`low` / `average` / `high`). Use it for staffing and when to promote. Sales alone is enough — no COGS.
+
+To **show the heatmap** in ChatGPT (MCP Apps widget), ask for the venue slot strength chart or call `render_venue_slot_strength` with the same workspace folder or sales Excel path (for example `demo-cafe-july-2026`). That tool returns the same 35-cell profile and links the weekday × meal-period visualisation. Keep `get_venue_slot_strength` when you only need the numbers in text.
 
 ## Pair lift index (sales alone)
 
