@@ -141,7 +141,25 @@ pub fn resolve_workspace_sales_path(
     data_dir: Option<&Path>,
 ) -> Result<String, WorkspaceConfigError> {
     let loaded = load_workspace_config(workspace, data_dir)?;
-    join_workspace_role_path(&loaded.workspace, &loaded.config.files.sales.path)
+    join_workspace_role_path("sales", &loaded.workspace, &loaded.config.files.sales.path)
+}
+
+/// Resolve the COGS Excel path for a workspace (relative to the data dir).
+///
+/// Requires `files.cogs` in `workspace.yaml`.
+pub fn resolve_workspace_cogs_path(
+    workspace: &str,
+    data_dir: Option<&Path>,
+) -> Result<String, WorkspaceConfigError> {
+    let loaded = load_workspace_config(workspace, data_dir)?;
+    let Some(cogs) = &loaded.config.files.cogs else {
+        return Err(WorkspaceConfigError::Invalid(format!(
+            "Workspace config missing files.cogs role: {}/{WORKSPACE_CONFIG_FILENAME}. \
+             Add a COGS Excel file, then call write_workspace_config (or ask the owner for unit costs).",
+            loaded.workspace
+        )));
+    };
+    join_workspace_role_path("cogs", &loaded.workspace, &cogs.path)
 }
 
 fn resolve_workspace_dir(
@@ -229,15 +247,16 @@ fn validate_role_path(role: &str, path: &str) -> Result<(), WorkspaceConfigError
 }
 
 fn join_workspace_role_path(
+    role: &str,
     workspace: &str,
     role_path: &str,
 ) -> Result<String, WorkspaceConfigError> {
-    validate_role_path("sales", role_path)?;
-    let role = role_path.trim().replace('\\', "/");
+    validate_role_path(role, role_path)?;
+    let relative = role_path.trim().replace('\\', "/");
     if workspace == "." {
-        Ok(role)
+        Ok(relative)
     } else {
-        Ok(format!("{workspace}/{role}"))
+        Ok(format!("{workspace}/{relative}"))
     }
 }
 
@@ -336,6 +355,28 @@ mod tests {
         assert_eq!(
             resolve_workspace_sales_path("cafe", Some(root.path())).unwrap(),
             "cafe/sales.xlsx"
+        );
+        assert_eq!(
+            resolve_workspace_cogs_path("cafe", Some(root.path())).unwrap(),
+            "cafe/cogs.xlsx"
+        );
+    }
+
+    #[test]
+    fn missing_cogs_role_is_clear_error() {
+        let _guard = env_lock().lock().unwrap();
+        let root = tempfile::tempdir().unwrap();
+        fs::create_dir_all(root.path().join("cafe")).unwrap();
+
+        let mut config = sample_config();
+        config.files.cogs = None;
+        write_workspace_config("cafe", &config, Some(root.path())).unwrap();
+
+        let err = resolve_workspace_cogs_path("cafe", Some(root.path())).unwrap_err();
+        let msg = err.to_string();
+        assert!(
+            msg.contains("files.cogs"),
+            "expected missing cogs role message, got {msg}"
         );
     }
 

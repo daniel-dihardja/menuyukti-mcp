@@ -1,10 +1,11 @@
 ---
 id: TASK-19
 title: Add local menu engineering matrix tool
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@Daniel'
 created_date: '2026-11-04T08:14:00Z'
-updated_date: '2026-11-04T08:16:00Z'
+updated_date: '2026-11-04T08:22:00Z'
 labels: []
 dependencies: []
 references:
@@ -32,9 +33,31 @@ Port the matrix semantics from the v3 calculate_menu_engineering_matrix analytic
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 ChatGPT can call one MCP tool against a workspace folder and receive menu engineering thresholds, quadrant distribution, and per-item classifications
-- [ ] #2 Missing workspace COGS role, missing COGS file, or unusable cost coverage returns a clear JSON error that names what is missing and how to fix it (list files / write config / ask owner for COGS)
-- [ ] #3 Demo cafe workspace (sales + cogs.xlsx) produces a non-empty matrix with the four categories represented where the data supports it
-- [ ] #4 Owner and MCP docs state that menu engineering needs sales and COGS configured
-- [ ] #5 Unit tests in crates/menuyukti cover COGS resolve/load and matrix classification (including missing-COGS and quadrant fixture cases); make check passes
+- [x] #1 ChatGPT can call one MCP tool against a workspace folder and receive menu engineering thresholds, quadrant distribution, and per-item classifications
+- [x] #2 Missing workspace COGS role, missing COGS file, or unusable cost coverage returns a clear JSON error that names what is missing and how to fix it (list files / write config / ask owner for COGS)
+- [x] #3 Demo cafe workspace (sales + cogs.xlsx) produces a non-empty matrix with the four categories represented where the data supports it
+- [x] #4 Owner and MCP docs state that menu engineering needs sales and COGS configured
+- [x] #5 Unit tests in crates/menuyukti cover COGS resolve/load and matrix classification (including missing-COGS and quadrant fixture cases); make check passes
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. TASK-19.1: resolve/load workspace COGS.
+2. TASK-19.2: port matrix analytics from v3.
+3. TASK-19.3: wire analyze_menu_engineering MCP tool + HTTP tests + INSTRUCTIONS.
+4. TASK-19.4: owner docs.
+5. make check; finalize each subtask then parent.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+All subtasks 19.1–19.4 done. make check green (fmt/clippy/tests including MCP HTTP).
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Local menu engineering matrix is available via analyze_menu_engineering. Library loads gated workspace COGS, classifies star/plow_horse/puzzle/weak, and the MCP tool fails closed without COGS. Demo cafe + unit/HTTP tests and owner docs updated. Verified with make check.
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -1,9 +1,11 @@
 ---
 id: TASK-19.4
 title: Document menu engineering COGS requirement for owners
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@Daniel'
 created_date: '2026-11-04T08:14:00Z'
+updated_date: '2026-11-04T08:22:00Z'
 labels: []
 dependencies:
   - TASK-19.3
@@ -27,6 +29,24 @@ Owners already drop optional COGS into workspaces, but docs still describe analy
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 docs/howtos/workspaces.md (and tool list there) document analyze_menu_engineering and that it needs sales + COGS roles
-- [ ] #2 README or workspaces README mentions menu engineering as a capability that requires COGS
+- [x] #1 docs/howtos/workspaces.md (and tool list there) document analyze_menu_engineering and that it needs sales + COGS roles
+- [x] #2 README or workspaces README mentions menu engineering as a capability that requires COGS
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Document analyze_menu_engineering + COGS requirement in workspaces howto, README, workspaces README.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Documented analyze_menu_engineering + COGS requirement in docs/howtos/workspaces.md, README.md, and workspaces/README.md.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Owner docs now list analyze_menu_engineering and state that menu engineering needs sales + COGS configured.
+<!-- SECTION:FINAL_SUMMARY:END -->

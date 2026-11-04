@@ -69,3 +69,13 @@ Personal uploads under `workspaces/` are gitignored. Only the demo workspace is 
 - `summarize_local_sales` — totals and top items (folder or Excel path)
 - `list_normalized_sales` — cleaned line items
 - `get_menu_heatmaps` — when each dish sells during the day / week
+- `analyze_menu_engineering` — star / plow_horse / puzzle / weak matrix (**needs sales + COGS**)
+
+## Menu engineering (needs COGS)
+
+`analyze_menu_engineering` classifies each sold menu item using popularity and contribution margin. It only works on a **workspace folder** that has both:
+
+1. `files.sales` — POS export
+2. `files.cogs` — unit-cost Excel with **Menu** and **COGS** columns (demo uses a sheet named `COGS`)
+
+If COGS is missing, drop a COGS Excel into the folder and ask ChatGPT to update the workspace config, then retry. Sales-only tools (`summarize_local_sales`, heatmaps) still work without COGS.

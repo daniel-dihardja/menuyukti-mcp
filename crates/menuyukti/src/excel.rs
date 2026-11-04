@@ -34,12 +34,49 @@ pub fn read_a1_string(data: &[u8]) -> Result<Option<String>, ExcelError> {
     Ok(cell_as_string(row.first().unwrap_or(&Data::Empty)))
 }
 
-/// Read rows after skipping `skip_rows`, using the next row as headers.
+/// Read rows after skipping `skip_rows`, using the next row as headers (first sheet).
 pub fn read_table(data: &[u8], skip_rows: usize) -> Result<(Vec<String>, Vec<RowMap>), ExcelError> {
     let mut workbook = open_xlsx(data)?;
     let first = first_sheet_name(&workbook)?;
+    read_table_from_workbook(&mut workbook, &first, skip_rows)
+}
+
+/// Read a table from a worksheet by exact name (case-insensitive match).
+pub fn read_table_sheet(
+    data: &[u8],
+    sheet_name: &str,
+    skip_rows: usize,
+) -> Result<(Vec<String>, Vec<RowMap>), ExcelError> {
+    let mut workbook = open_xlsx(data)?;
+    let resolved = resolve_sheet_name(&workbook, sheet_name)?;
+    read_table_from_workbook(&mut workbook, &resolved, skip_rows)
+}
+
+fn resolve_sheet_name(
+    workbook: &Xlsx<Cursor<&[u8]>>,
+    sheet_name: &str,
+) -> Result<String, ExcelError> {
+    let want = sheet_name.trim().to_ascii_lowercase();
+    workbook
+        .sheet_names()
+        .iter()
+        .find(|name| name.trim().eq_ignore_ascii_case(&want))
+        .cloned()
+        .ok_or_else(|| {
+            ExcelError::Message(format!(
+                "Excel workbook has no sheet named '{sheet_name}' (available: {})",
+                workbook.sheet_names().join(", ")
+            ))
+        })
+}
+
+fn read_table_from_workbook(
+    workbook: &mut Xlsx<Cursor<&[u8]>>,
+    sheet_name: &str,
+    skip_rows: usize,
+) -> Result<(Vec<String>, Vec<RowMap>), ExcelError> {
     let range = workbook
-        .worksheet_range(&first)
+        .worksheet_range(sheet_name)
         .map_err(|e| ExcelError::Sheet(e.to_string()))?;
 
     let mut rows = range.rows();

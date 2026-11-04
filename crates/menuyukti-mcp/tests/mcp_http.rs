@@ -136,6 +136,7 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
         "summarize_local_sales",
         "list_normalized_sales",
         "get_menu_heatmaps",
+        "analyze_menu_engineering",
     ] {
         assert!(
             names.contains(&required),
@@ -192,6 +193,30 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
         summary_via_workspace["pos"], "esb",
         "tool=summarize_local_sales workspace folder payload={summary_via_workspace}"
     );
+
+    let matrix = tool_payload(
+        server.addr,
+        "analyze_menu_engineering",
+        json!({"path": "demo-cafe-july-2026"}),
+    );
+    assert!(
+        matrix.get("error").is_none(),
+        "tool=analyze_menu_engineering demo cafe error payload={matrix}"
+    );
+    assert!(
+        matrix["items"]
+            .as_array()
+            .map(|a| !a.is_empty())
+            .unwrap_or(false),
+        "tool=analyze_menu_engineering expected items; payload={matrix}"
+    );
+    assert!(
+        matrix["thresholds"]["avg_popularity"]
+            .as_f64()
+            .unwrap_or(0.0)
+            > 0.0,
+        "tool=analyze_menu_engineering thresholds; payload={matrix}"
+    );
 }
 
 #[test]
@@ -245,5 +270,41 @@ fn mcp_http_writes_workspace_config() {
     assert!(
         rejected.get("error").is_some(),
         "expected outside-sandbox error, got {rejected}"
+    );
+}
+
+#[test]
+fn mcp_http_menu_engineering_requires_cogs() {
+    let _guard = port_lock().lock().unwrap();
+    let tmp = tempfile::tempdir().unwrap();
+    fs::create_dir_all(tmp.path().join("sales-only")).unwrap();
+    // Minimal valid workspace with sales role only (no COGS).
+    fs::write(
+        tmp.path().join("sales-only/workspace.yaml"),
+        r#"version: 1
+name: Sales Only
+venue: Sales Only
+files:
+  sales:
+    path: sales.xlsx
+"#,
+    )
+    .unwrap();
+    fs::write(tmp.path().join("sales-only/sales.xlsx"), b"x").unwrap();
+
+    let server = start_server(&tmp.path().to_path_buf());
+    let missing = tool_payload(
+        server.addr,
+        "analyze_menu_engineering",
+        json!({"path": "sales-only"}),
+    );
+    assert!(
+        missing.get("error").is_some(),
+        "expected missing-COGS error, got {missing}"
+    );
+    let err = missing["error"].as_str().unwrap_or("");
+    assert!(
+        err.contains("cogs") || err.contains("COGS"),
+        "error should mention COGS; got {err}"
     );
 }

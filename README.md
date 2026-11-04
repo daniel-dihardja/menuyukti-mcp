@@ -7,7 +7,7 @@ Licensed under the [MIT License](LICENSE).
 ## Why use it
 
 - Keep sales files private on your laptop or office PC
-- Ask natural questions in ChatGPT about revenue, top dishes, and demand patterns
+- Ask natural questions in ChatGPT about revenue, top dishes, demand patterns, and the menu engineering matrix (stars / plow horses / puzzles / weak items — **requires COGS**)
 - Organize each venue and month in a simple **workspace** folder (sales, COGS, notes)
 
 ## Quick start
@@ -26,6 +26,7 @@ Examples once everything is connected:
 - What were total sales and top items last month?
 - When does each dish sell during the day or week?
 - Show me the cleaned line items for this export
+- Run menu engineering on demo-cafe-july-2026 (needs sales + COGS in the workspace)
 
 ## Documentation
 

@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 
 use menuyukti::{
-    calculate_menu_heatmaps, list_normalized_rows, load_normalized_sales, summarize_sales,
+    calculate_menu_heatmaps, compute_menu_engineering_from_orders, list_normalized_rows,
+    load_normalized_sales, load_workspace_cogs, summarize_sales,
 };
 
 fn sales_reports() -> PathBuf {
@@ -129,4 +130,25 @@ fn workspace_folder_without_config_errors_clearly() {
         err.contains("Workspace config not found") || err.contains("workspace.yaml"),
         "unexpected error={err}"
     );
+}
+
+#[test]
+fn menu_engineering_for_demo_cafe() {
+    let root = sales_reports();
+    let sales = load_normalized_sales("demo-cafe-july-2026", Some(&root)).unwrap();
+    let cogs = load_workspace_cogs("demo-cafe-july-2026", Some(&root)).unwrap();
+    let matrix = compute_menu_engineering_from_orders(&sales.rows, &cogs.unit_costs).unwrap();
+    assert!(!matrix.items.is_empty(), "expected matrix items");
+    assert!(
+        matrix.coverage.matched_menus > 0,
+        "expected matched COGS coverage"
+    );
+    let cats: std::collections::HashSet<_> =
+        matrix.items.iter().map(|i| i.category.as_str()).collect();
+    for required in ["star", "plow_horse", "puzzle", "weak"] {
+        assert!(
+            cats.contains(required),
+            "demo cafe missing category {required}; got {cats:?}"
+        );
+    }
 }

@@ -28,6 +28,9 @@ const INSTRUCTIONS: &str = concat!(
     "workspace folder, call list_workspace_files, infer file roles, confirm if ",
     "unclear, then write_workspace_config (workspace.yaml). After that, call ",
     "summarize_local_sales with the workspace folder path. ",
+    "Menu engineering (analyze_menu_engineering) requires a workspace folder ",
+    "with both files.sales and files.cogs configured; if COGS is missing, ask ",
+    "the owner for a unit-cost Excel, list_workspace_files, then write_workspace_config. ",
     "Also available: list_workspaces for Excel inventory, list_normalized_sales ",
     "for cleaned line items, get_menu_heatmaps for demand patterns. ",
     "Paths must stay under MENUYUKTI_DATA_DIR. Files stay on the local machine."
@@ -240,6 +243,44 @@ impl MenuyuktiMcp {
                 "heatmaps": heatmaps,
             }))),
             Err(err) => Ok(error_json(err)),
+        }
+    }
+
+    #[tool(
+        description = "Compute the menu engineering matrix (star / plow_horse / puzzle / weak) for a workspace folder under MENUYUKTI_DATA_DIR. Requires workspace.yaml with both files.sales and files.cogs. Returns thresholds, quadrant distribution, per-item classifications, and COGS coverage. If COGS is missing, list_workspace_files / write_workspace_config or ask the owner for unit costs first."
+    )]
+    async fn analyze_menu_engineering(
+        &self,
+        Parameters(WorkspacePathArgs { path }): Parameters<WorkspacePathArgs>,
+    ) -> Result<CallToolResult, McpError> {
+        let cogs = match menuyukti::load_workspace_cogs(&path, None) {
+            Ok(v) => v,
+            Err(err) => {
+                return Ok(error_json(format!(
+                    "{err}. Menu engineering needs files.cogs on the workspace: \
+                     drop a COGS Excel, call list_workspace_files, then write_workspace_config \
+                     (or ask the owner for unit costs)."
+                )));
+            }
+        };
+        let loaded = match load_or_error(&path) {
+            Ok(v) => v,
+            Err(resp) => return Ok(resp),
+        };
+        match menuyukti::compute_menu_engineering_from_orders(&loaded.rows, &cogs.unit_costs) {
+            Ok(matrix) => Ok(text_json(json!({
+                "pos": loaded.pos,
+                "workspace": path,
+                "cogs_path": cogs.path,
+                "thresholds": matrix.thresholds,
+                "distribution": matrix.distribution,
+                "items": matrix.items,
+                "coverage": matrix.coverage,
+            }))),
+            Err(err) => Ok(error_json(format!(
+                "{err}. Fix COGS coverage (Menu + COGS columns matching sold menu names) \
+                 or ask the owner to update unit costs."
+            ))),
         }
     }
 }
