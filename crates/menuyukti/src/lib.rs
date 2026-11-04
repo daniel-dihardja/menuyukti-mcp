@@ -43,8 +43,9 @@ pub use paths::{
 };
 pub use pos::{detect_from_a1, detect_pos_from_excel_bytes};
 pub use workspace::{
-    load_workspace_config, resolve_workspace_cogs_path, resolve_workspace_sales_path,
-    write_workspace_config, WorkspaceConfig, WorkspaceConfigError, WorkspaceConfigLoad,
-    WorkspaceConfigWriteResult, WorkspaceFileRole, WorkspaceFiles, WorkspacePeriod,
-    WORKSPACE_CONFIG_FILENAME,
+    load_workspace_config, read_workspace_knowledge, resolve_workspace_cogs_path,
+    resolve_workspace_sales_path, write_workspace_config, write_workspace_knowledge,
+    WorkspaceConfig, WorkspaceConfigError, WorkspaceConfigLoad, WorkspaceConfigWriteResult,
+    WorkspaceFileRole, WorkspaceFiles, WorkspaceKnowledgeRead, WorkspaceKnowledgeWriteResult,
+    WorkspacePeriod, DEFAULT_KNOWLEDGE_FILENAME, WORKSPACE_CONFIG_FILENAME,
 };

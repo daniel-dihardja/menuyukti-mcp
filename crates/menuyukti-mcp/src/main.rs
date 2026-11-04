@@ -38,6 +38,10 @@ const INSTRUCTIONS: &str = concat!(
     "and menu engineering yields at least two stars, those stars become the focus. ",
     "Venue slot strength (get_venue_slot_strength) returns weekday × meal-period ",
     "demand for timing/staffing; sales alone is enough. ",
+    "Location notes: keep venue facts (hours, seating, cuisine, constraints, ",
+    "past decisions) in knowledge.md via read_workspace_knowledge / ",
+    "write_workspace_knowledge. Read before rewriting so updates replace the ",
+    "full document without losing prior notes. ",
     "Also available: list_workspaces for Excel inventory, list_normalized_sales ",
     "for cleaned line items, get_menu_heatmaps for per-menu demand patterns. ",
     "Paths must stay under MENUYUKTI_DATA_DIR. Files stay on the local machine."
@@ -100,6 +104,14 @@ struct WriteWorkspaceConfigArgs {
     /// Workspace folder under MENUYUKTI_DATA_DIR (for example my-venue-aug-2026).
     path: String,
     config: WorkspaceConfigArgs,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+struct WriteWorkspaceKnowledgeArgs {
+    /// Workspace folder under MENUYUKTI_DATA_DIR (for example my-venue-aug-2026).
+    path: String,
+    /// Full markdown body to store in knowledge.md (full replace; read first).
+    content: String,
 }
 
 #[derive(Clone)]
@@ -210,6 +222,34 @@ impl MenuyuktiMcp {
     ) -> Result<CallToolResult, McpError> {
         let config = config_from_args(config);
         match menuyukti::write_workspace_config(&path, &config, None) {
+            Ok(written) => Ok(text_json(written)),
+            Err(err) => Ok(error_json(err.to_string())),
+        }
+    }
+
+    #[tool(
+        description = "Read knowledge.md (location/venue notes) for a workspace folder under MENUYUKTI_DATA_DIR. Uses files.knowledge when set, otherwise knowledge.md. Missing file returns exists=false with empty content. Call this before write_workspace_knowledge so rewrites keep prior notes."
+    )]
+    async fn read_workspace_knowledge(
+        &self,
+        Parameters(WorkspacePathArgs { path }): Parameters<WorkspacePathArgs>,
+    ) -> Result<CallToolResult, McpError> {
+        match menuyukti::read_workspace_knowledge(&path, None) {
+            Ok(read) => Ok(text_json(read)),
+            Err(err) => Ok(error_json(err.to_string())),
+        }
+    }
+
+    #[tool(
+        description = "Create or fully replace knowledge.md for a workspace folder under MENUYUKTI_DATA_DIR. Store location/venue facts (hours, seating, cuisine, constraints, past decisions). Full replace — call read_workspace_knowledge first. When workspace.yaml exists without files.knowledge, sets that role to knowledge.md."
+    )]
+    async fn write_workspace_knowledge(
+        &self,
+        Parameters(WriteWorkspaceKnowledgeArgs { path, content }): Parameters<
+            WriteWorkspaceKnowledgeArgs,
+        >,
+    ) -> Result<CallToolResult, McpError> {
+        match menuyukti::write_workspace_knowledge(&path, &content, None) {
             Ok(written) => Ok(text_json(written)),
             Err(err) => Ok(error_json(err.to_string())),
         }

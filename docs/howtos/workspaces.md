@@ -1,6 +1,6 @@
 # Workspaces
 
-A **workspace** is a folder for one venue and period (for example July at your cafe). Put related files together there: sales export, COGS, notes, and later AI knowledge.
+A **workspace** is a folder for one venue and period (for example July at your cafe). Put related files together there: sales export, COGS, and location notes (`knowledge.md`).
 
 ## Default location
 
@@ -37,7 +37,7 @@ Known file roles today:
 | --- | --- |
 | `sales` | POS sales export (required for analytics tools) |
 | `cogs` | Menu / recipe unit costs |
-| `knowledge` | Optional notes or AI insights markdown |
+| `knowledge` | Optional location/venue notes markdown (`knowledge.md`; ChatGPT maintains it) |
 
 Paths in `files.*.path` are relative to the workspace folder.
 
@@ -66,6 +66,8 @@ Personal uploads under `workspaces/` are gitignored. Only the demo workspace is 
 - `list_workspaces` — see folders and Excel files Menuyukti MCP can read
 - `list_workspace_files` — see every file in one workspace folder
 - `write_workspace_config` — create/update `workspace.yaml` (LLM onboarding)
+- `read_workspace_knowledge` — read location/venue notes from `knowledge.md`
+- `write_workspace_knowledge` — create/update `knowledge.md` (full replace; ChatGPT reads first)
 - `summarize_local_sales` — totals and top items (folder or Excel path)
 - `list_normalized_sales` — cleaned line items
 - `get_menu_heatmaps` — when each dish sells during the day / week
@@ -73,6 +75,10 @@ Personal uploads under `workspaces/` are gitignored. Only the demo workspace is 
 - `get_pair_lift_matrix` — co-purchase lift matrix for combo / upsell ideas (**sales alone**; COGS optional)
 - `analyze_menu_engineering` — star / plow_horse / puzzle / weak matrix (**needs sales + COGS**)
 - `get_weak_items_review` — weak-quadrant depth review for reprice / improve / remove (**needs sales + COGS**)
+
+## Location knowledge (`knowledge.md`)
+
+`knowledge.md` holds **location and venue notes** for the workspace (hours, seating, cuisine, constraints, past decisions). ChatGPT maintains it with `read_workspace_knowledge` / `write_workspace_knowledge` — owners do not need to edit the file by hand. Writes fully replace the document, so the assistant should read first. When `workspace.yaml` exists without a `files.knowledge` role, the first write sets that role to `knowledge.md`.
 
 ## Venue slot strength (sales alone)
 

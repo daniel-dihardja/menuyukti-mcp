@@ -1,6 +1,6 @@
 # Workspaces
 
-Put venue/period folders here. Each folder can hold sales exports, COGS, notes, and later AI knowledge.
+Put venue/period folders here. Each folder can hold sales exports, COGS, and location notes (`knowledge.md`).
 
 Menuyukti MCP reads files from here by default (`MENUYUKTI_DATA_DIR=workspaces`).
 
@@ -10,11 +10,12 @@ For the full guide, see **[Workspaces howto](../docs/howtos/workspaces.md)**.
 
 | Path | Purpose |
 | --- | --- |
-| [`demo-cafe-july-2026/workspace.yaml`](./demo-cafe-july-2026/workspace.yaml) | Declares which file is sales vs COGS |
+| [`demo-cafe-july-2026/workspace.yaml`](./demo-cafe-july-2026/workspace.yaml) | Declares which file is sales vs COGS (optional `knowledge` → `knowledge.md`) |
 | [`demo-cafe-july-2026/sales.xlsx`](./demo-cafe-july-2026/sales.xlsx) | Anonymized cafe month with real sales data |
 | [`demo-cafe-july-2026/cogs.xlsx`](./demo-cafe-july-2026/cogs.xlsx) | Matching menu COGS (hospitality starter estimates) |
+| `demo-cafe-july-2026/knowledge.md` | Optional location/venue notes (created by ChatGPT via knowledge tools when used) |
 
-Owners only drop Excel files; ChatGPT writes `workspace.yaml`. Summarize or run menu engineering with the folder path:
+Owners only drop Excel files; ChatGPT writes `workspace.yaml` and maintains `knowledge.md` for location notes. Summarize or run menu engineering with the folder path:
 
 ```json
 {

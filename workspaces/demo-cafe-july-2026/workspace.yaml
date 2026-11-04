@@ -13,3 +13,6 @@ files:
   cogs:
     path: cogs.xlsx
     description: Menu unit costs (Menu + COGS columns, IDR); hospitality starter estimates
+  knowledge:
+    path: knowledge.md
+    description: Location and venue notes

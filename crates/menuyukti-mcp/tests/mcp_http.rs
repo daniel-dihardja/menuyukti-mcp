@@ -133,6 +133,8 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
         "list_workspaces",
         "list_workspace_files",
         "write_workspace_config",
+        "read_workspace_knowledge",
+        "write_workspace_knowledge",
         "summarize_local_sales",
         "list_normalized_sales",
         "get_menu_heatmaps",
@@ -329,6 +331,77 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
     assert!(
         rejected.get("error").is_some(),
         "tool=get_pair_lift_matrix expected path-gate error; payload={rejected}"
+    );
+}
+
+#[test]
+fn mcp_http_reads_and_writes_workspace_knowledge() {
+    let _guard = port_lock().lock().unwrap();
+    let tmp = tempfile::tempdir().unwrap();
+    fs::create_dir_all(tmp.path().join("cafe")).unwrap();
+    fs::write(
+        tmp.path().join("cafe/workspace.yaml"),
+        r#"version: 1
+name: Cafe
+venue: Cafe
+files:
+  sales:
+    path: sales.xlsx
+"#,
+    )
+    .unwrap();
+
+    let server = start_server(&tmp.path().to_path_buf());
+    let missing = tool_payload(
+        server.addr,
+        "read_workspace_knowledge",
+        json!({"path": "cafe"}),
+    );
+    assert_eq!(
+        missing["exists"], false,
+        "tool=read_workspace_knowledge missing payload={missing}"
+    );
+    assert_eq!(missing["knowledge_path"], "cafe/knowledge.md");
+
+    let body = "# Cafe\n\nOpen daily 09:00–21:00.\n";
+    let written = tool_payload(
+        server.addr,
+        "write_workspace_knowledge",
+        json!({"path": "cafe", "content": body}),
+    );
+    assert_eq!(
+        written["knowledge_path"], "cafe/knowledge.md",
+        "tool=write_workspace_knowledge payload={written}"
+    );
+    assert_eq!(written["config_updated"], true);
+    assert_eq!(written["content"], body);
+    assert!(tmp.path().join("cafe/knowledge.md").is_file());
+
+    let read = tool_payload(
+        server.addr,
+        "read_workspace_knowledge",
+        json!({"path": "cafe"}),
+    );
+    assert_eq!(read["exists"], true);
+    assert_eq!(read["content"], body);
+
+    let rejected = tool_payload(
+        server.addr,
+        "write_workspace_knowledge",
+        json!({"path": "../outside", "content": "nope"}),
+    );
+    assert!(
+        rejected.get("error").is_some(),
+        "expected outside-sandbox error, got {rejected}"
+    );
+    let read_rejected = tool_payload(
+        server.addr,
+        "read_workspace_knowledge",
+        json!({"path": "../outside"}),
+    );
+    assert!(
+        read_rejected.get("error").is_some(),
+        "expected outside-sandbox read error, got {read_rejected}"
     );
 }
 

@@ -13,6 +13,9 @@ use crate::paths::{
 /// Filename written and read for workspace role metadata.
 pub const WORKSPACE_CONFIG_FILENAME: &str = "workspace.yaml";
 
+/// Default markdown file for location/venue notes when `files.knowledge` is unset.
+pub const DEFAULT_KNOWLEDGE_FILENAME: &str = "knowledge.md";
+
 const SUPPORTED_VERSION: u32 = 1;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -69,6 +72,28 @@ pub struct WorkspaceConfigWriteResult {
     /// Path to `workspace.yaml` relative to the data dir.
     pub config_path: String,
     pub config: WorkspaceConfig,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct WorkspaceKnowledgeRead {
+    pub data_dir: String,
+    pub workspace: String,
+    /// Path to the knowledge file relative to the data dir.
+    pub knowledge_path: String,
+    /// False when the file is not present yet (content is empty).
+    pub exists: bool,
+    pub content: String,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct WorkspaceKnowledgeWriteResult {
+    pub data_dir: String,
+    pub workspace: String,
+    /// Path to the knowledge file relative to the data dir.
+    pub knowledge_path: String,
+    pub content: String,
+    /// True when `files.knowledge` was added to an existing `workspace.yaml`.
+    pub config_updated: bool,
 }
 
 #[derive(Debug, Error)]
@@ -160,6 +185,138 @@ pub fn resolve_workspace_cogs_path(
         )));
     };
     join_workspace_role_path("cogs", &loaded.workspace, &cogs.path)
+}
+
+/// Read location/venue knowledge markdown for a workspace folder.
+///
+/// Uses `files.knowledge` when set; otherwise defaults to [`DEFAULT_KNOWLEDGE_FILENAME`].
+/// Missing files return `exists: false` with empty content (not an error).
+pub fn read_workspace_knowledge(
+    workspace: &str,
+    data_dir: Option<&Path>,
+) -> Result<WorkspaceKnowledgeRead, WorkspaceConfigError> {
+    let ResolvedKnowledge {
+        root,
+        workspace_label,
+        abs,
+        knowledge_path,
+        ..
+    } = resolve_knowledge_file(workspace, data_dir)?;
+    if !abs.is_file() {
+        ensure_path_inside_root(&root, &abs, &knowledge_path)?;
+        return Ok(WorkspaceKnowledgeRead {
+            data_dir: root.display().to_string(),
+            workspace: workspace_label,
+            knowledge_path,
+            exists: false,
+            content: String::new(),
+        });
+    }
+    let allowed = resolve_allowed_path(&knowledge_path, Some(&root))?;
+    let content = fs::read_to_string(&allowed)?;
+    Ok(WorkspaceKnowledgeRead {
+        data_dir: root.display().to_string(),
+        workspace: workspace_label,
+        knowledge_path,
+        exists: true,
+        content,
+    })
+}
+
+/// Create or fully replace knowledge markdown for a workspace folder.
+///
+/// When `workspace.yaml` exists and `files.knowledge` is unset, sets the role to
+/// the resolved knowledge path via [`write_workspace_config`].
+pub fn write_workspace_knowledge(
+    workspace: &str,
+    content: &str,
+    data_dir: Option<&Path>,
+) -> Result<WorkspaceKnowledgeWriteResult, WorkspaceConfigError> {
+    let ResolvedKnowledge {
+        root,
+        workspace_label,
+        dir,
+        abs,
+        knowledge_path,
+        role_relative,
+    } = resolve_knowledge_file(workspace, data_dir)?;
+    ensure_path_inside_root(&root, &abs, &knowledge_path)?;
+    if let Some(parent) = abs.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    fs::write(&abs, content)?;
+
+    let mut config_updated = false;
+    let config_abs = dir.join(WORKSPACE_CONFIG_FILENAME);
+    if config_abs.is_file() {
+        let loaded = load_workspace_config(workspace, data_dir)?;
+        if loaded.config.files.knowledge.is_none() {
+            let mut config = loaded.config;
+            config.files.knowledge = Some(WorkspaceFileRole {
+                path: role_relative,
+                description: Some("Location and venue notes".into()),
+            });
+            write_workspace_config(workspace, &config, data_dir)?;
+            config_updated = true;
+        }
+    }
+
+    Ok(WorkspaceKnowledgeWriteResult {
+        data_dir: root.display().to_string(),
+        workspace: workspace_label,
+        knowledge_path,
+        content: content.to_string(),
+        config_updated,
+    })
+}
+
+struct ResolvedKnowledge {
+    root: PathBuf,
+    workspace_label: String,
+    dir: PathBuf,
+    abs: PathBuf,
+    /// Path relative to the data dir.
+    knowledge_path: String,
+    /// Path relative to the workspace folder (role path).
+    role_relative: String,
+}
+
+/// Resolve absolute knowledge path + data-dir-relative display path.
+fn resolve_knowledge_file(
+    workspace: &str,
+    data_dir: Option<&Path>,
+) -> Result<ResolvedKnowledge, WorkspaceConfigError> {
+    let (root, workspace_label, dir) = resolve_workspace_dir(workspace, data_dir)?;
+    let role_relative = knowledge_role_relative(&dir, workspace, data_dir)?;
+    validate_role_path("knowledge", &role_relative)?;
+    let abs = dir.join(&role_relative);
+    let knowledge_path = join_workspace_role_path("knowledge", &workspace_label, &role_relative)?;
+    Ok(ResolvedKnowledge {
+        root,
+        workspace_label,
+        dir,
+        abs,
+        knowledge_path,
+        role_relative,
+    })
+}
+
+fn knowledge_role_relative(
+    dir: &Path,
+    workspace: &str,
+    data_dir: Option<&Path>,
+) -> Result<String, WorkspaceConfigError> {
+    let config_abs = dir.join(WORKSPACE_CONFIG_FILENAME);
+    if !config_abs.is_file() {
+        return Ok(DEFAULT_KNOWLEDGE_FILENAME.to_string());
+    }
+    let loaded = load_workspace_config(workspace, data_dir)?;
+    Ok(loaded
+        .config
+        .files
+        .knowledge
+        .map(|k| k.path)
+        .unwrap_or_else(|| DEFAULT_KNOWLEDGE_FILENAME.to_string()))
 }
 
 fn resolve_workspace_dir(
@@ -411,5 +568,92 @@ mod tests {
 
         let err = load_workspace_config("cafe", Some(root.path())).unwrap_err();
         assert!(matches!(err, WorkspaceConfigError::Invalid(_)));
+    }
+
+    #[test]
+    fn knowledge_read_missing_is_empty_not_error() {
+        let _guard = env_lock().lock().unwrap();
+        let root = tempfile::tempdir().unwrap();
+        fs::create_dir_all(root.path().join("cafe")).unwrap();
+        write_workspace_config("cafe", &sample_config(), Some(root.path())).unwrap();
+
+        let read = read_workspace_knowledge("cafe", Some(root.path())).unwrap();
+        assert!(!read.exists);
+        assert!(read.content.is_empty());
+        assert_eq!(read.knowledge_path, "cafe/knowledge.md");
+    }
+
+    #[test]
+    fn knowledge_write_read_roundtrip_and_sets_role() {
+        let _guard = env_lock().lock().unwrap();
+        let root = tempfile::tempdir().unwrap();
+        fs::create_dir_all(root.path().join("cafe")).unwrap();
+        write_workspace_config("cafe", &sample_config(), Some(root.path())).unwrap();
+
+        let body = "# Demo Cafe\n\nOpens 08:00–22:00.\n";
+        let written = write_workspace_knowledge("cafe", body, Some(root.path())).unwrap();
+        assert_eq!(written.knowledge_path, "cafe/knowledge.md");
+        assert!(written.config_updated);
+        assert_eq!(written.content, body);
+
+        let loaded = load_workspace_config("cafe", Some(root.path())).unwrap();
+        let knowledge = loaded.config.files.knowledge.expect("knowledge role");
+        assert_eq!(knowledge.path, DEFAULT_KNOWLEDGE_FILENAME);
+
+        let read = read_workspace_knowledge("cafe", Some(root.path())).unwrap();
+        assert!(read.exists);
+        assert_eq!(read.content, body);
+
+        // Second write should not rewrite the role.
+        let again = write_workspace_knowledge("cafe", "# updated\n", Some(root.path())).unwrap();
+        assert!(!again.config_updated);
+    }
+
+    #[test]
+    fn knowledge_uses_configured_role_path() {
+        let _guard = env_lock().lock().unwrap();
+        let root = tempfile::tempdir().unwrap();
+        fs::create_dir_all(root.path().join("cafe")).unwrap();
+        let mut config = sample_config();
+        config.files.knowledge = Some(WorkspaceFileRole {
+            path: "notes/venue.md".into(),
+            description: Some("venue notes".into()),
+        });
+        write_workspace_config("cafe", &config, Some(root.path())).unwrap();
+
+        let written =
+            write_workspace_knowledge("cafe", "custom path notes\n", Some(root.path())).unwrap();
+        assert_eq!(written.knowledge_path, "cafe/notes/venue.md");
+        assert!(!written.config_updated);
+        assert!(root.path().join("cafe/notes/venue.md").is_file());
+
+        let read = read_workspace_knowledge("cafe", Some(root.path())).unwrap();
+        assert!(read.exists);
+        assert_eq!(read.content, "custom path notes\n");
+    }
+
+    #[test]
+    fn knowledge_write_without_config_does_not_create_yaml() {
+        let _guard = env_lock().lock().unwrap();
+        let root = tempfile::tempdir().unwrap();
+        fs::create_dir_all(root.path().join("cafe")).unwrap();
+
+        let written = write_workspace_knowledge("cafe", "notes only\n", Some(root.path())).unwrap();
+        assert!(!written.config_updated);
+        assert!(root.path().join("cafe/knowledge.md").is_file());
+        assert!(!root.path().join("cafe/workspace.yaml").is_file());
+    }
+
+    #[test]
+    fn knowledge_rejects_outside_data_dir() {
+        let _guard = env_lock().lock().unwrap();
+        let root = tempfile::tempdir().unwrap();
+        fs::create_dir_all(root.path().join("cafe")).unwrap();
+
+        let err = write_workspace_knowledge("../outside", "x", Some(root.path())).unwrap_err();
+        assert!(matches!(err, WorkspaceConfigError::Path(_)));
+
+        let err = read_workspace_knowledge("../outside", Some(root.path())).unwrap_err();
+        assert!(matches!(err, WorkspaceConfigError::Path(_)));
     }
 }
