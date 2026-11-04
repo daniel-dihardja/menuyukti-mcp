@@ -36,8 +36,10 @@ const INSTRUCTIONS: &str = concat!(
     "Pair lift (get_pair_lift_matrix) returns co-purchase lift for combo ideas; ",
     "sales alone is enough (top-by-presence focus). When files.cogs is configured ",
     "and menu engineering yields at least two stars, those stars become the focus. ",
+    "Venue slot strength (get_venue_slot_strength) returns weekday × meal-period ",
+    "demand for timing/staffing; sales alone is enough. ",
     "Also available: list_workspaces for Excel inventory, list_normalized_sales ",
-    "for cleaned line items, get_menu_heatmaps for demand patterns. ",
+    "for cleaned line items, get_menu_heatmaps for per-menu demand patterns. ",
     "Paths must stay under MENUYUKTI_DATA_DIR. Files stay on the local machine."
 );
 
@@ -266,6 +268,25 @@ impl MenuyuktiMcp {
             }))),
             Err(err) => Ok(error_json(err)),
         }
+    }
+
+    #[tool(
+        description = "Return venue slot strength: weekday × meal-period demand (order counts, traffic share, demand index, relative demand). Path may be a workspace folder (workspace.yaml sales role) or an Excel file under MENUYUKTI_DATA_DIR. Sales alone is enough — use for timing, staffing, and when to promote. Returns a fixed 35-cell slot_demand_profile."
+    )]
+    async fn get_venue_slot_strength(
+        &self,
+        Parameters(PathArgs { path }): Parameters<PathArgs>,
+    ) -> Result<CallToolResult, McpError> {
+        let loaded = match load_or_error(&path) {
+            Ok(v) => v,
+            Err(resp) => return Ok(resp),
+        };
+        let profile = menuyukti::compute_slot_demand_profile_from_orders(&loaded.rows);
+        Ok(text_json(json!({
+            "pos": loaded.pos,
+            "slot_count": profile.len(),
+            "slot_demand_profile": profile,
+        })))
     }
 
     #[tool(

@@ -19,13 +19,14 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub use analytics::{
     adapt_weak_review, adapt_weak_review_from_matrix, adapt_weak_review_from_orders,
     calculate_menu_heatmaps, compute_menu_basket_affinities_from_orders,
-    compute_menu_engineering_from_orders, inclusive_calendar_days, list_normalized_rows,
-    period_from_line_items, summarize_sales, BasketScope, DailyHeatmapRow,
-    MenuBasketAffinitiesResult, MenuBasketPair, MenuEngineeringCoverage,
-    MenuEngineeringDistributionItem, MenuEngineeringMatrixItem, MenuEngineeringMatrixResult,
-    MenuEngineeringThresholds, MenuHeatmapPayload, NormalizedSalesList, SalesSummary, TopItem,
-    WeakDisplayRow, WeakDistributionStats, WeakPortfolioStats, WeakReviewResult, WeeklyHeatmapRow,
-    MAX_FOCUS_ITEMS, MAX_TOP_PAIRS, MIN_CO_OCCURRENCE,
+    compute_menu_engineering_from_orders, compute_slot_demand_profile_from_orders,
+    inclusive_calendar_days, list_normalized_rows, period_from_line_items, summarize_sales,
+    BasketScope, DailyHeatmapRow, MenuBasketAffinitiesResult, MenuBasketPair,
+    MenuEngineeringCoverage, MenuEngineeringDistributionItem, MenuEngineeringMatrixItem,
+    MenuEngineeringMatrixResult, MenuEngineeringThresholds, MenuHeatmapPayload,
+    NormalizedSalesList, SalesSummary, SlotDemandCell, TopItem, WeakDisplayRow,
+    WeakDistributionStats, WeakPortfolioStats, WeakReviewResult, WeeklyHeatmapRow,
+    HIGH_DEMAND_THRESHOLD, LOW_DEMAND_THRESHOLD, MAX_FOCUS_ITEMS, MAX_TOP_PAIRS, MIN_CO_OCCURRENCE,
 };
 pub use cogs::{load_workspace_cogs, parse_cogs_excel, resolve_cogs_path, CogsError, CogsTable};
 pub use column_mapping::{

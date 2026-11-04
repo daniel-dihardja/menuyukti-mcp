@@ -2,8 +2,8 @@ use std::path::PathBuf;
 
 use menuyukti::{
     calculate_menu_heatmaps, compute_menu_basket_affinities_from_orders,
-    compute_menu_engineering_from_orders, list_normalized_rows, load_normalized_sales,
-    load_workspace_cogs, summarize_sales, BasketScope,
+    compute_menu_engineering_from_orders, compute_slot_demand_profile_from_orders,
+    list_normalized_rows, load_normalized_sales, load_workspace_cogs, summarize_sales, BasketScope,
 };
 
 fn sales_reports() -> PathBuf {
@@ -188,5 +188,20 @@ fn pair_lift_for_demo_cafe() {
     assert_eq!(
         with_stars.focus_menus,
         stars[..stars.len().min(12)].to_vec()
+    );
+}
+
+#[test]
+fn venue_slot_strength_for_demo_cafe() {
+    let root = sales_reports();
+    let sales = load_normalized_sales("demo-cafe-july-2026", Some(&root)).unwrap();
+    let profile = compute_slot_demand_profile_from_orders(&sales.rows);
+    assert_eq!(profile.len(), 35, "expected 35 day×meal cells");
+    assert!(profile.iter().any(|c| c.order_count > 0));
+    let relatives: std::collections::HashSet<_> =
+        profile.iter().map(|c| c.relative_demand.as_str()).collect();
+    assert!(
+        relatives.contains("low") || relatives.contains("high") || relatives.contains("average"),
+        "expected relative_demand labels; got {relatives:?}"
     );
 }

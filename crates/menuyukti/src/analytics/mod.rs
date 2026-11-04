@@ -3,6 +3,7 @@
 mod basket_affinities;
 mod heatmaps;
 mod menu_engineering;
+mod slot_demand;
 mod summary;
 mod weak_review;
 
@@ -16,6 +17,10 @@ pub use heatmaps::{
 pub use menu_engineering::{
     compute_menu_engineering_from_orders, MenuEngineeringCoverage, MenuEngineeringDistributionItem,
     MenuEngineeringMatrixItem, MenuEngineeringMatrixResult, MenuEngineeringThresholds,
+};
+pub use slot_demand::{
+    compute_slot_demand_profile_from_orders, SlotDemandCell, HIGH_DEMAND_THRESHOLD,
+    LOW_DEMAND_THRESHOLD,
 };
 pub use summary::{
     list_normalized_rows, summarize_sales, NormalizedSalesList, SalesSummary, TopItem,

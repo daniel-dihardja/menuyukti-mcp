@@ -136,6 +136,7 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
         "summarize_local_sales",
         "list_normalized_sales",
         "get_menu_heatmaps",
+        "get_venue_slot_strength",
         "analyze_menu_engineering",
         "get_weak_items_review",
         "get_pair_lift_matrix",
@@ -247,6 +248,36 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
     assert!(
         weak["period_start"].as_str().is_some(),
         "tool=get_weak_items_review period_start; payload={weak}"
+    );
+
+    let slots = tool_payload(
+        server.addr,
+        "get_venue_slot_strength",
+        json!({"path": "demo-cafe-july-2026"}),
+    );
+    assert!(
+        slots.get("error").is_none(),
+        "tool=get_venue_slot_strength demo cafe error payload={slots}"
+    );
+    assert_eq!(
+        slots["slot_count"].as_u64(),
+        Some(35),
+        "tool=get_venue_slot_strength expected 35 cells; payload={slots}"
+    );
+    assert_eq!(
+        slots["slot_demand_profile"].as_array().map(|a| a.len()),
+        Some(35),
+        "tool=get_venue_slot_strength profile length; payload={slots}"
+    );
+
+    let slots_rejected = tool_payload(
+        server.addr,
+        "get_venue_slot_strength",
+        json!({"path": "../outside.xlsx"}),
+    );
+    assert!(
+        slots_rejected.get("error").is_some(),
+        "tool=get_venue_slot_strength expected path-gate error; payload={slots_rejected}"
     );
 
     let lift = tool_payload(

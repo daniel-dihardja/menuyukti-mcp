@@ -69,9 +69,14 @@ Personal uploads under `workspaces/` are gitignored. Only the demo workspace is 
 - `summarize_local_sales` — totals and top items (folder or Excel path)
 - `list_normalized_sales` — cleaned line items
 - `get_menu_heatmaps` — when each dish sells during the day / week
+- `get_venue_slot_strength` — weekday × meal-period venue demand for timing (**sales alone**)
 - `get_pair_lift_matrix` — co-purchase lift matrix for combo / upsell ideas (**sales alone**; COGS optional)
 - `analyze_menu_engineering` — star / plow_horse / puzzle / weak matrix (**needs sales + COGS**)
 - `get_weak_items_review` — weak-quadrant depth review for reprice / improve / remove (**needs sales + COGS**)
+
+## Venue slot strength (sales alone)
+
+`get_venue_slot_strength` summarizes how busy the venue is by weekday and meal period (breakfast through late night). Each of the 35 slots includes order count, traffic share, demand index (1.0 = average), and relative demand (`low` / `average` / `high`). Use it for staffing and when to promote. Sales alone is enough — no COGS.
 
 ## Pair lift index (sales alone)
 
@@ -89,7 +94,7 @@ COGS is optional here — unlike menu engineering, missing unit costs does not b
 1. `files.sales` — POS export
 2. `files.cogs` — unit-cost Excel with **Menu** and **COGS** columns (demo uses a sheet named `COGS`)
 
-If COGS is missing, drop a COGS Excel into the folder and ask ChatGPT to update the workspace config, then retry. Sales-only tools (`summarize_local_sales`, heatmaps, pair lift) still work without COGS.
+If COGS is missing, drop a COGS Excel into the folder and ask ChatGPT to update the workspace config, then retry. Sales-only tools (`summarize_local_sales`, heatmaps, venue slot strength, pair lift) still work without COGS.
 
 ## Weak items review (needs COGS)
 
