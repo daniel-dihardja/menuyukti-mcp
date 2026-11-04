@@ -142,10 +142,46 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
         "analyze_menu_engineering",
         "get_weak_items_review",
         "get_pair_lift_matrix",
+        "render_hello_world_widget",
     ] {
         assert!(
             names.contains(&required),
             "tools/list missing {required}; got {names:?}"
+        );
+    }
+
+    let tools = listed_tools["result"]["tools"]
+        .as_array()
+        .expect("tools array");
+    let hello_tool = tools
+        .iter()
+        .find(|t| t["name"] == "render_hello_world_widget")
+        .expect("render_hello_world_widget tool entry");
+    assert_eq!(
+        hello_tool["_meta"]["ui"]["resourceUri"].as_str(),
+        Some("ui://widget/hello-world-v3.html"),
+        "render_hello_world_widget missing _meta.ui.resourceUri; tool={hello_tool}"
+    );
+    assert_eq!(
+        hello_tool["_meta"]["openai/outputTemplate"].as_str(),
+        Some("ui://widget/hello-world-v3.html"),
+        "render_hello_world_widget missing openai/outputTemplate; tool={hello_tool}"
+    );
+    for analytics in [
+        "summarize_local_sales",
+        "get_menu_heatmaps",
+        "get_venue_slot_strength",
+        "get_pair_lift_matrix",
+        "analyze_menu_engineering",
+        "get_weak_items_review",
+    ] {
+        let tool = tools
+            .iter()
+            .find(|t| t["name"] == analytics)
+            .unwrap_or_else(|| panic!("missing analytics tool {analytics}"));
+        assert!(
+            tool.get("_meta").and_then(|m| m.get("ui")).is_none(),
+            "analytics tool {analytics} must not declare UI widget meta; tool={tool}"
         );
     }
 
@@ -456,6 +492,105 @@ fn mcp_http_writes_workspace_config() {
     assert!(
         rejected.get("error").is_some(),
         "expected outside-sandbox error, got {rejected}"
+    );
+}
+
+#[test]
+fn mcp_http_hello_world_widget_resource_and_structured_content() {
+    let _guard = port_lock().lock().unwrap();
+    let data_dir = repo_root().join("workspaces");
+    let server = start_server(&data_dir);
+
+    let call = http_post_json(
+        server.addr,
+        json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": { "name": "render_hello_world_widget", "arguments": {} }
+        }),
+    );
+    let result = &call["result"];
+    assert_eq!(
+        result["structuredContent"]["message"].as_str(),
+        Some("Hello World"),
+        "expected mock structuredContent.message; call={call}"
+    );
+    assert_eq!(
+        result["structuredContent"]["source"].as_str(),
+        Some("mock"),
+        "expected mock structuredContent.source; call={call}"
+    );
+    assert_eq!(
+        result["_meta"]["ui"]["resourceUri"].as_str(),
+        Some("ui://widget/hello-world-v3.html"),
+        "tool result must include _meta.ui.resourceUri; call={call}"
+    );
+    assert_eq!(
+        result["_meta"]["openai/outputTemplate"].as_str(),
+        Some("ui://widget/hello-world-v3.html"),
+        "tool result must include openai/outputTemplate; call={call}"
+    );
+    let text = result["content"][0]["text"]
+        .as_str()
+        .unwrap_or_else(|| panic!("missing text content; call={call}"));
+    assert!(
+        text.contains("Hello World"),
+        "content text should include Hello World; text={text}"
+    );
+
+    let listed = http_post_json(
+        server.addr,
+        json!({"jsonrpc":"2.0","id":2,"method":"resources/list","params":{}}),
+    );
+    let resources = listed["result"]["resources"]
+        .as_array()
+        .unwrap_or_else(|| panic!("resources array missing; listed={listed}"));
+    let hello = resources
+        .iter()
+        .find(|r| r["uri"] == "ui://widget/hello-world-v3.html")
+        .unwrap_or_else(|| panic!("hello-world resource missing; listed={listed}"));
+    assert_eq!(
+        hello["mimeType"].as_str(),
+        Some("text/html+skybridge"),
+        "resources/list mimeType; resource={hello}"
+    );
+
+    let read = http_post_json(
+        server.addr,
+        json!({
+            "jsonrpc": "2.0",
+            "id": 3,
+            "method": "resources/read",
+            "params": { "uri": "ui://widget/hello-world-v3.html" }
+        }),
+    );
+    let contents = read["result"]["contents"]
+        .as_array()
+        .unwrap_or_else(|| panic!("contents array missing; read={read}"));
+    assert_eq!(contents.len(), 1, "expected one content block; read={read}");
+    assert_eq!(
+        contents[0]["uri"].as_str(),
+        Some("ui://widget/hello-world-v3.html"),
+        "resources/read uri; read={read}"
+    );
+    assert_eq!(
+        contents[0]["mimeType"].as_str(),
+        Some("text/html+skybridge"),
+        "resources/read mimeType; read={read}"
+    );
+    let html = contents[0]["text"]
+        .as_str()
+        .unwrap_or_else(|| panic!("missing HTML text; read={read}"));
+    assert!(
+        html.contains("Hello World") || html.contains("id=\"label\""),
+        "widget HTML should render a Hello World label; html_len={}",
+        html.len()
+    );
+    assert!(
+        html.contains("structuredContent") || html.contains("tool-result"),
+        "widget HTML should read mock structuredContent from tool-result; html_len={}",
+        html.len()
     );
 }
 

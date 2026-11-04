@@ -48,3 +48,19 @@ make mcp-inspect
 - Put sales files in a [workspace](./workspaces.md).
 - In **ChatGPT Desktop** settings, add Menuyukti MCP as an MCP server at `http://127.0.0.1:8787/mcp`, then use it in chat.
 - If your POS export isn’t recognized, see [Custom POS columns](./custom-pos-columns.md).
+
+## MCP Apps widgets (Hello World / charts)
+
+Tool status text like “Hello World widget ready.” means ChatGPT called the tool.
+An inline iframe is a separate step: ChatGPT must also `resources/read` the
+`ui://` HTML template.
+
+If the tool succeeds but no widget appears:
+
+1. Restart `make mcp`, then refresh the MCP connection in ChatGPT and start a **new** chat.
+2. On Chrome 142+, OpenAI’s Apps SDK examples require disabling
+   `chrome://flags/#local-network-access-check` (set to Disabled) and restarting
+   Chrome — otherwise localhost MCP widgets stay blank.
+3. Prefer ChatGPT Desktop or a ChatGPT plugin connected to an HTTPS tunnel
+   (`ngrok http 8787` → `https://….ngrok.app/mcp`) when local Desktop MCP only
+   shows tool text.

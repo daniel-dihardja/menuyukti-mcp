@@ -5,8 +5,9 @@ use std::net::SocketAddr;
 use rmcp::{
     handler::server::{router::tool::ToolRouter, wrapper::Parameters},
     model::{
-        CallToolResult, ContentBlock, Implementation, ProtocolVersion, ServerCapabilities,
-        ServerConfig,
+        CallToolResult, ContentBlock, Implementation, ListResourcesResult, MetaObject,
+        ProtocolVersion, ReadResourceRequestParams, ReadResourceResult, Resource, ResourceContents,
+        ServerCapabilities, ServerConfig,
     },
     schemars, tool, tool_handler, tool_router,
     transport::streamable_http_server::{
@@ -16,11 +17,20 @@ use rmcp::{
 };
 use serde::Deserialize;
 use serde_json::json;
+use tower_http::cors::{Any, CorsLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 const DEFAULT_HOST: &str = "127.0.0.1";
 const DEFAULT_PORT: u16 = 8787;
 const MCP_PATH: &str = "/mcp";
+
+/// MCP Apps UI resource for the hello-world smoke widget.
+/// Bump the URI when the HTML changes so ChatGPT does not keep a cached blank template.
+const HELLO_WORLD_WIDGET_URI: &str = "ui://widget/hello-world-v3.html";
+/// ChatGPT Apps SDK examples still serve widgets as `text/html+skybridge`.
+/// Keep the MCP Apps profile MIME as a secondary compatibility note in docs/tests.
+const WIDGET_MIME_TYPE: &str = "text/html+skybridge";
+const HELLO_WORLD_WIDGET_HTML: &str = include_str!("../assets/hello_world_widget.html");
 
 const INSTRUCTIONS: &str = concat!(
     "Local Menuyukti MCP sales analytics for restaurant POS Excel files. ",
@@ -44,8 +54,65 @@ const INSTRUCTIONS: &str = concat!(
     "full document without losing prior notes. ",
     "Also available: list_workspaces for Excel inventory, list_normalized_sales ",
     "for cleaned line items, get_menu_heatmaps for per-menu demand patterns. ",
+    "UI smoke only: render_hello_world_widget shows a Hello World MCP Apps widget ",
+    "with hard-coded mock data (no sales files). Do not use it for analytics. ",
     "Paths must stay under MENUYUKTI_DATA_DIR. Files stay on the local machine."
 );
+
+fn hello_world_widget_meta() -> MetaObject {
+    let mut meta = MetaObject::new();
+    meta.insert(
+        "ui".to_string(),
+        json!({ "resourceUri": HELLO_WORLD_WIDGET_URI }),
+    );
+    // ChatGPT compatibility aliases / hints used by Apps SDK hosts.
+    meta.insert(
+        "openai/outputTemplate".to_string(),
+        json!(HELLO_WORLD_WIDGET_URI),
+    );
+    meta.insert("openai/widgetAccessible".to_string(), json!(true));
+    meta.insert(
+        "openai/toolInvocation/invoking".to_string(),
+        json!("Rendering Hello World widget…"),
+    );
+    meta.insert(
+        "openai/toolInvocation/invoked".to_string(),
+        json!("Hello World widget ready."),
+    );
+    meta
+}
+
+fn hello_world_tool_result() -> CallToolResult {
+    // Hosts that mount then tear down widgets often require the template URI on
+    // the *result* `_meta`, not only on tools/list.
+    let mut result = CallToolResult::structured(mock_hello_world_payload())
+        .with_meta(Some(hello_world_widget_meta()));
+    result.content = vec![ContentBlock::text(
+        "Showing the Hello World MCP Apps widget (mock data).",
+    )];
+    result
+}
+
+fn hello_world_resource() -> Resource {
+    Resource::new(HELLO_WORLD_WIDGET_URI, "hello-world-widget")
+        .with_title("Hello World widget")
+        .with_description("MCP Apps smoke widget that renders mock Hello World structuredContent.")
+        .with_mime_type(WIDGET_MIME_TYPE)
+        .with_meta(hello_world_widget_meta())
+}
+
+fn hello_world_resource_contents() -> ResourceContents {
+    ResourceContents::text(HELLO_WORLD_WIDGET_HTML, HELLO_WORLD_WIDGET_URI)
+        .with_mime_type(WIDGET_MIME_TYPE)
+        .with_meta(hello_world_widget_meta())
+}
+
+fn mock_hello_world_payload() -> serde_json::Value {
+    json!({
+        "message": "Hello World",
+        "source": "mock",
+    })
+}
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 struct PathArgs {
@@ -437,18 +504,57 @@ impl MenuyuktiMcp {
             "pairs": affinities.pairs,
         })))
     }
+
+    #[tool(
+        description = "Render a Hello World MCP Apps widget using hard-coded mock data. UI smoke / wiring proof only — does not read sales files. Prefer analytics tools for real venue questions.",
+        annotations(title = "Render Hello World widget", read_only_hint = true),
+        meta = hello_world_widget_meta()
+    )]
+    async fn render_hello_world_widget(&self) -> Result<CallToolResult, McpError> {
+        Ok(hello_world_tool_result())
+    }
 }
 
 #[tool_handler]
 impl ServerHandler for MenuyuktiMcp {
     fn get_info(&self) -> ServerConfig {
-        ServerConfig::new(ServerCapabilities::builder().enable_tools().build())
-            .with_server_info(Implementation::new(
-                "menuyukti-mcp",
-                env!("CARGO_PKG_VERSION"),
-            ))
-            .with_protocol_version(ProtocolVersion::default())
-            .with_instructions(INSTRUCTIONS.to_string())
+        ServerConfig::new(
+            ServerCapabilities::builder()
+                .enable_tools()
+                .enable_resources()
+                .build(),
+        )
+        .with_server_info(Implementation::new(
+            "menuyukti-mcp",
+            env!("CARGO_PKG_VERSION"),
+        ))
+        .with_protocol_version(ProtocolVersion::default())
+        .with_instructions(INSTRUCTIONS.to_string())
+    }
+
+    async fn list_resources(
+        &self,
+        _request: Option<rmcp::model::PaginatedRequestParams>,
+        _context: rmcp::service::RequestContext<rmcp::RoleServer>,
+    ) -> Result<ListResourcesResult, McpError> {
+        Ok(ListResourcesResult {
+            resources: vec![hello_world_resource()],
+            ..Default::default()
+        })
+    }
+
+    async fn read_resource(
+        &self,
+        request: ReadResourceRequestParams,
+        _context: rmcp::service::RequestContext<rmcp::RoleServer>,
+    ) -> Result<rmcp::model::ReadResourceResponse, McpError> {
+        if request.uri != HELLO_WORLD_WIDGET_URI {
+            return Err(McpError::resource_not_found(
+                format!("unknown resource URI: {}", request.uri),
+                Some(json!({ "uri": request.uri })),
+            ));
+        }
+        Ok(ReadResourceResult::new(vec![hello_world_resource_contents()]).into())
     }
 }
 
@@ -477,7 +583,14 @@ async fn main() -> anyhow::Result<()> {
         .ok()
         .and_then(|raw| raw.trim().parse::<u16>().ok())
         .unwrap_or(DEFAULT_PORT);
-    let router = axum::Router::new().nest_service(MCP_PATH, service);
+    // ChatGPT web/sandbox iframes call the MCP HTTP endpoint cross-origin.
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers(Any);
+    let router = axum::Router::new()
+        .nest_service(MCP_PATH, service)
+        .layer(cors);
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
     let listener = tokio::net::TcpListener::bind(addr).await?;
 
