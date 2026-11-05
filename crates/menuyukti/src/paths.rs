@@ -22,7 +22,10 @@ pub enum PathNotAllowedError {
     #[error("{DATA_DIR_ENV} is not a directory: {0}")]
     NotADirectory(PathBuf),
 
-    #[error("Path is outside {DATA_DIR_ENV} ({root}): {path}")]
+    #[error(
+        "Path is outside {DATA_DIR_ENV} ({root}): {path}. \
+         Use a folder under the data directory; call list_workspaces or get_setup_status to see available paths."
+    )]
     OutsideDataDir { root: PathBuf, path: String },
 }
 
@@ -112,7 +115,11 @@ pub fn resolve_allowed_path(
     if !resolved.is_file() {
         return Err(ResolvePathError::Io(std::io::Error::new(
             std::io::ErrorKind::NotFound,
-            format!("Workspace file not found: {}", resolved.display()),
+            format!(
+                "Workspace file not found: {}. \
+                 Verify the path is under {DATA_DIR_ENV}; call list_workspaces or get_setup_status.",
+                resolved.display()
+            ),
         )));
     }
     Ok(resolved)
@@ -162,7 +169,11 @@ pub fn resolve_allowed_dir(
     if !resolved.is_dir() {
         return Err(ResolvePathError::Io(std::io::Error::new(
             std::io::ErrorKind::NotFound,
-            format!("Workspace directory not found: {}", resolved.display()),
+            format!(
+                "Workspace directory not found: {}. \
+                 Verify the folder is under {DATA_DIR_ENV}; call list_workspaces or get_setup_status.",
+                resolved.display()
+            ),
         )));
     }
     Ok(resolved)

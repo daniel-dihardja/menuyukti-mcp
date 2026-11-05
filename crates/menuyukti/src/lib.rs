@@ -11,6 +11,7 @@ pub mod load;
 pub mod normalize;
 pub mod paths;
 pub mod pos;
+pub mod setup;
 pub mod workspace;
 
 /// Library crate version (mirrors package version).
@@ -42,6 +43,7 @@ pub use paths::{
     WorkspaceList, DATA_DIR_ENV,
 };
 pub use pos::{detect_from_a1, detect_pos_from_excel_bytes};
+pub use setup::{get_setup_status, SetupStatus, SetupWorkspaceSummary, DEMO_WORKSPACE_NAME};
 pub use workspace::{
     load_workspace_config, read_workspace_knowledge, resolve_workspace_cogs_path,
     resolve_workspace_sales_path, write_workspace_config, write_workspace_knowledge,

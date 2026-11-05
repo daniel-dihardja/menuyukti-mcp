@@ -36,31 +36,36 @@ const VENUE_SLOT_STRENGTH_WIDGET_HTML: &str =
     include_str!("../assets/venue_slot_strength_widget.html");
 
 const INSTRUCTIONS: &str = concat!(
-    "Local Menuyukti MCP sales analytics for restaurant POS Excel files. ",
-    "Onboarding: when an owner drops sales (+ optional COGS) Excel into a new ",
-    "workspace folder, call list_workspace_files, infer file roles, confirm if ",
-    "unclear, then write_workspace_config (workspace.yaml). After that, call ",
-    "summarize_local_sales with the workspace folder path. ",
-    "Menu engineering (analyze_menu_engineering) requires a workspace folder ",
-    "with both files.sales and files.cogs configured; if COGS is missing, ask ",
-    "the owner for a unit-cost Excel, list_workspace_files, then write_workspace_config. ",
-    "Weak items review (get_weak_items_review) also needs sales + COGS; use it for ",
-    "reprice / improve / remove decisions on low-popularity, low-margin dishes. ",
-    "Pair lift (get_pair_lift_matrix) returns co-purchase lift for combo ideas; ",
-    "sales alone is enough (top-by-presence focus). When files.cogs is configured ",
-    "and menu engineering yields at least two stars, those stars become the focus. ",
-    "Venue slot strength: get_venue_slot_strength returns weekday × meal-period ",
-    "JSON for timing/staffing (sales alone). To show the heatmap widget in ChatGPT, ",
-    "call render_venue_slot_strength with the same workspace or sales path. ",
-    "Location notes: keep venue facts (hours, seating, cuisine, constraints, ",
-    "past decisions) in knowledge.md via read_workspace_knowledge / ",
-    "write_workspace_knowledge. Read before rewriting so updates replace the ",
-    "full document without losing prior notes. ",
-    "Also available: list_workspaces for Excel inventory, list_normalized_sales ",
-    "for cleaned line items, get_menu_heatmaps for per-menu demand patterns. ",
-    "UI smoke only: render_hello_world_widget shows a Hello World MCP Apps widget ",
-    "with hard-coded mock data (no sales files). Do not use it for analytics. ",
-    "Paths must stay under MENUYUKTI_DATA_DIR. Files stay on the local machine."
+    "Local Menuyukti MCP: restaurant POS Excel analytics on the owner's machine. ",
+    "Files stay under MENUYUKTI_DATA_DIR; never leave the local sandbox. ",
+    // 3-step ritual + first contact
+    "Owner ritual: (1) keep this MCP server running and connected, ",
+    "(2) drop sales Excel (+ optional COGS) into one folder per venue/month under the data dir, ",
+    "(3) ask you to set up the workspace, then ask outcome questions. ",
+    "First contact or when paths/config fail: call get_setup_status ",
+    "(and list_workspaces if useful). If unclear what to analyze, offer ",
+    "demo-cafe-july-2026 with example asks: summarize; show venue slot strength chart; ",
+    "menu engineering (needs COGS). ",
+    "Onboard a new folder: list_workspace_files → infer sales/COGS roles → confirm if unclear → ",
+    "write_workspace_config → summarize_local_sales. ",
+    // Goal → tool map
+    "Goal→tool: how did we do → summarize_local_sales; ",
+    "when each dish sells → get_menu_heatmaps; ",
+    "when is the venue busy / staffing by daypart → render_venue_slot_strength for show/chart/heatmap, ",
+    "get_venue_slot_strength for numbers-only JSON; ",
+    "combo / upsell ideas → get_pair_lift_matrix (sales alone; COGS upgrades focus to stars when ≥2); ",
+    "stars/plow horses/puzzles/weak matrix → analyze_menu_engineering (needs sales+COGS); ",
+    "reprice/improve/remove weak dishes → get_weak_items_review (needs sales+COGS); ",
+    "cleaned line items → list_normalized_sales; ",
+    "venue hours/seating/notes → read_workspace_knowledge then write_workspace_knowledge (full replace). ",
+    // COGS gates
+    "COGS gate: menu engineering and weak-items need a unit-cost Excel mapped as files.cogs. ",
+    "If missing, ask the owner to drop COGS Excel, then list_workspace_files and write_workspace_config. ",
+    "Sales-only tools still work without COGS. ",
+    // Widgets + smoke
+    "Prefer render_venue_slot_strength when the owner says show/chart/heatmap; ",
+    "prefer get_venue_slot_strength for text/numbers only. ",
+    "render_hello_world_widget is UI smoke only (mock data) — never use it for analytics."
 );
 
 fn hello_world_widget_meta() -> MetaObject {
@@ -321,6 +326,24 @@ fn config_from_args(args: WorkspaceConfigArgs) -> menuyukti::WorkspaceConfig {
 #[tool_router]
 impl MenuyuktiMcp {
     #[tool(
+        description = "Diagnose first-run setup under MENUYUKTI_DATA_DIR: resolved data dir, server version, workspace folders, which folders lack workspace.yaml, and whether demo-cafe-july-2026 is present. No path argument. Call on first contact or when path/config tools fail."
+    )]
+    async fn get_setup_status(&self) -> Result<CallToolResult, McpError> {
+        match menuyukti::get_setup_status(None) {
+            Ok(status) => Ok(text_json(json!({
+                "server": "menuyukti-mcp",
+                "version": status.version,
+                "data_dir": status.data_dir,
+                "workspace_count": status.workspace_count,
+                "workspaces": status.workspaces,
+                "folders_missing_workspace_yaml": status.folders_missing_workspace_yaml,
+                "demo_workspace_present": status.demo_workspace_present,
+            }))),
+            Err(err) => Ok(error_json(err.to_string())),
+        }
+    }
+
+    #[tool(
         description = "List analysis workspaces under MENUYUKTI_DATA_DIR (typically workspaces/). Groups Excel files by workspace folder and returns relative file paths you can pass to the other sales tools. Ignores non-Excel files."
     )]
     async fn list_workspaces(&self) -> Result<CallToolResult, McpError> {
@@ -470,9 +493,9 @@ impl MenuyuktiMcp {
             Ok(v) => v,
             Err(err) => {
                 return Ok(error_json(format!(
-                    "{err}. Menu engineering needs files.cogs on the workspace: \
-                     drop a COGS Excel, call list_workspace_files, then write_workspace_config \
-                     (or ask the owner for unit costs)."
+                    "{err} Menu engineering needs sales + a unit-cost (COGS) Excel: \
+                     ask the owner to drop COGS into the folder, then list_workspace_files \
+                     and write_workspace_config (or call get_setup_status)."
                 )));
             }
         };
@@ -508,9 +531,9 @@ impl MenuyuktiMcp {
             Ok(v) => v,
             Err(err) => {
                 return Ok(error_json(format!(
-                    "{err}. Weak items review needs files.cogs on the workspace: \
-                     drop a COGS Excel, call list_workspace_files, then write_workspace_config \
-                     (or ask the owner for unit costs)."
+                    "{err} Weak items review needs sales + a unit-cost (COGS) Excel: \
+                     ask the owner to drop COGS into the folder, then list_workspace_files \
+                     and write_workspace_config (or call get_setup_status)."
                 )));
             }
         };

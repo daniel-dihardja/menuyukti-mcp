@@ -11,8 +11,10 @@ Guides for setting up Menuyukti MCP with ChatGPT Desktop and working with your s
 | [Custom POS columns](./howtos/custom-pos-columns.md) | When your spreadsheet columns don’t match a known POS |
 | [Develop](./howtos/develop.md) | Contributors building from source |
 
-## Start here
+## Start here (same 3-step ritual as the product)
 
-1. Restaurant owners: read the [project README](../README.md), then [Install and run](./howtos/install-and-run.md).
-2. In **ChatGPT Desktop** settings, add `http://127.0.0.1:8787/mcp` and use Menuyukti MCP in chat.
-3. Drop your Excel files into a [workspace](./howtos/workspaces.md) and ask ChatGPT to write the `workspace.yaml` config.
+1. **Run the server** and connect ChatGPT Desktop → [Install and run](./howtos/install-and-run.md) (`http://127.0.0.1:8787/mcp`).
+2. **Drop sales (+ optional COGS)** into one folder per venue/month → [Workspaces](./howtos/workspaces.md).
+3. In chat, `@` Menuyukti MCP: ask it to **set up the workspace**, then use the [What to ask](../README.md#what-to-ask) cheat sheet.
+
+Owners do not edit `workspace.yaml` by hand — ChatGPT writes it after you drop the files.

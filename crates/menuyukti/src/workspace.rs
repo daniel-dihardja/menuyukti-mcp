@@ -117,7 +117,9 @@ pub fn load_workspace_config(
     let config_abs = dir.join(WORKSPACE_CONFIG_FILENAME);
     if !config_abs.is_file() {
         return Err(WorkspaceConfigError::Invalid(format!(
-            "Workspace config not found: {}",
+            "Workspace config not found: {} (no files.sales mapping yet). \
+             Call list_workspace_files, confirm which Excel is sales (+ optional COGS), \
+             then write_workspace_config — or ask the owner which file is sales.",
             relative_to_root(&root, &config_abs)
         )));
     }
@@ -180,7 +182,8 @@ pub fn resolve_workspace_cogs_path(
     let Some(cogs) = &loaded.config.files.cogs else {
         return Err(WorkspaceConfigError::Invalid(format!(
             "Workspace config missing files.cogs role: {}/{WORKSPACE_CONFIG_FILENAME}. \
-             Add a COGS Excel file, then call write_workspace_config (or ask the owner for unit costs).",
+             Ask the owner to drop a unit-cost (COGS) Excel into the folder, then call \
+             list_workspace_files and write_workspace_config to set files.cogs.",
             loaded.workspace
         )));
     };

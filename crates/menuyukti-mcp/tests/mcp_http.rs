@@ -130,6 +130,7 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
         .filter_map(|t| t["name"].as_str())
         .collect();
     for required in [
+        "get_setup_status",
         "list_workspaces",
         "list_workspace_files",
         "write_workspace_config",
@@ -331,6 +332,11 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
     assert!(
         slots_rejected.get("error").is_some(),
         "tool=get_venue_slot_strength expected path-gate error; payload={slots_rejected}"
+    );
+    let slots_err = slots_rejected["error"].as_str().unwrap_or("");
+    assert!(
+        slots_err.contains("get_setup_status") || slots_err.contains("list_workspaces"),
+        "path-gate error should suggest setup recovery; got {slots_err}"
     );
 
     let lift = tool_payload(
@@ -741,6 +747,10 @@ files:
         err.contains("cogs") || err.contains("COGS"),
         "error should mention COGS; got {err}"
     );
+    assert!(
+        err.contains("list_workspace_files") && err.contains("write_workspace_config"),
+        "COGS error should include recovery tools; got {err}"
+    );
 
     let weak_missing = tool_payload(
         server.addr,
@@ -755,5 +765,99 @@ files:
     assert!(
         weak_err.contains("cogs") || weak_err.contains("COGS"),
         "weak-items error should mention COGS; got {weak_err}"
+    );
+    assert!(
+        weak_err.contains("list_workspace_files") && weak_err.contains("write_workspace_config"),
+        "weak-items COGS error should include recovery tools; got {weak_err}"
+    );
+}
+
+#[test]
+fn mcp_http_setup_status_and_owner_playbook_instructions() {
+    let _guard = port_lock().lock().unwrap();
+    let tmp = tempfile::tempdir().unwrap();
+    fs::create_dir_all(tmp.path().join("needs-setup")).unwrap();
+    fs::write(tmp.path().join("needs-setup/sales.xlsx"), b"x").unwrap();
+    fs::create_dir_all(tmp.path().join("demo-cafe-july-2026")).unwrap();
+    fs::write(
+        tmp.path().join("demo-cafe-july-2026/workspace.yaml"),
+        "version: 1\nname: Demo\nvenue: Demo\nfiles:\n  sales:\n    path: sales.xlsx\n",
+    )
+    .unwrap();
+    fs::write(tmp.path().join("demo-cafe-july-2026/sales.xlsx"), b"y").unwrap();
+
+    let server = start_server(&tmp.path().to_path_buf());
+
+    let init = http_post_json(
+        server.addr,
+        json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {},
+                "clientInfo": { "name": "menuyukti-test", "version": "0" }
+            }
+        }),
+    );
+    let instructions = init["result"]["instructions"]
+        .as_str()
+        .unwrap_or_else(|| panic!("initialize missing instructions; init={init}"));
+    for needle in [
+        "get_setup_status",
+        "demo-cafe-july-2026",
+        "write_workspace_config",
+        "render_venue_slot_strength",
+        "list_workspace_files",
+    ] {
+        assert!(
+            instructions.contains(needle),
+            "instructions missing `{needle}`; instructions={instructions}"
+        );
+    }
+
+    let status = tool_payload(server.addr, "get_setup_status", json!({}));
+    assert_eq!(
+        status["server"].as_str(),
+        Some("menuyukti-mcp"),
+        "setup status server; payload={status}"
+    );
+    assert!(
+        status["version"].as_str().is_some(),
+        "setup status version; payload={status}"
+    );
+    assert_eq!(
+        status["demo_workspace_present"].as_bool(),
+        Some(true),
+        "demo should be present; payload={status}"
+    );
+    assert_eq!(
+        status["workspace_count"].as_u64(),
+        Some(2),
+        "expected two workspace folders; payload={status}"
+    );
+    let missing = status["folders_missing_workspace_yaml"]
+        .as_array()
+        .expect("folders_missing_workspace_yaml array");
+    assert!(
+        missing.iter().any(|v| v.as_str() == Some("needs-setup")),
+        "needs-setup should lack workspace.yaml; payload={status}"
+    );
+
+    let no_config = tool_payload(
+        server.addr,
+        "summarize_local_sales",
+        json!({"path": "needs-setup"}),
+    );
+    assert!(
+        no_config.get("error").is_some(),
+        "expected missing workspace.yaml error; payload={no_config}"
+    );
+    let no_config_err = no_config["error"].as_str().unwrap_or("");
+    assert!(
+        no_config_err.contains("list_workspace_files")
+            && no_config_err.contains("write_workspace_config"),
+        "missing-config error should include recovery; got {no_config_err}"
     );
 }

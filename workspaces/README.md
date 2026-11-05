@@ -4,7 +4,7 @@ Put venue/period folders here. Each folder can hold sales exports, COGS, and loc
 
 Menuyukti MCP reads files from here by default (`MENUYUKTI_DATA_DIR=workspaces`).
 
-For the full guide, see **[Workspaces howto](../docs/howtos/workspaces.md)**.
+**Owner ritual:** run the MCP server → drop sales (+ optional COGS) into a folder → in ChatGPT ask Menuyukti to set up the workspace, then ask outcome questions. See **[Workspaces howto](../docs/howtos/workspaces.md)** and the **[What to ask](../README.md#what-to-ask)** cheat sheet.
 
 ## Default demo workspace
 
