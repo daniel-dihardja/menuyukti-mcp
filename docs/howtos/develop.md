@@ -14,6 +14,10 @@ make widgets-preview  # mock widget HTML + live reload (no Node)
 make backlog   # Backlog.md board (optional)
 ```
 
+## CI
+
+GitHub Actions runs the same `make check` gate on every **pull request** and on **push to `main`** (see [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)). Version-tag releases stay in [`release.yml`](../../.github/workflows/release.yml). The toolchain is pinned via [`rust-toolchain.toml`](../../rust-toolchain.toml) (stable + rustfmt + clippy).
+
 ## Crate layout
 
 - `crates/menuyukti` — Excel normalize + analytics library
