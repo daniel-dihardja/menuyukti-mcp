@@ -5,6 +5,7 @@ edition.workspace = true
 license.workspace = true
 description = "Local Menuyukti MCP server for sales analytics"
 readme = "../../README.md"
+default-run = "menuyukti-mcp"
 
 [[bin]]
 name = "menuyukti-mcp"

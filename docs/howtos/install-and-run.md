@@ -34,7 +34,7 @@ The server listens at **`http://127.0.0.1:8787/mcp`**.
 ```bash
 make mcp
 # or: bash scripts/run-mcp.sh
-# or: MENUYUKTI_DATA_DIR="$PWD/workspaces" cargo run -p menuyukti-mcp
+# or: MENUYUKTI_DATA_DIR="$PWD/workspaces" cargo run -p menuyukti-mcp --bin menuyukti-mcp
 ```
 
 Optional: open [MCP Inspector](https://modelcontextprotocol.io/) against the running server (needs Node / `npx`):
