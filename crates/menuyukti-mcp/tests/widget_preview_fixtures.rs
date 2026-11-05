@@ -1,0 +1,47 @@
+//! Fixture shape checks for the local widget preview harness.
+
+use serde_json::Value;
+use std::path::PathBuf;
+
+fn preview_fixtures_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("preview/fixtures")
+}
+
+fn read_fixture(name: &str) -> Value {
+    let path = preview_fixtures_dir().join(name);
+    let raw = std::fs::read_to_string(&path)
+        .unwrap_or_else(|err| panic!("read {}: {err}", path.display()));
+    serde_json::from_str(&raw).unwrap_or_else(|err| panic!("parse {}: {err}", path.display()))
+}
+
+#[test]
+fn hello_world_fixture_has_message_and_source() {
+    let v = read_fixture("hello_world.json");
+    assert_eq!(v["message"], "Hello World");
+    assert_eq!(v["source"], "mock");
+}
+
+#[test]
+fn venue_slot_strength_fixture_has_35_cells() {
+    let v = read_fixture("venue_slot_strength.json");
+    assert_eq!(v["slot_count"], 35);
+    let profile = v["slot_demand_profile"]
+        .as_array()
+        .expect("slot_demand_profile array");
+    assert_eq!(profile.len(), 35);
+    let first = &profile[0];
+    assert!(first["day"].is_string());
+    assert!(first["meal_period"].is_string());
+    assert!(first["demand_index"].is_number());
+    assert!(first["relative_demand"].is_string());
+}
+
+#[test]
+fn venue_slot_strength_empty_fixture_has_empty_profile() {
+    let v = read_fixture("venue_slot_strength_empty.json");
+    assert_eq!(v["slot_count"], 0);
+    assert_eq!(
+        v["slot_demand_profile"].as_array().map(|a| a.len()),
+        Some(0)
+    );
+}

@@ -10,15 +10,22 @@ readme = "../../README.md"
 name = "menuyukti-mcp"
 path = "src/main.rs"
 
+[[bin]]
+name = "menuyukti-widget-preview"
+path = "src/bin/widget_preview.rs"
+
 [dependencies]
 anyhow = { workspace = true }
 axum = { workspace = true }
+futures-util = { workspace = true }
 menuyukti = { workspace = true }
+notify = { workspace = true }
 rmcp = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
+tokio-stream = { workspace = true }
 tokio-util = { workspace = true }
 tower-http = { workspace = true }
 tracing = { workspace = true }

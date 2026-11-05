@@ -11,7 +11,9 @@
           system-ui,
           -apple-system,
           sans-serif;
-        --venue: #0d9488;
+        /* Sequential Blues: pale low → mid blue high (not pure white). */
+        --venue-low: #dbeafe;
+        --venue-high: #2563eb;
       }
       html,
       body {
@@ -62,9 +64,9 @@
         border-radius: 999px;
         background: linear-gradient(
           to right,
-          color-mix(in srgb, var(--venue) 12%, white),
-          color-mix(in srgb, var(--venue) 50%, white),
-          var(--venue)
+          var(--venue-low),
+          color-mix(in srgb, var(--venue-high) 50%, var(--venue-low)),
+          var(--venue-high)
         );
       }
       .tiers {
@@ -91,15 +93,17 @@
         overflow-x: auto;
       }
       table {
-        border-collapse: collapse;
+        border-collapse: separate;
+        border-spacing: 1px;
         width: 100%;
         min-width: 520px;
         font-size: 0.72rem;
+        background: #fff;
       }
       th,
       td {
-        border: 1px solid #e2e8f0;
-        padding: 6px 4px;
+        border: 0;
+        padding: 12px 4px;
         text-align: center;
       }
       th {
@@ -124,12 +128,6 @@
       }
       td.cell.light-text {
         color: #f8fafc;
-      }
-      td.cell[data-relative="low"] {
-        box-shadow: inset 0 0 0 1px color-mix(in srgb, #94a3b8 55%, transparent);
-      }
-      td.cell[data-relative="high"] {
-        box-shadow: inset 0 0 0 1px color-mix(in srgb, #0f766e 70%, transparent);
       }
       .empty {
         margin-top: 16px;
@@ -159,19 +157,31 @@
       </div>
       <div id="tiers" class="tiers hidden">
         <span class="tier"
-          ><span class="tier-swatch" style="background: #e2e8f0"></span> Low
-          (&lt; 0.9)</span
+          ><span
+            class="tier-swatch"
+            style="background: var(--venue-low)"
+          ></span>
+          Low (&lt; 0.9)</span
         >
         <span class="tier"
           ><span
             class="tier-swatch"
-            style="background: color-mix(in srgb, var(--venue) 45%, white)"
+            style="
+              background: color-mix(
+                in srgb,
+                var(--venue-high) 45%,
+                var(--venue-low)
+              );
+            "
           ></span>
           Average</span
         >
         <span class="tier"
-          ><span class="tier-swatch" style="background: var(--venue)"></span> High
-          (&gt; 1.1)</span
+          ><span
+            class="tier-swatch"
+            style="background: var(--venue-high)"
+          ></span>
+          High (&gt; 1.1)</span
         >
       </div>
       <div id="scroll" class="scroll hidden">
@@ -236,9 +246,8 @@
       }
 
       function cellBackground(t) {
-        const alpha = 0.12 + t * 0.88;
-        const pct = Math.round(alpha * 100);
-        return `color-mix(in srgb, var(--venue) ${pct}%, white)`;
+        const pct = Math.round(Math.min(1, Math.max(0, t)) * 100);
+        return `color-mix(in srgb, var(--venue-high) ${pct}%, var(--venue-low))`;
       }
 
       function formatIndex(value) {

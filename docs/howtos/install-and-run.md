@@ -43,6 +43,18 @@ Optional: open [MCP Inspector](https://modelcontextprotocol.io/) against the run
 make mcp-inspect
 ```
 
+### Widget preview (styles / mock data)
+
+To style MCP Apps widgets without ChatGPT or the MCP server, run the Rust preview harness:
+
+```bash
+make widgets-preview
+# or: bash scripts/run-widget-preview.sh
+# or: cargo run -p menuyukti-mcp --bin menuyukti-widget-preview
+```
+
+Open **`http://127.0.0.1:8790/`**, pick a widget (Hello World, venue slot strength, or the empty heatmap edge case). The page iframes the real HTML under `crates/menuyukti-mcp/assets/` and injects mock `structuredContent`. Saving a watched asset or preview fixture reloads the browser. Node is not required for this path. Optional port override: `MENUYUKTI_WIDGET_PREVIEW_PORT`.
+
 ## Next steps
 
 - Put sales files in a [workspace](./workspaces.md).

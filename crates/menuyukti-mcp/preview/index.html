@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Menuyukti widget preview</title>
+    <style>
+      :root {
+        color: #0f172a;
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 32px;
+        background: #f8fafc;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 1.4rem;
+      }
+      p {
+        margin: 0 0 20px;
+        color: #64748b;
+        max-width: 40rem;
+        line-height: 1.45;
+      }
+      ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 10px;
+        max-width: 36rem;
+      }
+      a {
+        display: block;
+        padding: 14px 16px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        background: #fff;
+        color: #0f172a;
+        text-decoration: none;
+        font-weight: 600;
+      }
+      a:hover {
+        border-color: #0d9488;
+      }
+      span {
+        display: block;
+        margin-top: 4px;
+        color: #64748b;
+        font-size: 0.85rem;
+        font-weight: 400;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Menuyukti widget preview</h1>
+    <p>
+      Local harness for MCP Apps widget HTML under
+      <code>crates/menuyukti-mcp/assets/</code>. Edit a widget file and this page
+      reloads. No ChatGPT or MCP server required (Rust preview binary only).
+    </p>
+    <ul>
+      <li>
+        <a href="/preview/hello-world.html"
+          >Hello World
+          <span>Mock message / source smoke widget</span></a
+        >
+      </li>
+      <li>
+        <a href="/preview/venue-slot-strength.html"
+          >Venue slot strength
+          <span>Populated 35-cell heatmap mock</span></a
+        >
+      </li>
+      <li>
+        <a href="/preview/venue-slot-strength-empty.html"
+          >Venue slot strength (empty)
+          <span>Empty profile / edge-state mock</span></a
+        >
+      </li>
+    </ul>
+    <script>
+      // Index also reloads when assets change.
+      try {
+        const source = new EventSource("/__reload");
+        source.addEventListener("reload", () => location.reload());
+      } catch (_) {}
+      let watchVersion = null;
+      setInterval(async () => {
+        try {
+          const res = await fetch("/__watch", { cache: "no-store" });
+          if (!res.ok) return;
+          const data = await res.json();
+          if (watchVersion === null) watchVersion = data.version;
+          else if (data.version !== watchVersion) location.reload();
+        } catch (_) {}
+      }, 500);
+    </script>
+  </body>
+</html>

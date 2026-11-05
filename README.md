@@ -7,8 +7,9 @@ Licensed under the [MIT License](LICENSE).
 ## Why use it
 
 - Keep sales files private on your laptop or office PC
-- Ask natural questions in ChatGPT about revenue, top dishes, demand patterns, and the menu engineering matrix (stars / plow horses / puzzles / weak items — **requires COGS**)
-- Organize each venue and month in a simple **workspace** folder (sales, COGS, notes)
+- Ask natural questions in ChatGPT about revenue, top dishes, demand patterns, combos, and the menu engineering matrix (stars / plow horses / puzzles / weak items — **requires COGS**)
+- See a **venue slot strength heatmap** (weekday × meal period) as a ChatGPT widget when the host renders MCP Apps UI
+- Organize each venue and month in a simple **workspace** folder (sales, COGS, location notes)
 
 ## Quick start
 
@@ -25,8 +26,24 @@ Examples once everything is connected:
 
 - What were total sales and top items last month?
 - When does each dish sell during the day or week?
+- Show venue slot strength for demo-cafe-july-2026 (heatmap widget; sales alone)
+- Which dishes belong in combos / upsells? (pair lift; sales alone, COGS optional for star focus)
 - Show me the cleaned line items for this export
-- Run menu engineering on demo-cafe-july-2026 (needs sales + COGS in the workspace)
+- Run menu engineering on demo-cafe-july-2026 (needs sales + COGS)
+- Which weak items should I reprice, improve, or remove? (needs sales + COGS)
+- Remember our hours / seating in knowledge.md for this workspace
+
+### Sales alone vs COGS
+
+| Capability | Needs |
+| --- | --- |
+| Summary, per-menu heatmaps, venue slot strength (JSON or heatmap widget), pair lift | Sales |
+| Menu engineering matrix, weak items review | Sales + COGS |
+| Pair lift with menu-engineering **stars** as focus | Sales + COGS (optional upgrade) |
+
+## ChatGPT widgets
+
+Menuyukti MCP can return MCP Apps UI templates (for example venue slot strength). ChatGPT must mount the iframe after the tool runs — status text alone is not the chart. If a tool succeeds but no widget appears, see [Install and run → MCP Apps widgets](docs/howtos/install-and-run.md#mcp-apps-widgets-hello-world--charts).
 
 ## Documentation
 
@@ -34,7 +51,7 @@ Full guides live under **[docs/](docs/)**:
 
 | Guide | Topic |
 | --- | --- |
-| [Install and run](docs/howtos/install-and-run.md) | Download or build, start the local server |
-| [Workspaces](docs/howtos/workspaces.md) | Where to put sales and related files |
+| [Install and run](docs/howtos/install-and-run.md) | Download or build, start the local server, widget troubleshooting |
+| [Workspaces](docs/howtos/workspaces.md) | Where to put sales and related files; tool list |
 | [Custom POS columns](docs/howtos/custom-pos-columns.md) | Map unusual spreadsheet headers |
 | [Develop](docs/howtos/develop.md) | Contributor commands and crate layout |
