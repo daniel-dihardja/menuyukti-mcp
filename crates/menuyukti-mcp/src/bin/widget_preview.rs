@@ -1,35 +1,25 @@
 //! Local MCP Apps widget preview server (developer tooling).
 //!
 //! Serves widget HTML from `assets/` inside an iframe harness with mock
-//! `structuredContent`, and reloads the browser when watched files change.
-//! Heatmap widgets get `assets/shared/widget-theme.css` inlined the same way
-//! the MCP server does for ChatGPT. Does not start the MCP product server.
+//! `structuredContent`. Heatmap widgets get `assets/shared/widget-theme.css`
+//! inlined the same way the MCP server does for ChatGPT.
+//!
+//! No live-reload: refresh the browser after editing assets. That keeps the
+//! preview stable on macOS (FSEvents metadata noise used to reload-loop pages).
+//! Does not start the MCP product server.
 
 use std::{
-    convert::Infallible,
     net::SocketAddr,
     path::{Component, Path, PathBuf},
-    sync::{
-        atomic::{AtomicU64, Ordering},
-        Arc,
-    },
-    time::Duration,
 };
 
 use axum::{
     extract::{Path as AxumPath, State},
     http::{header, StatusCode},
-    response::{
-        sse::{Event, KeepAlive, Sse},
-        IntoResponse, Response,
-    },
+    response::{IntoResponse, Response},
     routing::get,
-    Json, Router,
+    Router,
 };
-use futures_util::stream::{Stream, StreamExt};
-use notify::{Config, EventKind, RecommendedWatcher, Watcher};
-use tokio::sync::broadcast;
-use tokio_stream::wrappers::{errors::BroadcastStreamRecvError, BroadcastStream};
 use tower_http::services::ServeDir;
 use tracing_subscriber::EnvFilter;
 
@@ -38,8 +28,6 @@ const DEFAULT_HOST: &str = "127.0.0.1";
 
 #[derive(Clone)]
 struct PreviewState {
-    version: Arc<AtomicU64>,
-    reload_tx: broadcast::Sender<()>,
     assets_dir: PathBuf,
 }
 
@@ -58,18 +46,9 @@ async fn main() -> anyhow::Result<()> {
     ensure_dir(&preview_dir, "preview harness")?;
     ensure_dir(&fixtures_dir, "preview fixtures")?;
 
-    let (reload_tx, _) = broadcast::channel(64);
     let state = PreviewState {
-        version: Arc::new(AtomicU64::new(0)),
-        reload_tx: reload_tx.clone(),
         assets_dir: assets_dir.clone(),
     };
-
-    start_watcher(
-        &[assets_dir.clone(), preview_dir.clone()],
-        state.version.clone(),
-        reload_tx,
-    )?;
 
     let port = std::env::var("MENUYUKTI_WIDGET_PREVIEW_PORT")
         .ok()
@@ -78,8 +57,6 @@ async fn main() -> anyhow::Result<()> {
 
     let app = Router::new()
         .route("/", get(index_page))
-        .route("/__watch", get(watch_version))
-        .route("/__reload", get(reload_sse))
         .route("/preview.js", get(preview_js))
         .route("/widgets/{*path}", get(serve_widget_asset))
         .nest_service("/fixtures", ServeDir::new(fixtures_dir))
@@ -93,7 +70,9 @@ async fn main() -> anyhow::Result<()> {
         assets_dir.display(),
         preview_dir.display()
     );
-    tracing::info!("open http://{DEFAULT_HOST}:{port}/ then edit files under assets/ or preview/");
+    tracing::info!(
+        "open http://{DEFAULT_HOST}:{port}/ — refresh the browser after editing assets (no live reload)"
+    );
 
     axum::serve(listener, app)
         .with_graceful_shutdown(async {
@@ -190,80 +169,10 @@ fn content_type_for(path: &Path) -> &'static str {
     }
 }
 
-async fn watch_version(State(state): State<PreviewState>) -> Json<serde_json::Value> {
-    Json(serde_json::json!({
-        "version": state.version.load(Ordering::Relaxed),
-    }))
-}
-
-async fn reload_sse(
-    State(state): State<PreviewState>,
-) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
-    let rx = state.reload_tx.subscribe();
-    let stream = BroadcastStream::new(rx).filter_map(|result| async move {
-        match result {
-            Ok(()) => Some(Ok(Event::default().event("reload").data("1"))),
-            Err(BroadcastStreamRecvError::Lagged(_)) => {
-                Some(Ok(Event::default().event("reload").data("lagged")))
-            }
-        }
-    });
-    Sse::new(stream).keep_alive(KeepAlive::new().interval(Duration::from_secs(15)))
-}
-
 fn ensure_dir(path: &Path, label: &str) -> anyhow::Result<()> {
     if path.is_dir() {
         Ok(())
     } else {
         anyhow::bail!("missing {label} directory: {}", path.display())
     }
-}
-
-fn start_watcher(
-    roots: &[PathBuf],
-    version: Arc<AtomicU64>,
-    reload_tx: broadcast::Sender<()>,
-) -> anyhow::Result<()> {
-    let (fs_tx, mut fs_rx) = tokio::sync::mpsc::unbounded_channel();
-
-    let mut watcher = RecommendedWatcher::new(
-        move |result: Result<notify::Event, notify::Error>| {
-            if let Ok(event) = result {
-                let _ = fs_tx.send(event);
-            }
-        },
-        Config::default(),
-    )?;
-
-    for root in roots {
-        watcher.watch(root, notify::RecursiveMode::Recursive)?;
-        tracing::info!("watching {}", root.display());
-    }
-
-    // Keep the watcher alive for the process lifetime.
-    std::mem::forget(watcher);
-
-    tokio::spawn(async move {
-        while let Some(event) = fs_rx.recv().await {
-            if !is_interesting(&event.kind) {
-                continue;
-            }
-            // Coalesce bursty FS events from a single save.
-            tokio::time::sleep(Duration::from_millis(120)).await;
-            while fs_rx.try_recv().is_ok() {}
-
-            let next = version.fetch_add(1, Ordering::Relaxed) + 1;
-            tracing::info!("preview assets changed → reload (version {next})");
-            let _ = reload_tx.send(());
-        }
-    });
-
-    Ok(())
-}
-
-fn is_interesting(kind: &EventKind) -> bool {
-    matches!(
-        kind,
-        EventKind::Create(_) | EventKind::Modify(_) | EventKind::Remove(_) | EventKind::Any
-    )
 }

@@ -8,7 +8,7 @@ help:
 	@echo "Targets:"
 	@echo "  make mcp                 Start the Rust MCP server (http://127.0.0.1:8787/mcp)"
 	@echo "  make mcp-inspect         Start the server and open MCP Inspector (needs npx)"
-	@echo "  make widgets-preview     Local widget HTML preview with mock data + reload"
+	@echo "  make widgets-preview     Local widget HTML preview with mock data (refresh after edits)"
 	@echo "  make sync-plugin-skills  Copy .agents/skills into plugins/menuyukti/skills"
 	@echo "  make test                Run Cargo tests"
 	@echo "  make check               fmt --check + clippy -D warnings + tests"

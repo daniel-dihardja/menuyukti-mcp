@@ -10,7 +10,7 @@ make test
 # or: cargo test -p menuyukti && cargo test -p menuyukti-mcp
 make mcp
 make mcp-inspect
-make widgets-preview  # mock widget HTML + live reload (no Node)
+make widgets-preview  # mock widget HTML (refresh after edits; no Node)
 make sync-plugin-skills  # copy .agents/skills → plugins/menuyukti/skills
 make backlog   # Backlog.md board (optional)
 ```

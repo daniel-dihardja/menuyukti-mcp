@@ -24,7 +24,6 @@ anyhow = { workspace = true }
 axum = { workspace = true }
 futures-util = { workspace = true }
 menuyukti = { workspace = true }
-notify = { workspace = true }
 rmcp = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true }
