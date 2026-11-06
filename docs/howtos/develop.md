@@ -12,10 +12,11 @@ make mcp
 make mcp-inspect
 make widgets-preview  # mock widget HTML (refresh after edits; no Node)
 make sync-plugin-skills  # copy .agents/skills → plugins/menuyukti/skills
+make sync-codex-plugin   # sync skills + reinstall Menuyukti into Codex CLI
 make backlog   # Backlog.md board (optional)
 ```
 
-After editing Codex skills under `.agents/skills/`, run `make sync-plugin-skills` before committing so the installable plugin stays in sync. See [Codex plugin](./codex-plugin.md).
+After editing Codex skills under `.agents/skills/`, run `make sync-plugin-skills` before committing so the installable plugin stays in sync. To also refresh your local Codex install, use `make sync-codex-plugin` (then start a new session). See [Codex plugin](./codex-plugin.md).
 
 ## CI
 

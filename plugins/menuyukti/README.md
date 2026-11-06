@@ -24,7 +24,8 @@ Synced from [`.agents/skills/`](../../.agents/skills/) via `make sync-plugin-ski
 Edit skills under `.agents/skills/`, then run:
 
 ```bash
-make sync-plugin-skills
+make sync-plugin-skills   # package only
+make sync-codex-plugin    # package + reinstall into Codex CLI
 ```
 
 Do not hand-edit copies under `skills/` except for packaging smoke tests.
