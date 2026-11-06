@@ -53,4 +53,4 @@ Example: `Bill No.` → `bill_no.`
 
 ## Slot-strength minimum
 
-`scripts/slot_strength.py` only aggregates on `bill_number` + `order_time`. Other mapped columns are validated when present but not used for demand cells.
+Venue slot strength aggregation needs `bill_number` + `order_time`. Keep the full eight-field mapping so the same file works with Menuyukti MCP analytics later.

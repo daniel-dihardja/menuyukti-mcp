@@ -76,7 +76,7 @@ Secondary reference for power users — owners can stick to the [What to ask](..
 - `get_venue_slot_strength` — weekday × meal-period venue demand JSON for timing (**sales alone**; Codex: present with **`menuyukti-venue-slot-strength`**)
 - `get_pair_lift_matrix` — co-purchase lift matrix for combo / upsell ideas (**sales alone**; COGS optional)
 - `analyze_menu_engineering` — star / plow_horse / puzzle / weak matrix (**needs sales + COGS**)
-- `get_weak_items_review` — weak-quadrant depth review for reprice / improve / remove (**needs sales + COGS**; Codex: then use **menuyukti-visualize-weak-items** for a sortable table)
+- `get_weak_items_review` — weak-quadrant depth review for reprice / improve / remove (**needs sales + COGS**; Codex: then use **menuyukti-visualize-weak-items** for a sortable HTML table)
 
 ## Location knowledge (`knowledge.md`)
 
@@ -86,11 +86,11 @@ Secondary reference for power users — owners can stick to the [What to ask](..
 
 `get_venue_slot_strength` summarizes how busy the venue is by weekday and meal period (breakfast through late night). Each of the 35 slots includes order count, traffic share, demand index (1.0 = average), and relative demand (`low` / `average` / `high`). Use it for staffing and when to promote. Sales alone is enough — no COGS.
 
-To **show the heatmap in Codex**, ask for the venue slot strength chart; the agent should call `get_venue_slot_strength` (or the offline path) and draw the markdown grid with the **`menuyukti-venue-slot-strength`** skill (see [`.agents/skills/menuyukti-venue-slot-strength/`](../../.agents/skills/menuyukti-venue-slot-strength/)). Menuyukti returns JSON only — visualisation is skill-driven, not an MCP Apps widget.
+To **show the heatmap**, ask for the venue slot strength chart. The agent should use **one** path: `render_venue_slot_strength` (MCP Apps widget) **or** `get_venue_slot_strength` + **`menuyukti-venue-slot-strength`** (write one local HTML heatmap) — never both (see [`.agents/skills/menuyukti-venue-slot-strength/`](../../.agents/skills/menuyukti-venue-slot-strength/)).
 
 ## Menu item heatmaps (sales alone)
 
-`get_menu_heatmaps` returns per-menu daily (hour) and weekly (weekday) unit quantities. In **Codex**, ask to show dish heatmaps; the agent should call that tool and draw daily/weekly markdown tables with the **menuyukti-visualize-menu-heatmaps** skill (see [`.agents/skills/menuyukti-visualize-menu-heatmaps/`](../../.agents/skills/menuyukti-visualize-menu-heatmaps/)). Sales alone is enough — no COGS.
+`get_menu_heatmaps` returns per-menu daily (hour) and weekly (weekday) unit quantities. In **Codex**, ask to show dish heatmaps; the agent should call that tool and write a daily/weekly **HTML** heatmap with the **menuyukti-visualize-menu-heatmaps** skill (see [`.agents/skills/menuyukti-visualize-menu-heatmaps/`](../../.agents/skills/menuyukti-visualize-menu-heatmaps/)). Sales alone is enough — no COGS.
 
 ## Pair lift index (sales alone)
 
@@ -114,4 +114,4 @@ If COGS is missing, drop a COGS Excel into the folder and ask ChatGPT to update 
 
 `get_weak_items_review` returns the **weak** quadrant only, with period depth (avg qty/day) and portfolio KPIs. Use it when deciding which dishes to **reprice, improve, or remove**. Same workspace COGS requirement as menu engineering.
 
-To **show a sortable table in Codex**, ask for the weak items table; the agent should call `get_weak_items_review` and present it with the **menuyukti-visualize-weak-items** skill (markdown in chat and/or a local HTML file with clickable column headers — see [`.agents/skills/menuyukti-visualize-weak-items/`](../../.agents/skills/menuyukti-visualize-weak-items/)). There is no Action / keep / remove column. These visualisation skills ship with the [Codex plugin](./codex-plugin.md).
+To **show a sortable table in Codex**, ask for the weak items table; the agent should call `get_weak_items_review` and write a local **HTML** table with clickable column headers via the **menuyukti-visualize-weak-items** skill (see [`.agents/skills/menuyukti-visualize-weak-items/`](../../.agents/skills/menuyukti-visualize-weak-items/)). There is no Action / keep / remove column. These visualisation skills ship with the [Codex plugin](./codex-plugin.md).

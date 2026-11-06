@@ -1,8 +1,8 @@
 interface:
   display_name: "Menuyukti venue slot strength"
-  short_description: "Compute and chart weekday × meal-period demand from MCP or POS Excel."
+  short_description: "Chart weekday × meal-period demand from MCP as a local HTML heatmap."
   brand_color: "#1F6F4A"
-  default_prompt: "Using this skill, get venue slot strength and show it as a heatmap."
+  default_prompt: "Using this skill, get venue slot strength and show it as an HTML heatmap."
 
 policy:
   allow_implicit_invocation: true

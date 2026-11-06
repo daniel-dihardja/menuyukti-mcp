@@ -15,9 +15,9 @@ Synced from [`.agents/skills/`](../../.agents/skills/) via `make sync-plugin-ski
 | Skill | Role |
 | --- | --- |
 | `menuyukti-mcp` | Setup ritual, goal → MCP tool map |
-| `menuyukti-venue-slot-strength` | Venue demand (MCP or offline Excel) + heatmap |
-| `menuyukti-visualize-menu-heatmaps` | Per-dish daily / weekly heatmaps |
-| `menuyukti-visualize-weak-items` | Sortable weak-items table |
+| `menuyukti-venue-slot-strength` | Venue demand → local HTML color heatmap |
+| `menuyukti-visualize-menu-heatmaps` | Per-dish daily / weekly HTML heatmaps |
+| `menuyukti-visualize-weak-items` | Sortable weak-items HTML table |
 
 ## Authoring
 

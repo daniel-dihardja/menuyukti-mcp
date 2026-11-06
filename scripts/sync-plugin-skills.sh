@@ -22,7 +22,7 @@ for name in "${SKILLS[@]}"; do
   fi
   rm -rf "${DEST}/${name}"
   mkdir -p "${DEST}/${name}"
-  # Copy tree; keep skill packaging files (SKILL.md, agents/, references/, scripts/, assets/).
+  # Copy tree; keep skill packaging files (SKILL.md, agents/, references/, assets/).
   if command -v rsync >/dev/null 2>&1; then
     rsync -a --delete \
       --exclude '.DS_Store' \

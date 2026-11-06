@@ -45,7 +45,8 @@ When unclear or path/config fails:
 | How did we do? | `summarize_local_sales` |
 | When each dish sells (numbers) | `get_menu_heatmaps` |
 | When each dish sells (show / chart) | `get_menu_heatmaps`, then **`menuyukti-visualize-menu-heatmaps`** |
-| Venue busy / staffing (numbers or chart) | `get_venue_slot_strength`, then **`menuyukti-venue-slot-strength`** (heatmap recipe) |
+| Venue busy / staffing (show / chart) | **One path only:** `render_venue_slot_strength` (widget) **or** `get_venue_slot_strength` + **`menuyukti-venue-slot-strength`** redraw — never both |
+| Venue busy / staffing (numbers only) | `get_venue_slot_strength` |
 | Combos / upsells | `get_pair_lift_matrix` (sales alone; COGS upgrades star focus) |
 | Stars / plow horses / puzzles / weak | `analyze_menu_engineering` (**sales + COGS**) |
 | Reprice / improve / remove (numbers) | `get_weak_items_review` (**sales + COGS**) |
@@ -53,12 +54,12 @@ When unclear or path/config fails:
 | Cleaned rows | `list_normalized_sales` |
 | Venue notes | `read_workspace_knowledge` then `write_workspace_knowledge` (full replace) |
 
-For Codex charts: MCP returns JSON only; visualisation skills (or the merged venue-slot skill) draw markdown / local HTML. Do not expect MCP Apps widgets.
+For charts: pick **one** presentation. If `render_venue_slot_strength` mounted a widget, narrate only — do not also write HTML. If using a visualisation skill, write **one local HTML** file from the recipe (no Python/render scripts; no second markdown grid for the same ask).
 
 ## COGS gate
 
 Menu engineering and weak-items need a unit-cost Excel as `files.cogs`. If missing: ask the owner to drop COGS, then `list_workspace_files` + `write_workspace_config`. Sales-only tools still work without COGS.
 
-## Offline venue slot strength
+## Visualisation skills
 
-If Menuyukti MCP is **not** available and the user needs weekday × meal-period demand from a local Excel (especially custom columns), use **`menuyukti-venue-slot-strength`** alone (mapping → script → heatmap). Do **not** reimplement menu engineering, pair lift, or heatmap math in this skill.
+Charts come from MCP JSON + the matching skill’s HTML recipe (`menuyukti-venue-slot-strength`, `menuyukti-visualize-menu-heatmaps`, `menuyukti-visualize-weak-items`). Prefer MCP tools for all analytics math — do **not** reimplement menu engineering, pair lift, heatmaps, or slot strength by hand.

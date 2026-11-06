@@ -2,14 +2,15 @@
 name: menuyukti-visualize-menu-heatmaps
 description: >-
   Turn Menuyukti get_menu_heatmaps JSON into daily and weekly quantity heatmaps
-  in Codex. Use when the user asks to show, chart, plot, or visualize when each
-  dish sells, menu item heatmaps, hourly or weekday demand by menu. Do not use
-  for venue slot strength, pair lift, or menu-engineering quadrant charts.
+  as local HTML in Codex. Use when the user asks to show, chart, plot, or
+  visualize when each dish sells, menu item heatmaps, hourly or weekday demand
+  by menu. Do not use for venue slot strength, pair lift, or menu-engineering
+  quadrant charts.
 ---
 
 # Visualize menu item heatmaps
 
-Present per-menu **unit quantity** timing as Codex-readable heatmaps. Fetch MCP data; do not invent counts.
+Present per-menu **unit quantity** timing as a **local HTML heatmap**. Fetch MCP data; do not invent counts. Do **not** use Python or other scripts to render — write the HTML yourself from the recipe.
 
 ## When to use
 
@@ -30,7 +31,7 @@ Sales alone is enough. Do not recompute heatmaps from `list_normalized_sales`.
 Follow [references/menu-heatmap-recipe.md](references/menu-heatmap-recipe.md):
 
 1. If the user named dishes, keep those rows (case-insensitive match on `menu`).
-2. Else take **top N by weekly total quantity** (default **N = 25**, same as Menuyukti v3 chat). For wide **daily** tables in markdown, you may display the top **10** of that set unless the user asks for more.
+2. Else take **top N by weekly total quantity** (default **N = 25**, same as Menuyukti v3 chat). For wide **daily** tables you may display the top **10** of that set unless the user asks for more.
 3. Optional: if `analyze_menu_engineering` (or equivalent matrix items) is already available, you may filter to `star` / `plow_horse` / `puzzle` and note that filter. Do not block on COGS when the owner only asked for heatmaps.
 
 ## Which view
@@ -43,8 +44,9 @@ Follow [references/menu-heatmap-recipe.md](references/menu-heatmap-recipe.md):
 
 ## Render + narrate
 
-- Cell value = raw `quantity` (units), with intensity glyphs from the **drawn** matrix max (see recipe).
-- After the grid: peak column (hour or weekday), top item by row total, and item count — from selected rows only.
+- Write one self-contained **HTML** file per ask (cell value = raw `quantity`; color intensity from the **drawn** matrix max). Tell the owner the path and to open it in a browser.
+- Do **not** also dump a markdown grid for the same ask.
+- After the file: peak column (hour or weekday), top item by row total, and item count — from selected rows only.
 
 ## Privacy
 

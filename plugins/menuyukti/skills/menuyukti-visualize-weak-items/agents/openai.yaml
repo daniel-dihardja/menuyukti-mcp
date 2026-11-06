@@ -1,8 +1,8 @@
 interface:
   display_name: "Menuyukti visualize weak items"
-  short_description: "Draw a sortable weak-items review table from MCP JSON."
+  short_description: "Draw a sortable weak-items HTML table from MCP JSON."
   brand_color: "#1F6F4A"
-  default_prompt: "Using this skill, fetch weak items review and show it as a sortable table."
+  default_prompt: "Using this skill, fetch weak items review and show it as a sortable HTML table."
 
 policy:
   allow_implicit_invocation: true

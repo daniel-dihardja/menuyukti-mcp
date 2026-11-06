@@ -7,9 +7,9 @@ Install Menuyukti as one **Desktop plugin** instead of adding the MCP URL and ea
 - **MCP connection** to `http://127.0.0.1:8787/mcp` (localhost — **Desktop only**)
 - **Skills** bundled under `plugins/menuyukti/skills/`:
   - `menuyukti-mcp` — coaching / setup ritual
-  - `menuyukti-venue-slot-strength` — venue demand (MCP or offline Excel) + heatmap
-  - `menuyukti-visualize-menu-heatmaps`
-  - `menuyukti-visualize-weak-items`
+  - `menuyukti-venue-slot-strength` — venue demand HTML heatmap
+  - `menuyukti-visualize-menu-heatmaps` — per-dish HTML heatmaps
+  - `menuyukti-visualize-weak-items` — sortable weak-items HTML table
 
 ## Prerequisites
 

@@ -1,8 +1,10 @@
-# Weak items review — Codex table recipe
+# Weak items review — Codex HTML recipe
 
 Matches Menuyukti v3 `WeakTable` / `WeakKpis` (without the removed `action` column).
 
 Source tool: `get_weak_items_review` → `{ pos, workspace, stats, items, period_start, period_end, … }` (`crates/menuyukti/src/analytics/weak_review.rs`). Note: MCP names the row list **`items`** (adapter field `rows`).
+
+**Write the HTML yourself.** Do not run Python or other render scripts.
 
 ## Columns
 
@@ -22,12 +24,31 @@ Omit the Avg qty / day column only when every row has `avg_qty_per_day: null` (p
 
 Sort by **`contribution_margin_share` ascending** (smallest share first). Tie-break by `menu` ascending.
 
-## Sortable behaviour
+## HTML page (required)
 
-| Surface | How to sort |
-| --- | --- |
-| HTML (`scripts/render_weak_table.py`) | Click column headers; click again to toggle asc/desc |
-| Markdown in chat | Default as above; on “sort by units / margin / menu …”, re-print the table in that order and state the active sort |
+Write one self-contained `.html` file the owner can open locally. Embed the `items` (or `rows`) payload as JSON in a `<script>` block and render the table in the browser — no external CDN, no sales-file upload.
+
+### Structure
+
+1. Title + short meta (workspace / POS name).
+2. **KPI strip** from `stats` (see below).
+3. Hint: default sort = margin share ascending; no action column.
+4. Table with clickable `<th>` headers:
+   - Click sorts by that column ascending.
+   - Click again toggles asc / desc.
+   - Show ↑ / ↓ on the active column.
+5. Caption noting data came from `get_weak_items_review` (local file only).
+
+### Formatting in cells
+
+- Share columns: `(value * 100).toFixed(1) + "%"`
+- `units_sold`: integer
+- `avg_qty_per_day` / `contribution_margin`: 2 decimals
+- Nulls → `—`
+
+### Suggested look
+
+Light page, tabular numbers right-aligned, sticky/simple header row, muted KPI labels. Keep it readable; no dark theme required.
 
 ## KPI strip (from `stats`)
 
@@ -39,31 +60,9 @@ Show before the table:
 - Weak margin amount (`margin_amount`)
 - Period (`period_start`–`period_end`, `period_days` when present)
 
-## Markdown skeleton
+## Chat narration (not a second chart)
 
-```markdown
-### Weak items review
-
-- **Weak items:** 12 / 48 (25.0% of menu)
-- **Margin share:** 4.2% · **Weak margin:** 320.50
-- **Period:** 2026-07-01 – 2026-07-31 (31 days)
-- **Sort:** margin share ↑
-
-| Menu | Avg qty/day | Units | Margin | Share |
-| --- | ---: | ---: | ---: | ---: |
-| Quiet Soup | 0.65 | 20 | 40.00 | 0.4% |
-| … | … | … | … | … |
-```
-
-## HTML path
-
-Save the MCP tool JSON to a file, then:
-
-```bash
-python3 scripts/render_weak_table.py --json weak.json --out weak-items.html
-```
-
-Open `weak-items.html` locally. The page embeds only the review payload (no sales file upload).
+After writing the HTML, summarize in chat with 3–5 bullets. Do **not** paste a full markdown data table for the same ask.
 
 ## Narration rules
 

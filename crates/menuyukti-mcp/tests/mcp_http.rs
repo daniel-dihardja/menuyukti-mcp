@@ -175,13 +175,23 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
         .expect("render_venue_slot_strength tool entry");
     assert_eq!(
         venue_render["_meta"]["ui"]["resourceUri"].as_str(),
-        Some("ui://widget/venue-slot-strength-v1.html"),
+        Some("ui://widget/venue-slot-strength-v4.html"),
         "render_venue_slot_strength missing _meta.ui.resourceUri; tool={venue_render}"
     );
     assert_eq!(
         venue_render["_meta"]["openai/outputTemplate"].as_str(),
-        Some("ui://widget/venue-slot-strength-v1.html"),
+        Some("ui://widget/venue-slot-strength-v4.html"),
         "render_venue_slot_strength missing openai/outputTemplate; tool={venue_render}"
+    );
+    assert_eq!(
+        venue_render["_meta"]["ui"]["prefersBorder"].as_bool(),
+        Some(true),
+        "render_venue_slot_strength should prefer host border/padding; tool={venue_render}"
+    );
+    assert_eq!(
+        venue_render["_meta"]["openai/widgetPrefersBorder"].as_bool(),
+        Some(true),
+        "render_venue_slot_strength missing openai/widgetPrefersBorder; tool={venue_render}"
     );
     for analytics in [
         "summarize_local_sales",
@@ -652,13 +662,23 @@ fn mcp_http_venue_slot_strength_widget_render_and_resource() {
     );
     assert_eq!(
         result["_meta"]["ui"]["resourceUri"].as_str(),
-        Some("ui://widget/venue-slot-strength-v1.html"),
+        Some("ui://widget/venue-slot-strength-v4.html"),
         "tool result must include template URI; call={call}"
     );
     assert_eq!(
         result["_meta"]["openai/outputTemplate"].as_str(),
-        Some("ui://widget/venue-slot-strength-v1.html"),
+        Some("ui://widget/venue-slot-strength-v4.html"),
         "tool result must include openai/outputTemplate; call={call}"
+    );
+    assert_eq!(
+        result["_meta"]["ui"]["prefersBorder"].as_bool(),
+        Some(true),
+        "tool result should prefer host border/padding; call={call}"
+    );
+    assert_eq!(
+        result["_meta"]["openai/widgetPrefersBorder"].as_bool(),
+        Some(true),
+        "tool result missing openai/widgetPrefersBorder; call={call}"
     );
     let text = result["content"][0]["text"]
         .as_str()
@@ -677,7 +697,7 @@ fn mcp_http_venue_slot_strength_widget_render_and_resource() {
         .unwrap_or_else(|| panic!("resources array missing; listed={listed}"));
     let venue = resources
         .iter()
-        .find(|r| r["uri"] == "ui://widget/venue-slot-strength-v1.html")
+        .find(|r| r["uri"] == "ui://widget/venue-slot-strength-v4.html")
         .unwrap_or_else(|| panic!("venue slot resource missing; listed={listed}"));
     assert_eq!(
         venue["mimeType"].as_str(),
@@ -691,7 +711,7 @@ fn mcp_http_venue_slot_strength_widget_render_and_resource() {
             "jsonrpc": "2.0",
             "id": 3,
             "method": "resources/read",
-            "params": { "uri": "ui://widget/venue-slot-strength-v1.html" }
+            "params": { "uri": "ui://widget/venue-slot-strength-v4.html" }
         }),
     );
     let contents = read["result"]["contents"]
@@ -709,6 +729,21 @@ fn mcp_http_venue_slot_strength_widget_render_and_resource() {
     assert!(
         html.contains("slot_demand_profile") || html.contains("Venue slot strength"),
         "widget HTML should render venue slot strength; html_len={}",
+        html.len()
+    );
+    assert!(
+        html.contains("--pad-top: 48px"),
+        "widget HTML should keep extra top padding for ChatGPT/Codex; html_len={}",
+        html.len()
+    );
+    assert!(
+        html.contains("color-scheme: light dark") || html.contains("applyDocumentTheme"),
+        "widget HTML should theme for host light/dark; html_len={}",
+        html.len()
+    );
+    assert!(
+        html.contains("--color-background-primary") && html.contains("host-context-changed"),
+        "widget HTML should apply host style tokens / context changes; html_len={}",
         html.len()
     );
 }

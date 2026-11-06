@@ -5,48 +5,69 @@
     <title>Venue slot strength</title>
     <style>
       :root {
-        color: #0f172a;
-        font-family:
-          "Segoe UI",
-          system-ui,
-          -apple-system,
-          sans-serif;
-        /* Sequential Blues: pale low → mid blue high (not pure white). */
-        --venue-low: #dbeafe;
-        --venue-high: #2563eb;
+        /* Host may override these via styles.variables; light-dark needs color-scheme. */
+        color-scheme: light dark;
+        --color-background-primary: light-dark(#ffffff, #171717);
+        --color-background-secondary: light-dark(#f8fafc, #212121);
+        --color-background-tertiary: light-dark(#f1f5f9, #2a2a2a);
+        --color-background-warning: light-dark(#fef3c7, #422006);
+        --color-text-primary: light-dark(#0f172a, #fafafa);
+        --color-text-secondary: light-dark(#64748b, #a3a3a3);
+        --color-text-warning: light-dark(#92400e, #fcd34d);
+        --color-border-primary: light-dark(#e2e8f0, #404040);
+        --font-sans: "Segoe UI", system-ui, -apple-system, sans-serif;
+        /* Sequential Blues: pale low → mid blue high (theme-aware). */
+        --venue-low: light-dark(#dbeafe, #1e3a5f);
+        --venue-high: light-dark(#2563eb, #60a5fa);
+        --venue-cell-ink-on-high: light-dark(#f8fafc, #0f172a);
+        /* Design inset lives on .panel — ChatGPT/Codex often crop body padding
+           when sizing the iframe to inner content. */
+        --pad-top: 48px;
+        --pad-x: 32px;
+        --pad-bottom: 32px;
+        --safe-top: 0px;
+        --safe-right: 0px;
+        --safe-bottom: 0px;
+        --safe-left: 0px;
+        color: var(--color-text-primary);
+        font-family: var(--font-sans);
       }
       html,
       body {
         margin: 0;
-        min-height: 100%;
+        padding: 0;
+        background: var(--color-background-primary);
       }
       body {
         box-sizing: border-box;
-        padding: 32px;
-        background: #ffffff;
       }
       .panel {
         box-sizing: border-box;
         width: 100%;
-        padding: 0;
+        padding: calc(var(--pad-top) + var(--safe-top))
+          calc(var(--pad-x) + var(--safe-right))
+          calc(var(--pad-bottom) + var(--safe-bottom))
+          calc(var(--pad-x) + var(--safe-left));
         border: 0;
         border-radius: 0;
-        background: transparent;
+        background: var(--color-background-primary);
+        color: var(--color-text-primary);
       }
       h2 {
         margin: 0;
         font-size: 1rem;
         font-weight: 700;
+        color: var(--color-text-primary);
       }
       .desc {
         margin: 6px 0 0;
-        color: #64748b;
+        color: var(--color-text-secondary);
         font-size: 0.8rem;
         line-height: 1.4;
       }
       .meta {
         margin: 10px 0 0;
-        color: #475569;
+        color: var(--color-text-secondary);
         font-size: 0.75rem;
       }
       .legend {
@@ -54,7 +75,7 @@
         align-items: center;
         gap: 8px;
         margin-top: 14px;
-        color: #64748b;
+        color: var(--color-text-secondary);
         font-size: 0.75rem;
       }
       .legend-bar {
@@ -75,7 +96,7 @@
         gap: 8px;
         margin-top: 8px;
         font-size: 0.72rem;
-        color: #64748b;
+        color: var(--color-text-secondary);
       }
       .tier {
         display: inline-flex;
@@ -86,7 +107,7 @@
         width: 12px;
         height: 12px;
         border-radius: 3px;
-        border: 1px solid #cbd5e1;
+        border: 1px solid var(--color-border-primary);
       }
       .scroll {
         margin-top: 14px;
@@ -98,7 +119,8 @@
         width: 100%;
         min-width: 520px;
         font-size: 0.72rem;
-        background: #fff;
+        background: var(--color-background-primary);
+        color: var(--color-text-primary);
       }
       th,
       td {
@@ -107,17 +129,18 @@
         text-align: center;
       }
       th {
-        background: #f1f5f9;
+        background: var(--color-background-tertiary);
         font-weight: 600;
-        color: #334155;
+        color: var(--color-text-primary);
       }
       th.row-label,
       td.row-label {
         text-align: left;
         padding-left: 8px;
         white-space: nowrap;
-        background: #f8fafc;
+        background: var(--color-background-secondary);
         font-weight: 600;
+        color: var(--color-text-primary);
         position: sticky;
         left: 0;
         z-index: 1;
@@ -125,16 +148,17 @@
       td.cell {
         font-weight: 600;
         min-width: 3.2rem;
+        color: var(--color-text-primary);
       }
       td.cell.light-text {
-        color: #f8fafc;
+        color: var(--venue-cell-ink-on-high);
       }
       .empty {
         margin-top: 16px;
         padding: 16px;
         border-radius: 8px;
-        background: #fef3c7;
-        color: #92400e;
+        background: var(--color-background-warning);
+        color: var(--color-text-warning);
         font-size: 0.9rem;
       }
       .hidden {
@@ -143,7 +167,7 @@
     </style>
   </head>
   <body>
-    <div class="panel">
+    <div class="panel" id="panel">
       <h2>Venue slot strength</h2>
       <p class="desc">
         Weekday × meal-period demand. Index 1.0 = average traffic across all
@@ -215,6 +239,8 @@
         "late_night",
       ];
 
+      const root = document.documentElement;
+      const panelEl = document.getElementById("panel");
       const metaEl = document.getElementById("meta");
       const legendEl = document.getElementById("legend");
       const tiersEl = document.getElementById("tiers");
@@ -222,6 +248,95 @@
       const emptyEl = document.getElementById("empty");
       const headRow = document.getElementById("head-row");
       const bodyEl = document.getElementById("body");
+
+      let nextRpcId = 1;
+      let hostFontStyleEl = null;
+
+      function px(n) {
+        const v = Number(n);
+        return Number.isFinite(v) ? `${Math.max(0, v)}px` : "0px";
+      }
+
+      function applyDocumentTheme(theme) {
+        const mode = theme === "dark" || theme === "light" ? theme : null;
+        if (!mode) return;
+        root.style.colorScheme = mode;
+        root.dataset.theme = mode;
+        try {
+          document.body.style.colorScheme = mode;
+        } catch (_) {
+          /* ignore */
+        }
+      }
+
+      function applyHostStyleVariables(variables) {
+        if (!variables || typeof variables !== "object") return;
+        for (const [key, value] of Object.entries(variables)) {
+          if (typeof key !== "string" || !key.startsWith("--")) continue;
+          if (typeof value !== "string" || !value) continue;
+          root.style.setProperty(key, value);
+        }
+      }
+
+      function applyHostFonts(cssText) {
+        if (typeof cssText !== "string" || !cssText.trim()) return;
+        if (!hostFontStyleEl) {
+          hostFontStyleEl = document.createElement("style");
+          hostFontStyleEl.setAttribute("data-host-fonts", "true");
+          document.head.appendChild(hostFontStyleEl);
+        }
+        hostFontStyleEl.textContent = cssText;
+      }
+
+      function applySafeArea(insets) {
+        if (!insets || typeof insets !== "object") return;
+        root.style.setProperty("--safe-top", px(insets.top));
+        root.style.setProperty("--safe-right", px(insets.right));
+        root.style.setProperty("--safe-bottom", px(insets.bottom));
+        root.style.setProperty("--safe-left", px(insets.left));
+        notifySize();
+      }
+
+      function applyHostContext(ctx) {
+        if (!ctx || typeof ctx !== "object") return;
+        if (ctx.theme) applyDocumentTheme(ctx.theme);
+        if (ctx.styles?.variables) applyHostStyleVariables(ctx.styles.variables);
+        else if (ctx.styles?.cssVariables) {
+          applyHostStyleVariables(ctx.styles.cssVariables);
+        }
+        if (ctx.styles?.css?.fonts) applyHostFonts(ctx.styles.css.fonts);
+        if (ctx.safeAreaInsets) applySafeArea(ctx.safeAreaInsets);
+        else if (ctx.safe_area_insets) applySafeArea(ctx.safe_area_insets);
+        notifySize();
+      }
+
+      function notifySize() {
+        try {
+          if (!panelEl || !window.parent || window.parent === window) return;
+          const rect = panelEl.getBoundingClientRect();
+          const height = Math.ceil(
+            Math.max(
+              rect.height,
+              panelEl.scrollHeight,
+              document.documentElement.scrollHeight,
+              document.body.scrollHeight
+            )
+          );
+          const width = Math.ceil(
+            Math.max(rect.width, panelEl.scrollWidth, document.body.scrollWidth)
+          );
+          window.parent.postMessage(
+            {
+              jsonrpc: "2.0",
+              method: "ui/notifications/size-changed",
+              params: { width, height },
+            },
+            "*"
+          );
+        } catch (_) {
+          /* host may ignore */
+        }
+      }
 
       function showEmpty(message) {
         emptyEl.textContent = message;
@@ -231,6 +346,7 @@
         scrollEl.classList.add("hidden");
         headRow.innerHTML = "";
         bodyEl.innerHTML = "";
+        notifySize();
       }
 
       function showGrid() {
@@ -238,6 +354,7 @@
         legendEl.classList.remove("hidden");
         tiersEl.classList.remove("hidden");
         scrollEl.classList.remove("hidden");
+        notifySize();
       }
 
       function intensity(value, min, max) {
@@ -377,21 +494,89 @@ Relative: ${relative}`;
         renderFromStructured(structured);
       }
 
-      try {
-        if (typeof window !== "undefined" && window.openai?.toolOutput) {
-          renderFromToolResult(window.openai.toolOutput);
+      function handshakeHost() {
+        try {
+          if (!window.parent || window.parent === window) return;
+          const id = nextRpcId++;
+          window.parent.postMessage(
+            {
+              jsonrpc: "2.0",
+              id,
+              method: "ui/initialize",
+              params: {
+                appInfo: {
+                  name: "menuyukti-venue-slot-strength",
+                  version: "4",
+                },
+                appCapabilities: {
+                  availableDisplayModes: ["inline", "fullscreen"],
+                },
+                protocolVersion: "2026-01-26",
+              },
+            },
+            "*"
+          );
+        } catch (_) {
+          /* preview / non-MCP host */
         }
+      }
+
+      function applyFallbackThemeFromEnvironment() {
+        // Local preview / hosts that omit theme: follow OS preference.
+        try {
+          const prefersDark =
+            typeof window.matchMedia === "function" &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches;
+          applyDocumentTheme(prefersDark ? "dark" : "light");
+        } catch (_) {
+          applyDocumentTheme("light");
+        }
+      }
+
+      try {
+        applyFallbackThemeFromEnvironment();
+
+        // ChatGPT compatibility aliases.
+        if (typeof window !== "undefined" && window.openai) {
+          if (window.openai.theme) applyDocumentTheme(window.openai.theme);
+          if (window.openai.toolOutput) {
+            renderFromToolResult(window.openai.toolOutput);
+          }
+          const safe =
+            window.openai.safeArea?.insets || window.openai.safeAreaInsets;
+          if (safe) applySafeArea(safe);
+        }
+
+        handshakeHost();
+
         window.addEventListener(
           "message",
           (event) => {
             if (event.source !== window.parent) return;
             const message = event.data;
             if (!message || message.jsonrpc !== "2.0") return;
-            if (message.method !== "ui/notifications/tool-result") return;
-            renderFromToolResult(message.params);
+
+            if (message.method === "ui/notifications/tool-result") {
+              renderFromToolResult(message.params);
+              return;
+            }
+            if (
+              message.method === "ui/notifications/host-context-changed" ||
+              message.method === "ui/notifications/hostContextChanged"
+            ) {
+              applyHostContext(message.params?.hostContext || message.params);
+              return;
+            }
+            // ui/initialize response
+            if (message.result?.hostContext) {
+              applyHostContext(message.result.hostContext);
+            }
           },
           { passive: true }
         );
+
+        // Report size once after first paint (hosts that auto-resize).
+        requestAnimationFrame(() => notifySize());
       } catch (err) {
         showEmpty(`Bridge error: ${String(err)}`);
       }
