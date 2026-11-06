@@ -11,7 +11,7 @@ Licensed under the [MIT License](LICENSE).
 - Keep sales files private on your laptop or office PC
 - **Plan promotions** with venue demand timing, per-dish heatmaps, and combo / pair-lift ideas
 - **Trim the menu** with weak-items review (and the menu engineering matrix — **requires COGS**)
-- Get analytics as **JSON from MCP tools**; for charts, ChatGPT mounts an **MCP Apps widget** or Codex follows bundled skills to write a **local HTML** heatmap/table
+- Get analytics as **JSON from MCP tools**; for charts, the host mounts a Skybridge **MCP Apps view** (`render_*`) or Codex follows bundled skills to write a **local HTML** heatmap/table
 - Organize each venue and month in a simple **workspace** folder (sales, COGS, location notes)
 
 ## How to use (plugin guide)
@@ -22,21 +22,21 @@ Licensed under the [MIT License](LICENSE).
 
 Short path:
 
-1. Run the local MCP server with `MENUYUKTI_DATA_DIR` set → [Install and run](docs/howtos/install-and-run.md)
+1. Run the local Skybridge MCP server (`pnpm mcp`, Node 24+) with `MENUYUKTI_DATA_DIR` set → [Install and run](docs/howtos/install-and-run.md)
 2. Install the Menuyukti plugin from this repo’s marketplace → [plugin README](plugins/menuyukti/README.md)
 3. Drop sales (+ optional COGS) into a workspace folder → [Workspaces](docs/howtos/workspaces.md)
 4. In Codex, ask Menuyukti to **set up the workspace**, then ask outcome questions (try *summarize demo-cafe-july-2026*)
 
-The plugin is **Desktop-only** (localhost MCP). It does **not** start the binary for you — keep `http://127.0.0.1:8787/mcp` running while you chat.
+The plugin is **Desktop-only** (localhost MCP). It does **not** start the server for you — keep `http://127.0.0.1:8787/mcp` running while you chat.
 
 ## Documentation
 
 | Guide | Topic |
 | --- | --- |
 | **[Plugin README](plugins/menuyukti/README.md)** | **Use the Codex / ChatGPT Desktop plugin (primary owner guide)** |
-| [Install and run](docs/howtos/install-and-run.md) | Download or build, start the local server |
+| [Install and run](docs/howtos/install-and-run.md) | Start the local Skybridge MCP server |
 | [Workspaces](docs/howtos/workspaces.md) | Where to put sales and related files; tool list |
 | [Custom POS columns](docs/howtos/custom-pos-columns.md) | Map unusual spreadsheet headers |
 | [Codex plugin howto](docs/howtos/codex-plugin.md) | Marketplace / maintainer notes (points at the plugin README) |
-| [Develop](docs/howtos/develop.md) | Contributor commands and crate layout |
+| [Develop](docs/howtos/develop.md) | Contributor commands and layout |
 | [docs/](docs/) | Documentation index |

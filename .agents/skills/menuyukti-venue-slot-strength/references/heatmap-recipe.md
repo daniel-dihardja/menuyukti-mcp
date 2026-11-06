@@ -2,9 +2,9 @@
 
 Matches Menuyukti v3 `VenueDemandHeatmap` / `OrderMetricsVenueHeatmap` and the MCP Apps `venue_slot_strength_widget.html`: cell value is **`demand_index`**; detail includes **`order_count`** and **`relative_demand`**.
 
-**One chart only.** If `render_venue_slot_strength` already mounted a widget, do not redraw. Otherwise write a **color HTML heatmap**. Do not run Python or other render scripts. Do not also print a markdown glyph grid for the same ask.
+**One chart only.** If `render_venue_slot_strength` already mounted a Skybridge view, do not redraw HTML. Otherwise write a **color HTML heatmap**. Do not run Python or other render scripts. Do not also print a markdown glyph grid for the same ask.
 
-Definitions: [slot-strength.md](slot-strength.md) and `crates/menuyukti/src/analytics/slot_demand.rs`.
+Definitions: [slot-strength.md](slot-strength.md) and `apps/menuyukti/src/lib/analytics/slot-demand.ts`.
 
 ## Required fields per cell
 
@@ -23,7 +23,7 @@ Always fill all **35** slots (zeros allowed). Index cells by `(day, meal_period)
 
 ## If a widget already mounted
 
-After `render_venue_slot_strength`, skip HTML. Narrate from `structuredContent` only.
+After `render_venue_slot_strength`, skip HTML (never double-draw in the same turn). Narrate from `structuredContent` only.
 
 ## HTML color heatmap (required when no widget)
 

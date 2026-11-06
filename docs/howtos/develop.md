@@ -1,47 +1,65 @@
 # Develop
 
-Contributor workflow for building Menuyukti MCP from source.
+Contributor workflow for Menuyukti MCP (Skybridge / TypeScript).
+
+## Prerequisites
+
+- **Node.js 24+**
+- **pnpm 10+** (see `packageManager` in root `package.json`)
 
 ## Commands
 
+From the repo root (`package.json` is the source of truth):
+
 ```bash
-make check     # fmt --check + clippy + tests
-make test
-# or: cargo test -p menuyukti && cargo test -p menuyukti-mcp
-make mcp
-make mcp-inspect
-make widgets-preview  # mock widget HTML (refresh after edits; no Node)
-make sync-plugin-skills  # copy .agents/skills → plugins/menuyukti/skills
-make sync-codex-plugin   # sync skills + reinstall Menuyukti into Codex CLI
-make backlog   # Backlog.md board (optional)
+pnpm scripts              # list package scripts
+pnpm mcp                  # Skybridge MCP (http://127.0.0.1:8787/mcp)
+pnpm mcp:skybridge        # Alias for pnpm mcp
+pnpm mcp:inspect          # Skybridge + MCP Inspector
+pnpm check                # tsc --noEmit + vitest (required quality gate)
+pnpm typecheck
+pnpm test
+pnpm sync:plugin-skills   # copy .agents/skills → plugins/menuyukti/skills
+pnpm sync:codex-plugin    # sync skills + reinstall Menuyukti into Codex CLI
+pnpm backlog              # Backlog.md board (optional)
 ```
 
-After editing Codex skills under `.agents/skills/`, run `make sync-plugin-skills` before committing so the installable plugin stays in sync. To also refresh your local Codex install, use `make sync-codex-plugin` (then start a new session). See [Codex plugin](./codex-plugin.md).
+First time (or after lockfile changes):
+
+```bash
+pnpm install
+```
+
+After editing Codex skills under `.agents/skills/`, run `pnpm sync:plugin-skills` before committing so the installable plugin stays in sync. To also refresh your local Codex install, use `pnpm sync:codex-plugin` (then start a new session). See [Codex plugin](./codex-plugin.md).
+
+From the app package (workspace `menuyukti`):
+
+```bash
+cd apps/menuyukti
+pnpm check    # typecheck + test
+pnpm dev      # same as pnpm mcp from root
+```
 
 ## CI
 
-GitHub Actions runs the same `make check` gate on every **pull request** and on **push to `main`** (see [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)). Version-tag releases stay in [`release.yml`](../../.github/workflows/release.yml). The toolchain is pinned via [`rust-toolchain.toml`](../../rust-toolchain.toml) (stable + rustfmt + clippy).
+GitHub Actions runs `pnpm check` on every **pull request** and on **push to `main`** (see [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)): Node 24, `pnpm install --frozen-lockfile` at the repo root, then typecheck + vitest.
 
-## Crate layout
+Rust binary tag releases are retired (TASK-44.10).
 
-- `crates/menuyukti` — Excel normalize + analytics library
-- `crates/menuyukti-mcp` — MCP HTTP binary (`menuyukti-mcp`) plus optional `menuyukti-widget-preview` for local widget styling
+## Layout
 
-## MCP Apps widget theme
+- `apps/menuyukti` — **Skybridge MCP server** (source of truth)
+- `plugins/menuyukti` — Codex / ChatGPT Desktop plugin package
+- `.agents/skills` — skill source of truth (synced into the plugin)
+- `workspaces/` — default `MENUYUKTI_DATA_DIR` (includes `demo-cafe-july-2026`)
 
-Heatmap widgets (venue slot strength, pair lift) share chrome tokens under
-[`crates/menuyukti-mcp/assets/shared/widget-theme.css`](../../crates/menuyukti-mcp/assets/shared/widget-theme.css).
-Each widget HTML keeps a `/* __MENUYUKTI_SHARED_THEME__ */` marker; the MCP server
-and `make widgets-preview` **inline** that CSS into a self-contained document before
-serving (ChatGPT mounts one HTML resource, so runtime `<link>` is not used).
+## MCP Apps views
 
-Edit the shared file for host colors, panel padding, legend/table chrome, and default
-`--heatmap-*` scale tokens. Heatmap widgets share that blue sequential scale unless a
-widget overrides `--heatmap-*` in its own `<style>`.
+Analytics charts mount as Skybridge React views under [`apps/menuyukti/src/views/`](../../apps/menuyukti/src/views/). Preview them with `pnpm mcp` → DevTools at `http://127.0.0.1:8787/` by calling the matching `render_*` tool.
 
 ## Local data
 
-By default, `make mcp` sets `MENUYUKTI_DATA_DIR` to [`workspaces/`](../../workspaces/). See [Workspaces](./workspaces.md).
+By default, `pnpm mcp` sets `MENUYUKTI_DATA_DIR` to [`workspaces/`](../../workspaces/). See [Workspaces](./workspaces.md).
 
 ## Related guides
 

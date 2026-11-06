@@ -15,7 +15,7 @@
         "authentication": "ON_INSTALL"
       },
       "category": "Productivity",
-      "description": "Local POS analytics for Codex (Desktop-only localhost MCP). Requires the Menuyukti MCP binary running at http://127.0.0.1:8787/mcp."
+      "description": "Local POS analytics for Codex (Desktop-only localhost MCP). Requires pnpm mcp (Skybridge, Node 24+) at http://127.0.0.1:8787/mcp."
     }
   ]
 }

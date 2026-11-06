@@ -1,0 +1,26 @@
+---
+description: TypeScript quality gate — typecheck + vitest via pnpm check
+alwaysApply: true
+---
+
+# TypeScript quality gate
+
+After substantive TypeScript / Skybridge changes under `apps/menuyukti`, run the workspace gate before claiming done:
+
+```bash
+pnpm check
+# equivalent: bash scripts/check.sh
+# or: pnpm --filter menuyukti check
+```
+
+The gate is:
+
+1. `tsc --noEmit` (`pnpm typecheck`)
+2. `vitest run` (`pnpm test`)
+
+Rules:
+
+- Prefer `pnpm check` over ad-hoc flags that weaken the gate.
+- Keep the root `pnpm-lock.yaml` committed; use `pnpm install --frozen-lockfile` in CI.
+- Fix typecheck/test failures; do not silence with broad `any` or skipped tests.
+- Individual helpers: `pnpm typecheck`, `pnpm test`.

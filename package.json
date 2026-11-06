@@ -1,0 +1,27 @@
+{
+  "name": "menuyukti-repo",
+  "private": true,
+  "description": "Menuyukti MCP monorepo (Skybridge app + Codex plugin)",
+  "packageManager": "pnpm@10.24.0",
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
+  "scripts": {
+    "scripts": "node -e \"const p=require('./package.json'); console.log('Scripts:'); for (const [k,v] of Object.entries(p.scripts)) { if (k==='scripts') continue; console.log('  pnpm ' + k.padEnd(22) + v); }\"",
+    "mcp": "bash scripts/run-mcp-skybridge.sh",
+    "mcp:skybridge": "pnpm mcp",
+    "mcp:inspect": "bash scripts/mcp-inspect.sh",
+    "check": "bash scripts/check.sh",
+    "typecheck": "pnpm --filter menuyukti typecheck",
+    "test": "pnpm --filter menuyukti test",
+    "sync:plugin-skills": "bash scripts/sync-plugin-skills.sh",
+    "sync:codex-plugin": "bash scripts/sync-codex-plugin.sh",
+    "backlog": "backlog browser --port 6421 --no-open"
+  }
+}

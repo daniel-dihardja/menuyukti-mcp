@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
-# Quality gate for the Rust workspace: fmt, clippy, tests.
+# Quality gate for the Skybridge (TypeScript) Menuyukti MCP app.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-echo "==> cargo fmt --check"
-cargo fmt --all -- --check
+if [[ ! -d node_modules && ! -d apps/menuyukti/node_modules ]]; then
+  echo "==> pnpm install (workspace)"
+  pnpm install
+fi
 
-echo "==> cargo clippy"
-cargo clippy --workspace --all-targets --locked -- -D warnings
+echo "==> tsc --noEmit"
+pnpm --filter menuyukti typecheck
 
-echo "==> cargo test"
-cargo test --workspace --locked
+echo "==> vitest"
+pnpm --filter menuyukti test
 
 echo "All checks passed."

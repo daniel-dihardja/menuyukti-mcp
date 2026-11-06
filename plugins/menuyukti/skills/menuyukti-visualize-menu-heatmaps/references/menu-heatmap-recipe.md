@@ -2,7 +2,7 @@
 
 Matches Menuyukti v3 `MenuHeatmapContent` / `adaptDailyHeatmapMatrix` / `adaptWeeklyHeatmapMatrix`: cell value is raw unit **`quantity`**.
 
-Source tool: `get_menu_heatmaps` → `{ pos, menu_count, heatmaps: MenuHeatmapPayload[] }` (`crates/menuyukti/src/analytics/heatmaps.rs`).
+Source tool: `get_menu_heatmaps` → `{ pos, menu_count, heatmaps: MenuHeatmapPayload[] }` (`apps/menuyukti/src/lib/analytics/heatmaps.ts`).
 
 **Write the HTML yourself.** Do not run Python or other render scripts. Do not also dump a markdown grid for the same ask.
 

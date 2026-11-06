@@ -1,0 +1,41 @@
+{
+  "name": "menuyukti",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Menuyukti local MCP server (Skybridge / TypeScript)",
+  "type": "module",
+  "scripts": {
+    "dev": "DO_NOT_TRACK=1 SKYBRIDGE_TELEMETRY_DISABLED=1 skybridge dev -p 8787 --no-open",
+    "dev:tunnel": "DO_NOT_TRACK=1 SKYBRIDGE_TELEMETRY_DISABLED=1 skybridge dev -p 8787 --tunnel",
+    "build": "DO_NOT_TRACK=1 SKYBRIDGE_TELEMETRY_DISABLED=1 skybridge build",
+    "start": "DO_NOT_TRACK=1 SKYBRIDGE_TELEMETRY_DISABLED=1 skybridge start -p 8787",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "pnpm typecheck && pnpm test",
+    "deploy": "alpic deploy"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^6.2.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "skybridge": "^2.1.0",
+    "vite": "^8.1.5",
+    "xlsx": "^0.18.5",
+    "yaml": "^2.9.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@skybridge/devtools": "^2.1.0",
+    "@skybridge/vite-plugin": "^2.1.0",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "alpic": "^1.155.0",
+    "tsx": "^4.23.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.12"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  }
+}

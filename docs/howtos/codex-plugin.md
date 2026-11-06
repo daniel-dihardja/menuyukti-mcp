@@ -14,7 +14,7 @@ This howto only adds maintainer pointers and a manual (non-plugin) alternative.
 
 The plugin does **not** replace local setup:
 
-1. [Install and run](./install-and-run.md) the Menuyukti MCP binary with `MENUYUKTI_DATA_DIR` set.
+1. [Install and run](./install-and-run.md) the Menuyukti **Skybridge** MCP server (`pnpm mcp`, Node 24+) with `MENUYUKTI_DATA_DIR` set.
 2. Keep the server listening at `http://127.0.0.1:8787/mcp`.
 3. Put sales (and optional COGS) in a [workspace](./workspaces.md) (try `demo-cafe-july-2026`).
 
@@ -30,15 +30,15 @@ In ChatGPT Desktop settings, add Menuyukti MCP as an MCP server at `http://127.0
 - Refresh the installable copies, then reinstall into Codex CLI:
 
 ```bash
-make sync-codex-plugin
+pnpm sync:codex-plugin
 ```
 
-That runs `make sync-plugin-skills`, ensures the repo marketplace is registered, and re-runs `codex plugin add menuyukti@menuyukti-repo` so `~/.codex/plugins/cache` picks up local changes. Start a **new** Codex session afterward.
+That runs `pnpm sync:plugin-skills`, ensures the repo marketplace is registered, and re-runs `codex plugin add menuyukti@menuyukti-repo` so `~/.codex/plugins/cache` picks up local changes. Start a **new** Codex session afterward.
 
 Skills-only (no Codex reinstall):
 
 ```bash
-make sync-plugin-skills
+pnpm sync:plugin-skills
 ```
 
 Full owner-facing package docs: [`plugins/menuyukti/README.md`](../../plugins/menuyukti/README.md).

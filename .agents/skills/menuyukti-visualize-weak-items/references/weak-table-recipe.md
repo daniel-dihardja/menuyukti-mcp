@@ -2,7 +2,7 @@
 
 Matches Menuyukti v3 `WeakTable` / `WeakKpis` (without the removed `action` column).
 
-Source tool: `get_weak_items_review` → `{ pos, workspace, stats, items, period_start, period_end, … }` (`crates/menuyukti/src/analytics/weak_review.rs`). Note: MCP names the row list **`items`** (adapter field `rows`).
+Source tool: `get_weak_items_review` → `{ pos, workspace, stats, items, period_start, period_end, … }` (`apps/menuyukti/src/lib/analytics/weak-review.ts`). Note: MCP names the row list **`items`** (adapter field `rows`).
 
 **Write the HTML yourself.** Do not run Python or other render scripts.
 

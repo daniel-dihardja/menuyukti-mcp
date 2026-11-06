@@ -1,10 +1,11 @@
 ---
 id: TASK-44
 title: Migrate Menuyukti MCP from Rust to Skybridge
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@danieldihardja'
 created_date: '2026-11-06T17:29:00Z'
-updated_date: '2026-11-06T17:31:00Z'
+updated_date: '2026-11-06T18:37:00Z'
 labels:
   - skybridge
   - migration
@@ -40,9 +41,23 @@ Proposed stack decision: decision-3. Product contract stays decision-2 / doc-1.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 An accepted backlog decision records the Skybridge/TS stack choice and supersedes decision-1 for new work
-- [ ] #2 TypeScript Skybridge MCP exposes Menuyukti 1.0 tools and visualisations with owner-outcome parity (decision-2 / doc-1)
-- [ ] #3 Sales data remains local under MENUYUKTI_DATA_DIR with path gating equivalent to the Rust server
-- [ ] #4 Codex/ChatGPT Desktop plugin and owner docs run against the Skybridge server (no required Rust binary)
-- [ ] #5 Rust crates are retired or clearly marked obsolete after parity cutover; CI quality gate matches the new stack
+- [x] #1 An accepted backlog decision records the Skybridge/TS stack choice and supersedes decision-1 for new work
+- [x] #2 TypeScript Skybridge MCP exposes Menuyukti 1.0 tools and visualisations with owner-outcome parity (decision-2 / doc-1)
+- [x] #3 Sales data remains local under MENUYUKTI_DATA_DIR with path gating equivalent to the Rust server
+- [x] #4 Codex/ChatGPT Desktop plugin and owner docs run against the Skybridge server (no required Rust binary)
+- [x] #5 Rust crates are retired or clearly marked obsolete after parity cutover; CI quality gate matches the new stack
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+TASK-44.9 parity (2026-11-06): Skybridge demo-cafe ritual PASS — summarize 1748/29.8M; render_* 35 slots / 98 heatmaps / stars pair-lift / 64 weak; sales-only vs COGS behaviours OK; path gate OK. Details on doc-2. No blocking gaps before TASK-44.10.
+
+TASK-44.10 complete: Rust crates removed; make check/CI are TypeScript. Migration finished.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Migrated Menuyukti MCP from Rust to Skybridge (TypeScript/React): local Desktop MCP under MENUYUKTI_DATA_DIR with 1.0 tool/view parity on demo-cafe, plugin/docs on make mcp (Node 24+), and Rust crates/CI retired. decision-3 supersedes decision-1.
+<!-- SECTION:FINAL_SUMMARY:END -->

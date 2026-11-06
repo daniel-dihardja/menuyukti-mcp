@@ -1,8 +1,12 @@
 .DS_Store
 
-# Rust
-/target/
-**/*.rs.bk
+# Skybridge / Node (apps/menuyukti)
+node_modules/
+**/node_modules/
+.pnpm-store/
+apps/menuyukti/dist/
+apps/menuyukti/.vercel/
+*.tsbuildinfo
 
 # Optional local tooling
 .venv/
