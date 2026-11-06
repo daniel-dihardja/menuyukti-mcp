@@ -26,6 +26,18 @@ GitHub Actions runs the same `make check` gate on every **pull request** and on 
 - `crates/menuyukti` — Excel normalize + analytics library
 - `crates/menuyukti-mcp` — MCP HTTP binary (`menuyukti-mcp`) plus optional `menuyukti-widget-preview` for local widget styling
 
+## MCP Apps widget theme
+
+Heatmap widgets (venue slot strength, pair lift) share chrome tokens under
+[`crates/menuyukti-mcp/assets/shared/widget-theme.css`](../../crates/menuyukti-mcp/assets/shared/widget-theme.css).
+Each widget HTML keeps a `/* __MENUYUKTI_SHARED_THEME__ */` marker; the MCP server
+and `make widgets-preview` **inline** that CSS into a self-contained document before
+serving (ChatGPT mounts one HTML resource, so runtime `<link>` is not used).
+
+Edit the shared file for host colors, panel padding, legend/table chrome, and default
+`--heatmap-*` scale tokens. Heatmap widgets share that blue sequential scale unless a
+widget overrides `--heatmap-*` in its own `<style>`.
+
 ## Local data
 
 By default, `make mcp` sets `MENUYUKTI_DATA_DIR` to [`workspaces/`](../../workspaces/). See [Workspaces](./workspaces.md).

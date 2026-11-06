@@ -41,7 +41,7 @@ Authoring lives under [`.agents/skills/`](.agents/skills/); `make sync-plugin-sk
 | How did we do? | “Summarize demo-cafe-july-2026” |
 | When is the venue busy? | “Show venue slot strength for demo-cafe-july-2026” |
 | When does each dish sell? | “Show heatmaps for demo-cafe-july-2026” |
-| Combo / upsell ideas | “Which dishes pair well? Pair lift for demo-cafe-july-2026” |
+| Combo / upsell ideas | “Show the pair lift heatmap for demo-cafe-july-2026” |
 | Stars / weak items (needs COGS) | “Run menu engineering” / “Show weak items table for demo-cafe-july-2026” |
 | Remember venue facts | “Save our hours and seating in knowledge for this workspace” |
 
@@ -62,6 +62,7 @@ Menuyukti MCP returns **structured analytics JSON** (for example `get_venue_slot
 | Chart | Preferred presentation |
 | --- | --- |
 | Venue slot strength | `render_venue_slot_strength` (MCP Apps widget) when the host mounts it; otherwise `get_venue_slot_strength` + skill → **one** local HTML file |
+| Pair lift index | `render_pair_lift_matrix` (MCP Apps widget) when the host mounts it; otherwise `get_pair_lift_matrix` for numbers |
 | Menu heatmaps / weak items | Matching visualisation skill → **one** local HTML file (no MCP Apps widget yet) |
 
 **One chart per ask.** If a widget already mounted, narrate only — do not also write HTML. Skills never emit a second markdown grid for the same ask.

@@ -145,6 +145,7 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
         "get_pair_lift_matrix",
         "render_hello_world_widget",
         "render_venue_slot_strength",
+        "render_pair_lift_matrix",
     ] {
         assert!(
             names.contains(&required),
@@ -175,12 +176,12 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
         .expect("render_venue_slot_strength tool entry");
     assert_eq!(
         venue_render["_meta"]["ui"]["resourceUri"].as_str(),
-        Some("ui://widget/venue-slot-strength-v5.html"),
+        Some("ui://widget/venue-slot-strength-v6.html"),
         "render_venue_slot_strength missing _meta.ui.resourceUri; tool={venue_render}"
     );
     assert_eq!(
         venue_render["_meta"]["openai/outputTemplate"].as_str(),
-        Some("ui://widget/venue-slot-strength-v5.html"),
+        Some("ui://widget/venue-slot-strength-v6.html"),
         "render_venue_slot_strength missing openai/outputTemplate; tool={venue_render}"
     );
     assert_eq!(
@@ -192,6 +193,30 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
         venue_render["_meta"]["openai/widgetPrefersBorder"].as_bool(),
         Some(true),
         "render_venue_slot_strength missing openai/widgetPrefersBorder; tool={venue_render}"
+    );
+    let pair_render = tools
+        .iter()
+        .find(|t| t["name"] == "render_pair_lift_matrix")
+        .expect("render_pair_lift_matrix tool entry");
+    assert_eq!(
+        pair_render["_meta"]["ui"]["resourceUri"].as_str(),
+        Some("ui://widget/pair-lift-matrix-v5.html"),
+        "render_pair_lift_matrix missing _meta.ui.resourceUri; tool={pair_render}"
+    );
+    assert_eq!(
+        pair_render["_meta"]["openai/outputTemplate"].as_str(),
+        Some("ui://widget/pair-lift-matrix-v5.html"),
+        "render_pair_lift_matrix missing openai/outputTemplate; tool={pair_render}"
+    );
+    assert_eq!(
+        pair_render["_meta"]["ui"]["prefersBorder"].as_bool(),
+        Some(true),
+        "render_pair_lift_matrix should prefer host border/padding; tool={pair_render}"
+    );
+    assert_eq!(
+        pair_render["_meta"]["openai/widgetPrefersBorder"].as_bool(),
+        Some(true),
+        "render_pair_lift_matrix missing openai/widgetPrefersBorder; tool={pair_render}"
     );
     for analytics in [
         "summarize_local_sales",
@@ -662,12 +687,12 @@ fn mcp_http_venue_slot_strength_widget_render_and_resource() {
     );
     assert_eq!(
         result["_meta"]["ui"]["resourceUri"].as_str(),
-        Some("ui://widget/venue-slot-strength-v5.html"),
+        Some("ui://widget/venue-slot-strength-v6.html"),
         "tool result must include template URI; call={call}"
     );
     assert_eq!(
         result["_meta"]["openai/outputTemplate"].as_str(),
-        Some("ui://widget/venue-slot-strength-v5.html"),
+        Some("ui://widget/venue-slot-strength-v6.html"),
         "tool result must include openai/outputTemplate; call={call}"
     );
     assert_eq!(
@@ -697,7 +722,7 @@ fn mcp_http_venue_slot_strength_widget_render_and_resource() {
         .unwrap_or_else(|| panic!("resources array missing; listed={listed}"));
     let venue = resources
         .iter()
-        .find(|r| r["uri"] == "ui://widget/venue-slot-strength-v5.html")
+        .find(|r| r["uri"] == "ui://widget/venue-slot-strength-v6.html")
         .unwrap_or_else(|| panic!("venue slot resource missing; listed={listed}"));
     assert_eq!(
         venue["mimeType"].as_str(),
@@ -711,7 +736,7 @@ fn mcp_http_venue_slot_strength_widget_render_and_resource() {
             "jsonrpc": "2.0",
             "id": 3,
             "method": "resources/read",
-            "params": { "uri": "ui://widget/venue-slot-strength-v5.html" }
+            "params": { "uri": "ui://widget/venue-slot-strength-v6.html" }
         }),
     );
     let contents = read["result"]["contents"]
@@ -757,6 +782,146 @@ fn mcp_http_venue_slot_strength_widget_render_and_resource() {
     assert!(
         html.contains("menuyukti-venue-slot-metric"),
         "widget HTML should persist metric selection; html_len={}",
+        html.len()
+    );
+}
+
+#[test]
+fn mcp_http_pair_lift_matrix_widget_render_and_resource() {
+    let _guard = port_lock().lock().unwrap();
+    let data_dir = repo_root().join("workspaces");
+    let server = start_server(&data_dir);
+
+    let call = http_post_json(
+        server.addr,
+        json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+                "name": "render_pair_lift_matrix",
+                "arguments": { "path": "demo-cafe-july-2026" }
+            }
+        }),
+    );
+    let result = &call["result"];
+    assert!(
+        result.get("isError").and_then(|v| v.as_bool()) != Some(true),
+        "render_pair_lift_matrix error; call={call}"
+    );
+    let focus = result["structuredContent"]["focus_menus"]
+        .as_array()
+        .unwrap_or_else(|| panic!("focus_menus missing; call={call}"));
+    assert!(focus.len() >= 2, "expected >=2 focus menus; call={call}");
+    let matrix = result["structuredContent"]["matrix_lift"]
+        .as_array()
+        .unwrap_or_else(|| panic!("matrix_lift missing; call={call}"));
+    assert_eq!(
+        matrix.len(),
+        focus.len(),
+        "matrix rows must match focus; call={call}"
+    );
+    assert!(
+        matrix[0]
+            .as_array()
+            .and_then(|r| r.first())
+            .is_some_and(|c| c.is_null()),
+        "diagonal should be null; call={call}"
+    );
+    assert_eq!(
+        result["_meta"]["ui"]["resourceUri"].as_str(),
+        Some("ui://widget/pair-lift-matrix-v5.html"),
+        "tool result must include template URI; call={call}"
+    );
+    assert_eq!(
+        result["_meta"]["openai/outputTemplate"].as_str(),
+        Some("ui://widget/pair-lift-matrix-v5.html"),
+        "tool result must include openai/outputTemplate; call={call}"
+    );
+    assert_eq!(
+        result["_meta"]["ui"]["prefersBorder"].as_bool(),
+        Some(true),
+        "tool result should prefer host border/padding; call={call}"
+    );
+    assert_eq!(
+        result["_meta"]["openai/widgetPrefersBorder"].as_bool(),
+        Some(true),
+        "tool result missing openai/widgetPrefersBorder; call={call}"
+    );
+    let text = result["content"][0]["text"]
+        .as_str()
+        .unwrap_or_else(|| panic!("missing text content; call={call}"));
+    assert!(
+        text.to_lowercase().contains("pair lift"),
+        "content text should mention pair lift; text={text}"
+    );
+
+    let listed = http_post_json(
+        server.addr,
+        json!({"jsonrpc":"2.0","id":2,"method":"resources/list","params":{}}),
+    );
+    let resources = listed["result"]["resources"]
+        .as_array()
+        .unwrap_or_else(|| panic!("resources array missing; listed={listed}"));
+    let pair = resources
+        .iter()
+        .find(|r| r["uri"] == "ui://widget/pair-lift-matrix-v5.html")
+        .unwrap_or_else(|| panic!("pair lift resource missing; listed={listed}"));
+    assert_eq!(
+        pair["mimeType"].as_str(),
+        Some("text/html+skybridge"),
+        "resources/list mimeType; resource={pair}"
+    );
+
+    let read = http_post_json(
+        server.addr,
+        json!({
+            "jsonrpc": "2.0",
+            "id": 3,
+            "method": "resources/read",
+            "params": { "uri": "ui://widget/pair-lift-matrix-v5.html" }
+        }),
+    );
+    let contents = read["result"]["contents"]
+        .as_array()
+        .unwrap_or_else(|| panic!("contents array missing; read={read}"));
+    assert_eq!(contents.len(), 1, "expected one content block; read={read}");
+    assert_eq!(
+        contents[0]["mimeType"].as_str(),
+        Some("text/html+skybridge"),
+        "resources/read mimeType; read={read}"
+    );
+    let html = contents[0]["text"]
+        .as_str()
+        .unwrap_or_else(|| panic!("missing HTML text; read={read}"));
+    assert!(
+        html.contains("matrix_lift") || html.contains("Pair lift index"),
+        "widget HTML should render pair lift; html_len={}",
+        html.len()
+    );
+    assert!(
+        html.contains("--pad-top: 48px"),
+        "widget HTML should keep extra top padding for ChatGPT/Codex; html_len={}",
+        html.len()
+    );
+    assert!(
+        html.contains("color-scheme: light dark") || html.contains("applyDocumentTheme"),
+        "widget HTML should theme for host light/dark; html_len={}",
+        html.len()
+    );
+    assert!(
+        html.contains("--color-background-primary") && html.contains("host-context-changed"),
+        "widget HTML should apply host style tokens / context changes; html_len={}",
+        html.len()
+    );
+    assert!(
+        html.contains("null-cell") && html.contains("Same item / no lift"),
+        "widget HTML should distinguish null/diagonal cells; html_len={}",
+        html.len()
+    );
+    assert!(
+        html.contains("th.sortable") && html.contains("aria-sort") && html.contains("toggleSort"),
+        "widget HTML should support sortable column headers; html_len={}",
         html.len()
     );
 }
@@ -857,6 +1022,7 @@ fn mcp_http_setup_status_and_owner_playbook_instructions() {
         "demo-cafe-july-2026",
         "write_workspace_config",
         "render_venue_slot_strength",
+        "render_pair_lift_matrix",
         "list_workspace_files",
     ] {
         assert!(

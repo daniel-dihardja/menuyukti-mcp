@@ -27,13 +27,11 @@ const MCP_PATH: &str = "/mcp";
 /// MCP Apps UI resource for the hello-world smoke widget.
 /// Bump the URI when the HTML changes so ChatGPT does not keep a cached blank template.
 const HELLO_WORLD_WIDGET_URI: &str = "ui://widget/hello-world-v3.html";
-const VENUE_SLOT_STRENGTH_WIDGET_URI: &str = "ui://widget/venue-slot-strength-v5.html";
+const VENUE_SLOT_STRENGTH_WIDGET_URI: &str = "ui://widget/venue-slot-strength-v6.html";
+const PAIR_LIFT_MATRIX_WIDGET_URI: &str = "ui://widget/pair-lift-matrix-v5.html";
 /// ChatGPT Apps SDK examples still serve widgets as `text/html+skybridge`.
 /// Keep the MCP Apps profile MIME as a secondary compatibility note in docs/tests.
 const WIDGET_MIME_TYPE: &str = "text/html+skybridge";
-const HELLO_WORLD_WIDGET_HTML: &str = include_str!("../assets/hello_world_widget.html");
-const VENUE_SLOT_STRENGTH_WIDGET_HTML: &str =
-    include_str!("../assets/venue_slot_strength_widget.html");
 
 const INSTRUCTIONS: &str = concat!(
     "Local Menuyukti MCP: restaurant POS Excel analytics on the owner's machine. ",
@@ -54,7 +52,9 @@ const INSTRUCTIONS: &str = concat!(
     "when is the venue busy / staffing by daypart → for show/chart/heatmap pick ONE path: ",
     "render_venue_slot_strength (MCP Apps widget) OR get_venue_slot_strength for a skill redraw — never both in the same turn; ",
     "get_venue_slot_strength alone for numbers-only JSON; ",
-    "combo / upsell ideas → get_pair_lift_matrix (sales alone; COGS upgrades focus to stars when ≥2); ",
+    "combo / upsell ideas → for show/chart/heatmap pick ONE path: ",
+    "render_pair_lift_matrix (MCP Apps widget) OR get_pair_lift_matrix for numbers/skill redraw — never both; ",
+    "get_pair_lift_matrix alone for numbers-only JSON (sales alone; COGS upgrades focus to stars when ≥2); ",
     "stars/plow horses/puzzles/weak matrix → analyze_menu_engineering (needs sales+COGS); ",
     "reprice/improve/remove weak dishes → get_weak_items_review (needs sales+COGS); ",
     "cleaned line items → list_normalized_sales; ",
@@ -64,10 +64,10 @@ const INSTRUCTIONS: &str = concat!(
     "If missing, ask the owner to drop COGS Excel, then list_workspace_files and write_workspace_config. ",
     "Sales-only tools still work without COGS. ",
     // Widgets + smoke — one chart only
-    "For show/chart/heatmap: prefer render_venue_slot_strength when the host mounts MCP Apps widgets; ",
-    "otherwise use get_venue_slot_strength and let a presentation skill draw once. ",
-    "Never call render_venue_slot_strength and also redraw a markdown/HTML heatmap in the same turn — narrate only after a widget. ",
-    "prefer get_venue_slot_strength alone for text/numbers. ",
+    "For show/chart/heatmap: prefer render_venue_slot_strength or render_pair_lift_matrix when the host mounts MCP Apps widgets; ",
+    "otherwise use get_venue_slot_strength / get_pair_lift_matrix and let a presentation skill draw once. ",
+    "Never call a render_* widget tool and also redraw a markdown/HTML heatmap in the same turn — narrate only after a widget. ",
+    "prefer get_venue_slot_strength / get_pair_lift_matrix alone for text/numbers. ",
     "render_hello_world_widget is UI smoke only (mock data) — never use it for analytics."
 );
 
@@ -114,9 +114,12 @@ fn hello_world_resource() -> Resource {
 }
 
 fn hello_world_resource_contents() -> ResourceContents {
-    ResourceContents::text(HELLO_WORLD_WIDGET_HTML, HELLO_WORLD_WIDGET_URI)
-        .with_mime_type(WIDGET_MIME_TYPE)
-        .with_meta(hello_world_widget_meta())
+    ResourceContents::text(
+        menuyukti_mcp::widget_assets::hello_world_widget_html(),
+        HELLO_WORLD_WIDGET_URI,
+    )
+    .with_mime_type(WIDGET_MIME_TYPE)
+    .with_meta(hello_world_widget_meta())
 }
 
 fn mock_hello_world_payload() -> serde_json::Value {
@@ -166,7 +169,7 @@ fn venue_slot_strength_resource() -> Resource {
 
 fn venue_slot_strength_resource_contents() -> ResourceContents {
     ResourceContents::text(
-        VENUE_SLOT_STRENGTH_WIDGET_HTML,
+        menuyukti_mcp::widget_assets::venue_slot_strength_widget_html(),
         VENUE_SLOT_STRENGTH_WIDGET_URI,
     )
     .with_mime_type(WIDGET_MIME_TYPE)
@@ -187,6 +190,76 @@ fn venue_slot_strength_tool_result(
     result.content = vec![ContentBlock::text(format!(
         "Showing venue slot strength heatmap ({pos}, {} slots).",
         profile.len()
+    ))];
+    result
+}
+
+fn pair_lift_matrix_widget_meta() -> MetaObject {
+    let mut meta = MetaObject::new();
+    meta.insert(
+        "ui".to_string(),
+        json!({
+            "resourceUri": PAIR_LIFT_MATRIX_WIDGET_URI,
+            // Ask the host for a bordered card + outer padding (ChatGPT/Codex).
+            "prefersBorder": true,
+        }),
+    );
+    meta.insert(
+        "openai/outputTemplate".to_string(),
+        json!(PAIR_LIFT_MATRIX_WIDGET_URI),
+    );
+    meta.insert("openai/widgetAccessible".to_string(), json!(true));
+    // ChatGPT compatibility alias for `_meta.ui.prefersBorder`.
+    meta.insert("openai/widgetPrefersBorder".to_string(), json!(true));
+    meta.insert(
+        "openai/toolInvocation/invoking".to_string(),
+        json!("Rendering pair lift matrix…"),
+    );
+    meta.insert(
+        "openai/toolInvocation/invoked".to_string(),
+        json!("Pair lift matrix ready."),
+    );
+    meta
+}
+
+fn pair_lift_matrix_resource() -> Resource {
+    Resource::new(PAIR_LIFT_MATRIX_WIDGET_URI, "pair-lift-matrix-widget")
+        .with_title("Pair lift index heatmap")
+        .with_description(
+            "MCP Apps widget: focus menu × focus menu co-purchase lift from matrix_lift.",
+        )
+        .with_mime_type(WIDGET_MIME_TYPE)
+        .with_meta(pair_lift_matrix_widget_meta())
+}
+
+fn pair_lift_matrix_resource_contents() -> ResourceContents {
+    ResourceContents::text(
+        menuyukti_mcp::widget_assets::pair_lift_matrix_widget_html(),
+        PAIR_LIFT_MATRIX_WIDGET_URI,
+    )
+    .with_mime_type(WIDGET_MIME_TYPE)
+    .with_meta(pair_lift_matrix_widget_meta())
+}
+
+fn pair_lift_matrix_tool_result(
+    pos: &str,
+    affinities: &menuyukti::MenuBasketAffinitiesResult,
+) -> CallToolResult {
+    let payload = json!({
+        "pos": pos,
+        "total_orders": affinities.total_orders,
+        "multi_item_order_count": affinities.multi_item_order_count,
+        "avg_distinct_items_per_order": affinities.avg_distinct_items_per_order,
+        "scope": affinities.scope,
+        "focus_menus": affinities.focus_menus,
+        "matrix_lift": affinities.matrix_lift,
+        "pairs": affinities.pairs,
+    });
+    let mut result =
+        CallToolResult::structured(payload).with_meta(Some(pair_lift_matrix_widget_meta()));
+    result.content = vec![ContentBlock::text(format!(
+        "Showing pair lift index heatmap ({pos}, {} focus menus).",
+        affinities.focus_menus.len()
     ))];
     result
 }
@@ -625,6 +698,27 @@ impl MenuyuktiMcp {
         let profile = menuyukti::compute_slot_demand_profile_from_orders(&loaded.rows);
         Ok(venue_slot_strength_tool_result(&loaded.pos, &profile))
     }
+
+    #[tool(
+        description = "Render the pair lift index heatmap widget (focus menu × focus menu co-purchase lift). Path may be a workspace folder (workspace.yaml sales role) or an Excel file under MENUYUKTI_DATA_DIR. Sales alone is enough; COGS upgrades focus to stars when ≥2. Prefer this when the owner should see the combo chart; use get_pair_lift_matrix for JSON-only answers.",
+        annotations(title = "Render pair lift matrix", read_only_hint = true),
+        meta = pair_lift_matrix_widget_meta()
+    )]
+    async fn render_pair_lift_matrix(
+        &self,
+        Parameters(PathArgs { path }): Parameters<PathArgs>,
+    ) -> Result<CallToolResult, McpError> {
+        let loaded = match load_or_error(&path) {
+            Ok(v) => v,
+            Err(resp) => return Ok(resp),
+        };
+        let star_focus = optional_star_focus(&path, &loaded.rows);
+        let affinities = menuyukti::compute_menu_basket_affinities_from_orders(
+            &loaded.rows,
+            star_focus.as_deref(),
+        );
+        Ok(pair_lift_matrix_tool_result(&loaded.pos, &affinities))
+    }
 }
 
 #[tool_handler]
@@ -650,7 +744,11 @@ impl ServerHandler for MenuyuktiMcp {
         _context: rmcp::service::RequestContext<rmcp::RoleServer>,
     ) -> Result<ListResourcesResult, McpError> {
         Ok(ListResourcesResult {
-            resources: vec![hello_world_resource(), venue_slot_strength_resource()],
+            resources: vec![
+                hello_world_resource(),
+                venue_slot_strength_resource(),
+                pair_lift_matrix_resource(),
+            ],
             ..Default::default()
         })
     }
@@ -664,6 +762,8 @@ impl ServerHandler for MenuyuktiMcp {
             hello_world_resource_contents()
         } else if request.uri == VENUE_SLOT_STRENGTH_WIDGET_URI {
             venue_slot_strength_resource_contents()
+        } else if request.uri == PAIR_LIFT_MATRIX_WIDGET_URI {
+            pair_lift_matrix_resource_contents()
         } else {
             return Err(McpError::resource_not_found(
                 format!("unknown resource URI: {}", request.uri),

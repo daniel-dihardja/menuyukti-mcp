@@ -7,6 +7,10 @@ description = "Local Menuyukti MCP server for sales analytics"
 readme = "../../README.md"
 default-run = "menuyukti-mcp"
 
+[lib]
+name = "menuyukti_mcp"
+path = "src/lib.rs"
+
 [[bin]]
 name = "menuyukti-mcp"
 path = "src/main.rs"

@@ -74,7 +74,8 @@ Secondary reference for power users — owners can stick to the [What to ask](..
 - `list_normalized_sales` — cleaned line items
 - `get_menu_heatmaps` — when each dish sells during the day / week (JSON; Codex: then use the **menuyukti-visualize-menu-heatmaps** skill)
 - `get_venue_slot_strength` — weekday × meal-period venue demand JSON for timing (**sales alone**; Codex: present with **`menuyukti-venue-slot-strength`**)
-- `get_pair_lift_matrix` — co-purchase lift matrix for combo / upsell ideas (**sales alone**; COGS optional)
+- `get_pair_lift_matrix` — co-purchase lift matrix JSON for combo / upsell ideas (**sales alone**; COGS optional)
+- `render_pair_lift_matrix` — same data as an MCP Apps heatmap widget (ChatGPT)
 - `analyze_menu_engineering` — star / plow_horse / puzzle / weak matrix (**needs sales + COGS**)
 - `get_weak_items_review` — weak-quadrant depth review for reprice / improve / remove (**needs sales + COGS**; Codex: then use **menuyukti-visualize-weak-items** for a sortable HTML table)
 
@@ -100,6 +101,8 @@ To **show the heatmap**, ask for the venue slot strength chart. The agent should
 - **With COGS:** if menu engineering finds at least two **stars**, those stars become the focus (same idea as the cloud pair-lift chart).
 
 COGS is optional here — unlike menu engineering, missing unit costs does not block the tool.
+
+To **show the heatmap**, ask for the pair lift chart / combo heatmap. In ChatGPT the agent should call **`render_pair_lift_matrix`** (MCP Apps widget). Prefer that over narrating the raw matrix; keep `get_pair_lift_matrix` for numbers-only answers.
 
 ## Menu engineering (needs COGS)
 

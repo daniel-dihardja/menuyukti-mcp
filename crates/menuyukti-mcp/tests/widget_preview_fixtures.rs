@@ -45,3 +45,30 @@ fn venue_slot_strength_empty_fixture_has_empty_profile() {
         Some(0)
     );
 }
+
+#[test]
+fn pair_lift_matrix_fixture_is_square_with_null_diagonal() {
+    let v = read_fixture("pair_lift_matrix.json");
+    let focus = v["focus_menus"].as_array().expect("focus_menus array");
+    let matrix = v["matrix_lift"].as_array().expect("matrix_lift array");
+    assert!(focus.len() >= 2, "expected >=2 focus menus");
+    assert_eq!(matrix.len(), focus.len());
+    for (i, row) in matrix.iter().enumerate() {
+        let cells = row.as_array().expect("matrix row");
+        assert_eq!(cells.len(), focus.len());
+        assert!(cells[i].is_null(), "diagonal at {i} must be null");
+    }
+    assert!(v["pairs"]
+        .as_array()
+        .map(|a| !a.is_empty())
+        .unwrap_or(false));
+    assert!(v["scope"].is_string());
+}
+
+#[test]
+fn pair_lift_matrix_empty_fixture_has_empty_focus() {
+    let v = read_fixture("pair_lift_matrix_empty.json");
+    assert_eq!(v["focus_menus"].as_array().map(|a| a.len()), Some(0));
+    assert_eq!(v["matrix_lift"].as_array().map(|a| a.len()), Some(0));
+    assert_eq!(v["pairs"].as_array().map(|a| a.len()), Some(0));
+}

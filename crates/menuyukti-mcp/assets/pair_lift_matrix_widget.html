@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Pair lift index</title>
+    <style>
+      /* __MENUYUKTI_SHARED_THEME__ */
+
+      th {
+        max-width: 7rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      th.row-label,
+      td.row-label {
+        max-width: 9rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      th.sortable {
+        padding: 0;
+        vertical-align: bottom;
+      }
+      th.sortable button {
+        appearance: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        width: 100%;
+        margin: 0;
+        border: 0;
+        padding: 10px 4px;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        text-align: center;
+        max-width: 100%;
+      }
+      th.sortable.row-label button {
+        justify-content: flex-start;
+        padding-left: 8px;
+        text-align: left;
+      }
+      th.sortable button:hover {
+        color: var(--heatmap-high);
+      }
+      th.sortable button:focus-visible {
+        outline: 2px solid var(--heatmap-high);
+        outline-offset: -2px;
+      }
+      th.sortable .sort-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+      }
+      th.sortable .sort-ind {
+        flex: none;
+        font-size: 0.65rem;
+        opacity: 0.35;
+      }
+      th.sortable button[aria-sort="ascending"] .sort-ind,
+      th.sortable button[aria-sort="descending"] .sort-ind {
+        opacity: 1;
+        color: var(--heatmap-high);
+      }
+      .sort-hint {
+        margin: 8px 0 0;
+        color: var(--color-text-secondary);
+        font-size: 0.72rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="panel" id="panel">
+      <h2>Pair lift index</h2>
+      <p class="desc">
+        How often two dishes are bought together relative to chance. Lift 1.0 =
+        independent; above 1.0 = stronger combo / upsell candidates.
+      </p>
+      <p id="meta" class="meta"></p>
+      <div id="legend" class="legend hidden">
+        <span>Low</span>
+        <div class="legend-bar" aria-hidden="true"></div>
+        <span>High</span>
+        <span class="showing">Color + number = lift</span>
+      </div>
+      <div id="tiers" class="tiers hidden">
+        <span class="tier"
+          ><span
+            class="tier-swatch"
+            style="background: var(--heatmap-low)"
+          ></span>
+          Below chance (&lt; 1.0)</span
+        >
+        <span class="tier"
+          ><span
+            class="tier-swatch"
+            style="
+              background: color-mix(
+                in srgb,
+                var(--heatmap-high) 45%,
+                var(--heatmap-low)
+              );
+            "
+          ></span>
+          Around chance (~1.0)</span
+        >
+        <span class="tier"
+          ><span
+            class="tier-swatch"
+            style="background: var(--heatmap-high)"
+          ></span>
+          Above chance (&gt; 1.0)</span
+        >
+        <span class="tier"
+          ><span
+            class="tier-swatch"
+            style="background: var(--heatmap-null)"
+          ></span>
+          Same item / no lift</span
+        >
+      </div>
+      <p id="sort-hint" class="sort-hint hidden">
+        Click a column header to sort rows. Menu sorts A–Z; lift columns sort
+        by number. Column names stay fixed.
+      </p>
+      <div id="scroll" class="scroll hidden">
+        <table>
+          <thead>
+            <tr id="head-row"></tr>
+          </thead>
+          <tbody id="body"></tbody>
+        </table>
+      </div>
+      <div id="empty" class="empty">Waiting for pair lift data…</div>
+    </div>
+    <script type="module">
+      const root = document.documentElement;
+      const panelEl = document.getElementById("panel");
+      const metaEl = document.getElementById("meta");
+      const legendEl = document.getElementById("legend");
+      const tiersEl = document.getElementById("tiers");
+      const sortHintEl = document.getElementById("sort-hint");
+      const scrollEl = document.getElementById("scroll");
+      const emptyEl = document.getElementById("empty");
+      const headRow = document.getElementById("head-row");
+      const bodyEl = document.getElementById("body");
+
+      let nextRpcId = 1;
+      let hostFontStyleEl = null;
+
+      /** @type {{ focus: string[], matrix: Array<Array<number|null>>, pairs: unknown[], metaLine: string, min: number, max: number } | null} */
+      let gridState = null;
+      /** Permutation of original focus indexes for row order only (columns stay fixed). */
+      let rowOrder = [];
+      /** @type {'label' | number} */
+      let sortKey = "label";
+      /** @type {'asc' | 'desc'} */
+      let sortDir = "asc";
+
+      function px(n) {
+        const v = Number(n);
+        return Number.isFinite(v) ? `${Math.max(0, v)}px` : "0px";
+      }
+
+      function applyDocumentTheme(theme) {
+        const mode = theme === "dark" || theme === "light" ? theme : null;
+        if (!mode) return;
+        root.style.colorScheme = mode;
+        root.dataset.theme = mode;
+        try {
+          document.body.style.colorScheme = mode;
+        } catch (_) {
+          /* ignore */
+        }
+      }
+
+      function applyHostStyleVariables(variables) {
+        if (!variables || typeof variables !== "object") return;
+        for (const [key, value] of Object.entries(variables)) {
+          if (typeof key !== "string" || !key.startsWith("--")) continue;
+          if (typeof value !== "string" || !value) continue;
+          root.style.setProperty(key, value);
+        }
+      }
+
+      function applyHostFonts(cssText) {
+        if (typeof cssText !== "string" || !cssText.trim()) return;
+        if (!hostFontStyleEl) {
+          hostFontStyleEl = document.createElement("style");
+          hostFontStyleEl.setAttribute("data-host-fonts", "true");
+          document.head.appendChild(hostFontStyleEl);
+        }
+        hostFontStyleEl.textContent = cssText;
+      }
+
+      function applySafeArea(insets) {
+        if (!insets || typeof insets !== "object") return;
+        root.style.setProperty("--safe-top", px(insets.top));
+        root.style.setProperty("--safe-right", px(insets.right));
+        root.style.setProperty("--safe-bottom", px(insets.bottom));
+        root.style.setProperty("--safe-left", px(insets.left));
+        notifySize();
+      }
+
+      function applyHostContext(ctx) {
+        if (!ctx || typeof ctx !== "object") return;
+        if (ctx.theme) applyDocumentTheme(ctx.theme);
+        if (ctx.styles?.variables) applyHostStyleVariables(ctx.styles.variables);
+        else if (ctx.styles?.cssVariables) {
+          applyHostStyleVariables(ctx.styles.cssVariables);
+        }
+        if (ctx.styles?.css?.fonts) applyHostFonts(ctx.styles.css.fonts);
+        if (ctx.safeAreaInsets) applySafeArea(ctx.safeAreaInsets);
+        else if (ctx.safe_area_insets) applySafeArea(ctx.safe_area_insets);
+        notifySize();
+      }
+
+      function notifySize() {
+        try {
+          if (!panelEl || !window.parent || window.parent === window) return;
+          const rect = panelEl.getBoundingClientRect();
+          const height = Math.ceil(
+            Math.max(
+              rect.height,
+              panelEl.scrollHeight,
+              document.documentElement.scrollHeight,
+              document.body.scrollHeight
+            )
+          );
+          const width = Math.ceil(
+            Math.max(rect.width, panelEl.scrollWidth, document.body.scrollWidth)
+          );
+          window.parent.postMessage(
+            {
+              jsonrpc: "2.0",
+              method: "ui/notifications/size-changed",
+              params: { width, height },
+            },
+            "*"
+          );
+        } catch (_) {
+          /* host may ignore */
+        }
+      }
+
+      function showEmpty(message) {
+        gridState = null;
+        emptyEl.textContent = message;
+        emptyEl.classList.remove("hidden");
+        legendEl.classList.add("hidden");
+        tiersEl.classList.add("hidden");
+        sortHintEl.classList.add("hidden");
+        scrollEl.classList.add("hidden");
+        headRow.innerHTML = "";
+        bodyEl.innerHTML = "";
+        notifySize();
+      }
+
+      function showGrid() {
+        emptyEl.classList.add("hidden");
+        legendEl.classList.remove("hidden");
+        tiersEl.classList.remove("hidden");
+        sortHintEl.classList.remove("hidden");
+        scrollEl.classList.remove("hidden");
+        notifySize();
+      }
+
+      function intensity(value, min, max) {
+        const range = max - min || 1;
+        return Math.min(1, Math.max(0, (value - min) / range));
+      }
+
+      function cellBackground(t) {
+        const pct = Math.round(Math.min(1, Math.max(0, t)) * 100);
+        return `color-mix(in srgb, var(--heatmap-high) ${pct}%, var(--heatmap-low))`;
+      }
+
+      function formatLift(value) {
+        if (typeof value !== "number" || Number.isNaN(value)) return "—";
+        return value.toFixed(2);
+      }
+
+      function scopeLabel(scope) {
+        const s = String(scope || "").toLowerCase();
+        if (s === "stars") return "stars focus";
+        if (s === "top_by_presence" || s === "topbypresence") {
+          return "top by presence";
+        }
+        return scope ? String(scope) : "";
+      }
+
+      function pairKey(a, b) {
+        return a < b ? `${a}\0${b}` : `${b}\0${a}`;
+      }
+
+      function buildPairLookup(pairs) {
+        const map = new Map();
+        if (!Array.isArray(pairs)) return map;
+        for (const pair of pairs) {
+          const a = String(pair.menu_a ?? pair.menuA ?? "").trim();
+          const b = String(pair.menu_b ?? pair.menuB ?? "").trim();
+          if (!a || !b) continue;
+          map.set(pairKey(a, b), pair);
+        }
+        return map;
+      }
+
+      function cellLift(matrix, row, col) {
+        const rowVals = Array.isArray(matrix?.[row]) ? matrix[row] : null;
+        if (!rowVals) return null;
+        const raw = rowVals[col];
+        if (raw === null || raw === undefined) return null;
+        const n = Number(raw);
+        return Number.isFinite(n) ? n : null;
+      }
+
+      function sortValueForCompare(lift) {
+        // Null / diagonal treated as lowest for both directions.
+        return lift === null ? Number.NEGATIVE_INFINITY : lift;
+      }
+
+      function recomputeRowOrder() {
+        if (!gridState) {
+          rowOrder = [];
+          return;
+        }
+        const { focus, matrix } = gridState;
+        const next = focus.map((_, i) => i);
+        if (sortKey === "label") {
+          next.sort((i, j) => {
+            const cmp = String(focus[i]).localeCompare(String(focus[j]), undefined, {
+              sensitivity: "base",
+            });
+            return sortDir === "asc" ? cmp : -cmp;
+          });
+        } else {
+          const col = sortKey;
+          next.sort((i, j) => {
+            const a = i === col ? null : cellLift(matrix, i, col);
+            const b = j === col ? null : cellLift(matrix, j, col);
+            const cmp = sortValueForCompare(a) - sortValueForCompare(b);
+            if (cmp !== 0) return sortDir === "asc" ? cmp : -cmp;
+            return String(focus[i]).localeCompare(String(focus[j]), undefined, {
+              sensitivity: "base",
+            });
+          });
+        }
+        rowOrder = next;
+      }
+
+      function toggleSort(nextKey) {
+        if (sortKey === nextKey) {
+          sortDir = sortDir === "asc" ? "desc" : "asc";
+        } else {
+          sortKey = nextKey;
+          sortDir = nextKey === "label" ? "asc" : "desc";
+        }
+        drawGrid();
+      }
+
+      function sortIndicator(active) {
+        if (!active) return "↕";
+        return sortDir === "asc" ? "↑" : "↓";
+      }
+
+      function ariaSortValue(active) {
+        if (!active) return "none";
+        return sortDir === "asc" ? "ascending" : "descending";
+      }
+
+      function makeSortHeader({ label, key, title }) {
+        const th = document.createElement("th");
+        th.className =
+          key === "label" ? "sortable row-label" : "sortable";
+        const btn = document.createElement("button");
+        btn.type = "button";
+        const active = sortKey === key;
+        btn.setAttribute("aria-sort", ariaSortValue(active));
+        const sortKind =
+          key === "label" ? "alphabetically" : "by lift";
+        btn.setAttribute(
+          "aria-label",
+          `Sort ${label} ${sortKind}`
+        );
+        btn.title = title || `Sort by ${label}`;
+        const text = document.createElement("span");
+        text.className = "sort-label";
+        text.textContent = label;
+        const ind = document.createElement("span");
+        ind.className = "sort-ind";
+        ind.setAttribute("aria-hidden", "true");
+        ind.textContent = sortIndicator(active);
+        btn.appendChild(text);
+        btn.appendChild(ind);
+        btn.addEventListener("click", () => toggleSort(key));
+        th.appendChild(btn);
+        return th;
+      }
+
+      function drawGrid() {
+        if (!gridState) return;
+        recomputeRowOrder();
+        const { focus, matrix, pairs, metaLine, min, max } = gridState;
+        const pairLookup = buildPairLookup(pairs);
+        metaEl.textContent = metaLine;
+        const colIndexes = focus.map((_, i) => i);
+
+        headRow.innerHTML = "";
+        headRow.appendChild(
+          makeSortHeader({
+            label: "Menu",
+            key: "label",
+            title: "Sort row menus alphabetically",
+          })
+        );
+        // Column headers stay in original focus order; only rows reorder.
+        for (const c of colIndexes) {
+          const menu = String(focus[c]);
+          headRow.appendChild(
+            makeSortHeader({
+              label: menu,
+              key: c,
+              title: `Sort rows by lift with ${menu}`,
+            })
+          );
+        }
+
+        bodyEl.innerHTML = "";
+        for (const r of rowOrder) {
+          const rowMenu = String(focus[r]);
+          const tr = document.createElement("tr");
+          const labelTd = document.createElement("td");
+          labelTd.className = "row-label";
+          labelTd.textContent = rowMenu;
+          labelTd.title = rowMenu;
+          tr.appendChild(labelTd);
+
+          for (const c of colIndexes) {
+            const colMenu = String(focus[c]);
+            const td = document.createElement("td");
+            td.className = "cell";
+            const isDiagonal = r === c;
+            const lift = cellLift(matrix, r, c);
+
+            if (isDiagonal || lift === null) {
+              td.classList.add("null-cell");
+              td.textContent = "—";
+              td.title = isDiagonal
+                ? `${rowMenu} · same item (no lift)`
+                : `${rowMenu} × ${colMenu}: no lift (too few co-orders)`;
+              tr.appendChild(td);
+              continue;
+            }
+
+            const t = intensity(lift, min, max);
+            td.style.backgroundColor = cellBackground(t);
+            if (t > 0.75) td.classList.add("light-text");
+            td.textContent = formatLift(lift);
+
+            const pair = pairLookup.get(pairKey(rowMenu, colMenu));
+            const co = pair?.co_order_count ?? pair?.coOrderCount ?? null;
+            const support = pair?.support;
+            td.title = [
+              `${rowMenu} × ${colMenu}`,
+              `Lift: ${formatLift(lift)}`,
+              co != null ? `Co-orders: ${co}` : null,
+              support != null && Number.isFinite(Number(support))
+                ? `Support: ${(Number(support) * 100).toFixed(1)}%`
+                : null,
+              lift > 1
+                ? "Above chance — combo / upsell candidate"
+                : lift < 1
+                  ? "Below chance"
+                  : "Around chance",
+            ]
+              .filter(Boolean)
+              .join("\n");
+            tr.appendChild(td);
+          }
+          bodyEl.appendChild(tr);
+        }
+        showGrid();
+      }
+
+      function renderFromStructured(data) {
+        try {
+          if (!data || typeof data !== "object") {
+            showEmpty("No pair lift data yet.");
+            return;
+          }
+          const focus = Array.isArray(data.focus_menus)
+            ? data.focus_menus.map((m) => String(m))
+            : Array.isArray(data.focusMenus)
+              ? data.focusMenus.map((m) => String(m))
+              : null;
+          const matrix = Array.isArray(data.matrix_lift)
+            ? data.matrix_lift
+            : Array.isArray(data.matrixLift)
+              ? data.matrixLift
+              : null;
+
+          if (!focus || !matrix) {
+            showEmpty("Missing focus_menus or matrix_lift in tool result.");
+            return;
+          }
+          if (focus.length < 2) {
+            showEmpty("Need at least two focus menus to show pair lift.");
+            return;
+          }
+          if (matrix.length === 0) {
+            showEmpty("Empty pair lift matrix for this period.");
+            return;
+          }
+
+          const lifts = [];
+          for (let r = 0; r < focus.length; r += 1) {
+            for (let c = 0; c < focus.length; c += 1) {
+              if (r === c) continue;
+              const lift = cellLift(matrix, r, c);
+              if (lift !== null) lifts.push(lift);
+            }
+          }
+          const min = lifts.length ? Math.min(...lifts) : 0;
+          const max = lifts.length ? Math.max(...lifts) : 1;
+          const pos = data.pos ? String(data.pos) : "";
+          const scope = scopeLabel(data.scope);
+          const ordersCount = data.total_orders ?? data.totalOrders ?? null;
+
+          gridState = {
+            focus,
+            matrix,
+            pairs: Array.isArray(data.pairs) ? data.pairs : [],
+            min,
+            max,
+            metaLine: [
+              pos ? `POS: ${pos}` : null,
+              `${focus.length} focus menus`,
+              scope || null,
+              ordersCount != null ? `${ordersCount} orders` : null,
+              lifts.length
+                ? `lift range ${formatLift(min)}–${formatLift(max)}`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(" · "),
+          };
+          // Fresh payload: keep current sort key if still valid, else Menu A–Z.
+          if (typeof sortKey === "number" && (sortKey < 0 || sortKey >= focus.length)) {
+            sortKey = "label";
+            sortDir = "asc";
+          }
+          drawGrid();
+        } catch (err) {
+          showEmpty(`Could not render heatmap: ${String(err)}`);
+        }
+      }
+
+      function renderFromToolResult(params) {
+        const structured =
+          params?.structuredContent ??
+          params?.structured_content ??
+          params;
+        renderFromStructured(structured);
+      }
+
+      function handshakeHost() {
+        try {
+          if (!window.parent || window.parent === window) return;
+          const id = nextRpcId++;
+          window.parent.postMessage(
+            {
+              jsonrpc: "2.0",
+              id,
+              method: "ui/initialize",
+              params: {
+                appInfo: {
+                  name: "menuyukti-pair-lift-matrix",
+                  version: "5",
+                },
+                appCapabilities: {
+                  availableDisplayModes: ["inline", "fullscreen"],
+                },
+                protocolVersion: "2026-01-26",
+              },
+            },
+            "*"
+          );
+        } catch (_) {
+          /* preview / non-MCP host */
+        }
+      }
+
+      function applyFallbackThemeFromEnvironment() {
+        try {
+          const prefersDark =
+            typeof window.matchMedia === "function" &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches;
+          applyDocumentTheme(prefersDark ? "dark" : "light");
+        } catch (_) {
+          applyDocumentTheme("light");
+        }
+      }
+
+      try {
+        applyFallbackThemeFromEnvironment();
+
+        if (typeof window !== "undefined" && window.openai) {
+          if (window.openai.theme) applyDocumentTheme(window.openai.theme);
+          if (window.openai.toolOutput) {
+            renderFromToolResult(window.openai.toolOutput);
+          }
+          const safe =
+            window.openai.safeArea?.insets || window.openai.safeAreaInsets;
+          if (safe) applySafeArea(safe);
+        }
+
+        handshakeHost();
+
+        window.addEventListener(
+          "message",
+          (event) => {
+            if (event.source !== window.parent) return;
+            const message = event.data;
+            if (!message || message.jsonrpc !== "2.0") return;
+
+            if (message.method === "ui/notifications/tool-result") {
+              renderFromToolResult(message.params);
+              return;
+            }
+            if (
+              message.method === "ui/notifications/host-context-changed" ||
+              message.method === "ui/notifications/hostContextChanged"
+            ) {
+              applyHostContext(message.params?.hostContext || message.params);
+              return;
+            }
+            if (message.result?.hostContext) {
+              applyHostContext(message.result.hostContext);
+            }
+          },
+          { passive: true }
+        );
+
+        requestAnimationFrame(() => notifySize());
+      } catch (err) {
+        showEmpty(`Bridge error: ${String(err)}`);
+      }
+    </script>
+  </body>
+</html>

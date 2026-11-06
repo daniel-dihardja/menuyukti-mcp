@@ -47,14 +47,15 @@ When unclear or path/config fails:
 | When each dish sells (show / chart) | `get_menu_heatmaps`, then **`menuyukti-visualize-menu-heatmaps`** |
 | Venue busy / staffing (show / chart) | **One path only:** `render_venue_slot_strength` (widget) **or** `get_venue_slot_strength` + **`menuyukti-venue-slot-strength`** redraw — never both |
 | Venue busy / staffing (numbers only) | `get_venue_slot_strength` |
-| Combos / upsells | `get_pair_lift_matrix` (sales alone; COGS upgrades star focus) |
+| Combos / upsells (show / chart) | **One path only:** `render_pair_lift_matrix` (widget) **or** `get_pair_lift_matrix` for numbers/skill redraw — never both (sales alone; COGS upgrades star focus) |
+| Combos / upsells (numbers only) | `get_pair_lift_matrix` (sales alone; COGS upgrades star focus) |
 | Stars / plow horses / puzzles / weak | `analyze_menu_engineering` (**sales + COGS**) |
 | Reprice / improve / remove (numbers) | `get_weak_items_review` (**sales + COGS**) |
 | Weak items table / show weak dishes | `get_weak_items_review`, then **`menuyukti-visualize-weak-items`** (**sales + COGS**) |
 | Cleaned rows | `list_normalized_sales` |
 | Venue notes | `read_workspace_knowledge` then `write_workspace_knowledge` (full replace) |
 
-For charts: pick **one** presentation. If `render_venue_slot_strength` mounted a widget, narrate only — do not also write HTML. If using a visualisation skill, write **one local HTML** file from the recipe (no Python/render scripts; no second markdown grid for the same ask).
+For charts: pick **one** presentation. If `render_venue_slot_strength` or `render_pair_lift_matrix` mounted a widget, narrate only — do not also write HTML. If using a visualisation skill, write **one local HTML** file from the recipe (no Python/render scripts; no second markdown grid for the same ask).
 
 ## COGS gate
 
