@@ -62,7 +62,7 @@ Personal uploads under `workspaces/` are gitignored. Only the demo workspace is 
 
 ## What the tools can do
 
-Secondary reference for power users — owners can stick to the [What to ask](../../README.md#what-to-ask) prompts.
+Secondary reference for power users — owners can stick to the [What to ask](../../README.md#what-to-ask) prompts (1.0 outcomes: **plan promotions** and **trim / compact the menu**).
 
 - `get_setup_status` — first-run diagnosis (data dir, folders missing `workspace.yaml`, demo present)
 - `list_workspaces` — see folders and Excel files Menuyukti MCP can read
@@ -75,6 +75,7 @@ Secondary reference for power users — owners can stick to the [What to ask](..
 - `get_menu_heatmaps` — when each dish sells during the day / week (JSON; optional `matrix_category` with workspace COGS)
 - `render_menu_heatmaps` — same data as an MCP Apps heatmap widget (ChatGPT; category toggles, weak off by default)
 - `get_venue_slot_strength` — weekday × meal-period venue demand JSON for timing (**sales alone**; Codex: present with **`menuyukti-venue-slot-strength`**)
+- `render_venue_slot_strength` — same data as an MCP Apps heatmap widget (ChatGPT)
 - `get_pair_lift_matrix` — co-purchase lift matrix JSON for combo / upsell ideas (**sales alone**; COGS optional)
 - `render_pair_lift_matrix` — same data as an MCP Apps heatmap widget (ChatGPT)
 - `analyze_menu_engineering` — star / plow_horse / puzzle / weak matrix (**needs sales + COGS**)

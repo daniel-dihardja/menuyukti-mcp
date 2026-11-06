@@ -2,13 +2,16 @@
 
 Analyze your restaurant sales on **your own computer** with **Codex in ChatGPT Desktop**. Menuyukti MCP reads your POS Excel exports locally — sales data stays on your machine, not on someone else’s server.
 
+**Menuyukti 1.0** helps restaurant owners **plan promotions** and **trim / compact the menu**, using four local analytics capabilities (each with tools + charts): venue slot strength, menu heatmaps, pair lift index, and weak items analysis.
+
 Licensed under the [MIT License](LICENSE).
 
 ## Why use it
 
 - Keep sales files private on your laptop or office PC
-- Ask Codex natural questions about revenue, top dishes, demand patterns, combos, and the menu engineering matrix (stars / plow horses / puzzles / weak items — **requires COGS**)
-- Get analytics as **JSON from MCP tools**; for charts, Codex either mounts the venue-slot **MCP Apps widget** or follows bundled skills to write a **local HTML** heatmap/table
+- **Plan promotions** with venue demand timing, per-dish heatmaps, and combo / pair-lift ideas
+- **Trim the menu** with weak-items review (and the menu engineering matrix — **requires COGS**)
+- Get analytics as **JSON from MCP tools**; for charts, ChatGPT mounts an **MCP Apps widget** or Codex follows bundled skills to write a **local HTML** heatmap/table
 - Organize each venue and month in a simple **workspace** folder (sales, COGS, location notes)
 
 ## Quick start (Codex in ChatGPT Desktop)
@@ -35,14 +38,27 @@ Authoring lives under [`.agents/skills/`](.agents/skills/); `make sync-plugin-sk
 
 ## What to ask
 
+### Plan promotions
+
+| Goal | Capability | Example prompt |
+| --- | --- | --- |
+| When should we promote / staff? | Venue slot strength | “Show venue slot strength for demo-cafe-july-2026” |
+| When does each dish sell? | Menu heatmaps | “Show heatmaps for demo-cafe-july-2026” |
+| Combo / upsell ideas | Pair lift index | “Show the pair lift heatmap for demo-cafe-july-2026” |
+
+### Trim / compact the menu
+
+| Goal | Capability | Example prompt |
+| --- | --- | --- |
+| What to reprice, improve, or cut (needs COGS) | Weak items analysis | “Show weak items table for demo-cafe-july-2026” |
+| Full stars / plow horses / puzzles / weak (needs COGS) | Menu engineering (supports weak items) | “Run menu engineering for demo-cafe-july-2026” |
+
+### Setup and everyday asks
+
 | Goal | Example prompt |
 | --- | --- |
 | Check setup / list folders | “What’s my Menuyukti setup status?” / “List my workspaces” |
 | How did we do? | “Summarize demo-cafe-july-2026” |
-| When is the venue busy? | “Show venue slot strength for demo-cafe-july-2026” |
-| When does each dish sell? | “Show heatmaps for demo-cafe-july-2026” |
-| Combo / upsell ideas | “Show the pair lift heatmap for demo-cafe-july-2026” |
-| Stars / weak items (needs COGS) | “Run menu engineering” / “Show weak items table for demo-cafe-july-2026” |
 | Remember venue facts | “Save our hours and seating in knowledge for this workspace” |
 
 ### Sales alone vs COGS
