@@ -1,0 +1,14 @@
+{
+  "name": "my-pos",
+  "skip_rows": 0,
+  "columns": {
+    "bill_number": "<YOUR_ORDER_ID_COLUMN>",
+    "menu": "<YOUR_ITEM_NAME_COLUMN>",
+    "qty": "<YOUR_QTY_COLUMN>",
+    "price": "<YOUR_UNIT_PRICE_COLUMN>",
+    "total_after_bill_discount": "<YOUR_NET_SALES_COLUMN>",
+    "order_time": "<YOUR_SOLD_AT_COLUMN>",
+    "menu_category": "<YOUR_CATEGORY_COLUMN>",
+    "menu_category_detail": "<YOUR_SUBCATEGORY_COLUMN>"
+  }
+}
