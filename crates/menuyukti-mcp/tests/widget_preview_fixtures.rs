@@ -101,3 +101,28 @@ fn menu_heatmaps_empty_fixture_has_empty_list() {
     assert_eq!(v["menu_count"], 0);
     assert_eq!(v["heatmaps"].as_array().map(|a| a.len()), Some(0));
 }
+
+#[test]
+fn weak_items_review_fixture_has_items_and_stats() {
+    let v = read_fixture("weak_items_review.json");
+    let items = v["items"].as_array().expect("items array");
+    assert!(!items.is_empty(), "expected populated weak items");
+    assert_eq!(v["stats"]["item_count"].as_u64(), Some(items.len() as u64));
+    assert!(v["stats"]["period_days"].as_i64().unwrap_or(0) > 0);
+    assert!(v["period_start"].as_str().is_some());
+    assert!(v["period_end"].as_str().is_some());
+    let first = &items[0];
+    assert!(first["menu"].is_string());
+    assert!(first["units_sold"].is_number());
+    assert!(first["avg_qty_per_day"].is_number());
+    assert!(first["contribution_margin"].is_number());
+    assert!(first["contribution_margin_share"].is_number());
+    assert!(first.get("action").is_none());
+}
+
+#[test]
+fn weak_items_review_empty_fixture_has_empty_items() {
+    let v = read_fixture("weak_items_review_empty.json");
+    assert_eq!(v["items"].as_array().map(|a| a.len()), Some(0));
+    assert_eq!(v["stats"]["item_count"], 0);
+}

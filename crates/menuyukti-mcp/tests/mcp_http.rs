@@ -147,6 +147,7 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
         "render_venue_slot_strength",
         "render_pair_lift_matrix",
         "render_menu_heatmaps",
+        "render_weak_items_review",
     ] {
         assert!(
             names.contains(&required),
@@ -242,6 +243,30 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
         menu_render["_meta"]["openai/widgetPrefersBorder"].as_bool(),
         Some(true),
         "render_menu_heatmaps missing openai/widgetPrefersBorder; tool={menu_render}"
+    );
+    let weak_render = tools
+        .iter()
+        .find(|t| t["name"] == "render_weak_items_review")
+        .expect("render_weak_items_review tool entry");
+    assert_eq!(
+        weak_render["_meta"]["ui"]["resourceUri"].as_str(),
+        Some("ui://widget/weak-items-review-v2.html"),
+        "render_weak_items_review missing _meta.ui.resourceUri; tool={weak_render}"
+    );
+    assert_eq!(
+        weak_render["_meta"]["openai/outputTemplate"].as_str(),
+        Some("ui://widget/weak-items-review-v2.html"),
+        "render_weak_items_review missing openai/outputTemplate; tool={weak_render}"
+    );
+    assert_eq!(
+        weak_render["_meta"]["ui"]["prefersBorder"].as_bool(),
+        Some(true),
+        "render_weak_items_review should prefer host border/padding; tool={weak_render}"
+    );
+    assert_eq!(
+        weak_render["_meta"]["openai/widgetPrefersBorder"].as_bool(),
+        Some(true),
+        "render_weak_items_review missing openai/widgetPrefersBorder; tool={weak_render}"
     );
     for analytics in [
         "summarize_local_sales",
@@ -1141,6 +1166,123 @@ fn mcp_http_menu_heatmaps_widget_render_and_resource() {
 }
 
 #[test]
+fn mcp_http_weak_items_review_widget_render_and_resource() {
+    let _guard = port_lock().lock().unwrap();
+    let data_dir = repo_root().join("workspaces");
+    let server = start_server(&data_dir);
+
+    let call = http_post_json(
+        server.addr,
+        json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+                "name": "render_weak_items_review",
+                "arguments": { "path": "demo-cafe-july-2026" }
+            }
+        }),
+    );
+    let result = &call["result"];
+    assert!(
+        result.get("isError").and_then(|v| v.as_bool()) != Some(true),
+        "render_weak_items_review error; call={call}"
+    );
+    let items = result["structuredContent"]["items"]
+        .as_array()
+        .unwrap_or_else(|| panic!("items missing; call={call}"));
+    assert!(!items.is_empty(), "expected weak items; call={call}");
+    assert!(
+        result["structuredContent"]["stats"]["item_count"]
+            .as_u64()
+            .unwrap_or(0)
+            >= 1,
+        "expected stats.item_count; call={call}"
+    );
+    assert_eq!(
+        result["_meta"]["ui"]["resourceUri"].as_str(),
+        Some("ui://widget/weak-items-review-v2.html"),
+        "tool result must include template URI; call={call}"
+    );
+    assert_eq!(
+        result["_meta"]["openai/outputTemplate"].as_str(),
+        Some("ui://widget/weak-items-review-v2.html"),
+        "tool result must include openai/outputTemplate; call={call}"
+    );
+    assert_eq!(
+        result["_meta"]["ui"]["prefersBorder"].as_bool(),
+        Some(true),
+        "tool result should prefer host border/padding; call={call}"
+    );
+    let text = result["content"][0]["text"]
+        .as_str()
+        .unwrap_or_else(|| panic!("missing text content; call={call}"));
+    assert!(
+        text.to_lowercase().contains("weak items"),
+        "content text should mention weak items; text={text}"
+    );
+
+    let listed = http_post_json(
+        server.addr,
+        json!({"jsonrpc":"2.0","id":2,"method":"resources/list","params":{}}),
+    );
+    let resources = listed["result"]["resources"]
+        .as_array()
+        .unwrap_or_else(|| panic!("resources array missing; listed={listed}"));
+    let weak = resources
+        .iter()
+        .find(|r| r["uri"] == "ui://widget/weak-items-review-v2.html")
+        .unwrap_or_else(|| panic!("weak items resource missing; listed={listed}"));
+    assert_eq!(
+        weak["mimeType"].as_str(),
+        Some("text/html+skybridge"),
+        "resources/list mimeType; resource={weak}"
+    );
+
+    let read = http_post_json(
+        server.addr,
+        json!({
+            "jsonrpc": "2.0",
+            "id": 3,
+            "method": "resources/read",
+            "params": { "uri": "ui://widget/weak-items-review-v2.html" }
+        }),
+    );
+    let contents = read["result"]["contents"]
+        .as_array()
+        .unwrap_or_else(|| panic!("contents array missing; read={read}"));
+    assert_eq!(contents.len(), 1, "expected one content block; read={read}");
+    assert_eq!(
+        contents[0]["mimeType"].as_str(),
+        Some("text/html+skybridge"),
+        "resources/read mimeType; read={read}"
+    );
+    let html = contents[0]["text"]
+        .as_str()
+        .unwrap_or_else(|| panic!("missing HTML text; read={read}"));
+    assert!(
+        html.contains("Weak items review") && html.contains("contribution_margin_share"),
+        "widget HTML should render weak items table; html_len={}",
+        html.len()
+    );
+    assert!(
+        html.contains("--pad-top: 48px"),
+        "widget HTML should keep extra top padding for ChatGPT/Codex; html_len={}",
+        html.len()
+    );
+    assert!(
+        html.contains("th.sortable") && html.contains("toggleSort") && html.contains("aria-sort"),
+        "widget HTML should support sortable column headers; html_len={}",
+        html.len()
+    );
+    assert!(
+        !html.contains("label: \"Action\""),
+        "widget HTML must not include an Action column; html_len={}",
+        html.len()
+    );
+}
+
+#[test]
 fn mcp_http_menu_engineering_requires_cogs() {
     let _guard = port_lock().lock().unwrap();
     let tmp = tempfile::tempdir().unwrap();
@@ -1238,6 +1380,7 @@ fn mcp_http_setup_status_and_owner_playbook_instructions() {
         "render_venue_slot_strength",
         "render_pair_lift_matrix",
         "render_menu_heatmaps",
+        "render_weak_items_review",
         "list_workspace_files",
     ] {
         assert!(

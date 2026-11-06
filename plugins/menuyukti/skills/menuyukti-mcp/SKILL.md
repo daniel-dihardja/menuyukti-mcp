@@ -51,11 +51,11 @@ When unclear or path/config fails:
 | Combos / upsells (numbers only) | `get_pair_lift_matrix` (sales alone; COGS upgrades star focus) |
 | Stars / plow horses / puzzles / weak | `analyze_menu_engineering` (**sales + COGS**) |
 | Reprice / improve / remove (numbers) | `get_weak_items_review` (**sales + COGS**) |
-| Weak items table / show weak dishes | `get_weak_items_review`, then **`menuyukti-visualize-weak-items`** (**sales + COGS**) |
+| Weak items table / show weak dishes | Prefer **`render_weak_items_review`** (MCP Apps widget). Else `get_weak_items_review` + **`menuyukti-visualize-weak-items`**. Never both in one turn (**sales + COGS**) |
 | Cleaned rows | `list_normalized_sales` |
 | Venue notes | `read_workspace_knowledge` then `write_workspace_knowledge` (full replace) |
 
-For charts: pick **one** presentation. If `render_venue_slot_strength` or `render_pair_lift_matrix` mounted a widget, narrate only — do not also write HTML. If using a visualisation skill, write **one local HTML** file from the recipe (no Python/render scripts; no second markdown grid for the same ask).
+For charts: pick **one** presentation. If `render_venue_slot_strength`, `render_pair_lift_matrix`, `render_menu_heatmaps`, or `render_weak_items_review` mounted a widget, narrate only — do not also write HTML. If using a visualisation skill, write **one local HTML** file from the recipe (no Python/render scripts; no second markdown grid for the same ask).
 
 ## COGS gate
 

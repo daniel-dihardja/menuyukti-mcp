@@ -23,9 +23,9 @@ Owners only drop Excel files; ChatGPT writes `workspace.yaml` and maintains `kno
 }
 ```
 
-Menu engineering (`analyze_menu_engineering`) and weak items review (`get_weak_items_review`) need both sales and COGS roles configured. Summary, heatmaps (`get_menu_heatmaps` / `render_menu_heatmaps`), venue slot strength (`get_venue_slot_strength` / `render_venue_slot_strength`), and pair lift (`get_pair_lift_matrix` / `render_pair_lift_matrix`) work with sales alone; COGS upgrades pair-lift focus to stars and adds `matrix_category` on menu heatmaps when available.
+Menu engineering (`analyze_menu_engineering`) and weak items review (`get_weak_items_review` / `render_weak_items_review`) need both sales and COGS roles configured. Summary, heatmaps (`get_menu_heatmaps` / `render_menu_heatmaps`), venue slot strength (`get_venue_slot_strength` / `render_venue_slot_strength`), and pair lift (`get_pair_lift_matrix` / `render_pair_lift_matrix`) work with sales alone; COGS upgrades pair-lift focus to stars and adds `matrix_category` on menu heatmaps when available.
 
-In ChatGPT, ask to **show menu heatmaps**, **show the pair lift heatmap**, or **show venue slot strength** on `demo-cafe-july-2026` — the agent should call `render_menu_heatmaps`, `render_pair_lift_matrix`, or `render_venue_slot_strength` for the MCP Apps widget. In Codex, ask to **show venue slot strength** or **show menu heatmaps**; MCP returns JSON and the matching visualisation skill draws local HTML.
+In ChatGPT, ask to **show menu heatmaps**, **show the pair lift heatmap**, **show venue slot strength**, or **show weak items** on `demo-cafe-july-2026` — the agent should call `render_menu_heatmaps`, `render_pair_lift_matrix`, `render_venue_slot_strength`, or `render_weak_items_review` for the MCP Apps widget. In Codex, ask to **show venue slot strength**, **show menu heatmaps**, or **show weak items**; MCP returns JSON and the matching visualisation skill draws local HTML.
 
 ## Your own workspaces
 

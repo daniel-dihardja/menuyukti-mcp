@@ -78,7 +78,8 @@ Secondary reference for power users — owners can stick to the [What to ask](..
 - `get_pair_lift_matrix` — co-purchase lift matrix JSON for combo / upsell ideas (**sales alone**; COGS optional)
 - `render_pair_lift_matrix` — same data as an MCP Apps heatmap widget (ChatGPT)
 - `analyze_menu_engineering` — star / plow_horse / puzzle / weak matrix (**needs sales + COGS**)
-- `get_weak_items_review` — weak-quadrant depth review for reprice / improve / remove (**needs sales + COGS**; Codex: then use **menuyukti-visualize-weak-items** for a sortable HTML table)
+- `get_weak_items_review` — weak-quadrant depth review JSON for reprice / improve / remove (**needs sales + COGS**)
+- `render_weak_items_review` — same data as an MCP Apps sortable table widget (ChatGPT; needs sales + COGS)
 
 ## Location knowledge (`knowledge.md`)
 
@@ -122,4 +123,6 @@ If COGS is missing, drop a COGS Excel into the folder and ask ChatGPT to update 
 
 `get_weak_items_review` returns the **weak** quadrant only, with period depth (avg qty/day) and portfolio KPIs. Use it when deciding which dishes to **reprice, improve, or remove**. Same workspace COGS requirement as menu engineering.
 
-To **show a sortable table in Codex**, ask for the weak items table; the agent should call `get_weak_items_review` and write a local **HTML** table with clickable column headers via the **menuyukti-visualize-weak-items** skill (see [`.agents/skills/menuyukti-visualize-weak-items/`](../../.agents/skills/menuyukti-visualize-weak-items/)). There is no Action / keep / remove column. These visualisation skills ship with the [Codex plugin](./codex-plugin.md).
+To **show the sortable table**, ask for the weak items table / chart. In ChatGPT the agent should call **`render_weak_items_review`** (MCP Apps widget) — prefer that over narrating raw JSON. Keep `get_weak_items_review` for numbers-only answers. In **Codex** (or when the host does not mount MCP Apps), use `get_weak_items_review` + the **menuyukti-visualize-weak-items** skill (see [`.agents/skills/menuyukti-visualize-weak-items/`](../../.agents/skills/menuyukti-visualize-weak-items/)) — never both widget and skill redraw in the same turn. There is no Action / keep / remove column.
+
+Local styling: `make widgets-preview` lists **Weak items review** fixtures at `http://127.0.0.1:8790/`.

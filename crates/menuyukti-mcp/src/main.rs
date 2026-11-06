@@ -30,6 +30,7 @@ const HELLO_WORLD_WIDGET_URI: &str = "ui://widget/hello-world-v3.html";
 const VENUE_SLOT_STRENGTH_WIDGET_URI: &str = "ui://widget/venue-slot-strength-v6.html";
 const PAIR_LIFT_MATRIX_WIDGET_URI: &str = "ui://widget/pair-lift-matrix-v5.html";
 const MENU_HEATMAPS_WIDGET_URI: &str = "ui://widget/menu-heatmaps-v2.html";
+const WEAK_ITEMS_REVIEW_WIDGET_URI: &str = "ui://widget/weak-items-review-v2.html";
 /// ChatGPT Apps SDK examples still serve widgets as `text/html+skybridge`.
 /// Keep the MCP Apps profile MIME as a secondary compatibility note in docs/tests.
 const WIDGET_MIME_TYPE: &str = "text/html+skybridge";
@@ -59,7 +60,9 @@ const INSTRUCTIONS: &str = concat!(
     "render_pair_lift_matrix (MCP Apps widget) OR get_pair_lift_matrix for numbers/skill redraw — never both; ",
     "get_pair_lift_matrix alone for numbers-only JSON (sales alone; COGS upgrades focus to stars when ≥2); ",
     "stars/plow horses/puzzles/weak matrix → analyze_menu_engineering (needs sales+COGS); ",
-    "reprice/improve/remove weak dishes → get_weak_items_review (needs sales+COGS); ",
+    "reprice/improve/remove / show weak dishes → for show/table pick ONE path: ",
+    "render_weak_items_review (MCP Apps widget) OR get_weak_items_review for numbers/skill redraw — never both (needs sales+COGS); ",
+    "get_weak_items_review alone for numbers-only JSON; ",
     "cleaned line items → list_normalized_sales; ",
     "venue hours/seating/notes → read_workspace_knowledge then write_workspace_knowledge (full replace). ",
     // COGS gates
@@ -67,10 +70,10 @@ const INSTRUCTIONS: &str = concat!(
     "If missing, ask the owner to drop COGS Excel, then list_workspace_files and write_workspace_config. ",
     "Sales-only tools still work without COGS. ",
     // Widgets + smoke — one chart only
-    "For show/chart/heatmap: prefer render_venue_slot_strength, render_pair_lift_matrix, or render_menu_heatmaps when the host mounts MCP Apps widgets; ",
-    "otherwise use get_venue_slot_strength / get_pair_lift_matrix / get_menu_heatmaps and let a presentation skill draw once. ",
-    "Never call a render_* widget tool and also redraw a markdown/HTML heatmap in the same turn — narrate only after a widget. ",
-    "prefer get_venue_slot_strength / get_pair_lift_matrix / get_menu_heatmaps alone for text/numbers. ",
+    "For show/chart/heatmap/table: prefer render_venue_slot_strength, render_pair_lift_matrix, render_menu_heatmaps, or render_weak_items_review when the host mounts MCP Apps widgets; ",
+    "otherwise use get_venue_slot_strength / get_pair_lift_matrix / get_menu_heatmaps / get_weak_items_review and let a presentation skill draw once. ",
+    "Never call a render_* widget tool and also redraw a markdown/HTML chart or table in the same turn — narrate only after a widget. ",
+    "prefer get_venue_slot_strength / get_pair_lift_matrix / get_menu_heatmaps / get_weak_items_review alone for text/numbers. ",
     "render_hello_world_widget is UI smoke only (mock data) — never use it for analytics."
 );
 
@@ -330,6 +333,78 @@ fn menu_heatmaps_tool_result(
     result
 }
 
+fn weak_items_review_widget_meta() -> MetaObject {
+    let mut meta = MetaObject::new();
+    meta.insert(
+        "ui".to_string(),
+        json!({
+            "resourceUri": WEAK_ITEMS_REVIEW_WIDGET_URI,
+            "prefersBorder": true,
+        }),
+    );
+    meta.insert(
+        "openai/outputTemplate".to_string(),
+        json!(WEAK_ITEMS_REVIEW_WIDGET_URI),
+    );
+    meta.insert("openai/widgetAccessible".to_string(), json!(true));
+    meta.insert("openai/widgetPrefersBorder".to_string(), json!(true));
+    meta.insert(
+        "openai/toolInvocation/invoking".to_string(),
+        json!("Rendering weak items review…"),
+    );
+    meta.insert(
+        "openai/toolInvocation/invoked".to_string(),
+        json!("Weak items review ready."),
+    );
+    meta
+}
+
+fn weak_items_review_resource() -> Resource {
+    Resource::new(WEAK_ITEMS_REVIEW_WIDGET_URI, "weak-items-review-widget")
+        .with_title("Weak items review")
+        .with_description(
+            "MCP Apps widget: sortable weak-quadrant table with KPI strip from get_weak_items_review.",
+        )
+        .with_mime_type(WIDGET_MIME_TYPE)
+        .with_meta(weak_items_review_widget_meta())
+}
+
+fn weak_items_review_resource_contents() -> ResourceContents {
+    ResourceContents::text(
+        menuyukti_mcp::widget_assets::weak_items_review_widget_html(),
+        WEAK_ITEMS_REVIEW_WIDGET_URI,
+    )
+    .with_mime_type(WIDGET_MIME_TYPE)
+    .with_meta(weak_items_review_widget_meta())
+}
+
+fn weak_items_review_tool_result(
+    pos: &str,
+    workspace: &str,
+    cogs_path: &str,
+    review: &menuyukti::WeakReviewResult,
+    coverage: &menuyukti::MenuEngineeringCoverage,
+) -> CallToolResult {
+    let payload = json!({
+        "pos": pos,
+        "workspace": workspace,
+        "cogs_path": cogs_path,
+        "period_start": review.period_start,
+        "period_end": review.period_end,
+        "stats": review.stats,
+        "distribution_stats": review.distribution_stats,
+        "items": review.rows,
+        "coverage": coverage,
+    });
+    let mut result =
+        CallToolResult::structured(payload).with_meta(Some(weak_items_review_widget_meta()));
+    result.content = vec![ContentBlock::text(format!(
+        "Showing weak items review ({pos}, {} weak items).",
+        review.rows.len()
+    ))];
+    result
+}
+
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 struct PathArgs {
     /// Workspace folder (uses workspace.yaml sales role) or Excel file under MENUYUKTI_DATA_DIR.
@@ -468,6 +543,37 @@ fn enriched_menu_heatmaps(
         menuyukti::apply_matrix_categories(&mut heatmaps, &categories);
     }
     Ok(heatmaps)
+}
+
+/// Load weak-items review for a workspace path (sales + COGS required).
+fn load_weak_items_review(
+    path: &str,
+) -> Result<
+    (
+        String,
+        String,
+        menuyukti::WeakReviewResult,
+        menuyukti::MenuEngineeringCoverage,
+    ),
+    CallToolResult,
+> {
+    let cogs = menuyukti::load_workspace_cogs(path, None).map_err(|err| {
+        error_json(format!(
+            "{err} Weak items review needs sales + a unit-cost (COGS) Excel: \
+             ask the owner to drop COGS into the folder, then list_workspace_files \
+             and write_workspace_config (or call get_setup_status)."
+        ))
+    })?;
+    let loaded = load_or_error(path)?;
+    let matrix = menuyukti::compute_menu_engineering_from_orders(&loaded.rows, &cogs.unit_costs)
+        .map_err(|err| {
+            error_json(format!(
+                "{err}. Fix COGS coverage (Menu + COGS columns matching sold menu names) \
+                 or ask the owner to update unit costs."
+            ))
+        })?;
+    let review = menuyukti::adapt_weak_review_from_orders(&matrix, &loaded.rows);
+    Ok((loaded.pos, cogs.path, review, matrix.coverage))
 }
 
 fn role_from_args(role: WorkspaceFileRoleArgs) -> menuyukti::WorkspaceFileRole {
@@ -694,45 +800,25 @@ impl MenuyuktiMcp {
     }
 
     #[tool(
-        description = "Return Weak items review analytics for reprice / improve / remove decisions. Workspace folder under MENUYUKTI_DATA_DIR with files.sales and files.cogs required. Filters the menu-engineering matrix to the weak quadrant and adds period depth (avg qty/day, portfolio item/margin share). If COGS is missing, list_workspace_files / write_workspace_config or ask the owner for unit costs first."
+        description = "Return Weak items review analytics for reprice / improve / remove decisions. Workspace folder under MENUYUKTI_DATA_DIR with files.sales and files.cogs required. Filters the menu-engineering matrix to the weak quadrant and adds period depth (avg qty/day, portfolio item/margin share). If COGS is missing, list_workspace_files / write_workspace_config or ask the owner for unit costs first. JSON-only — use render_weak_items_review to mount the sortable table widget."
     )]
     async fn get_weak_items_review(
         &self,
         Parameters(WorkspacePathArgs { path }): Parameters<WorkspacePathArgs>,
     ) -> Result<CallToolResult, McpError> {
-        let cogs = match menuyukti::load_workspace_cogs(&path, None) {
-            Ok(v) => v,
-            Err(err) => {
-                return Ok(error_json(format!(
-                    "{err} Weak items review needs sales + a unit-cost (COGS) Excel: \
-                     ask the owner to drop COGS into the folder, then list_workspace_files \
-                     and write_workspace_config (or call get_setup_status)."
-                )));
-            }
-        };
-        let loaded = match load_or_error(&path) {
-            Ok(v) => v,
-            Err(resp) => return Ok(resp),
-        };
-        match menuyukti::compute_menu_engineering_from_orders(&loaded.rows, &cogs.unit_costs) {
-            Ok(matrix) => {
-                let review = menuyukti::adapt_weak_review_from_orders(&matrix, &loaded.rows);
-                Ok(text_json(json!({
-                    "pos": loaded.pos,
-                    "workspace": path,
-                    "cogs_path": cogs.path,
-                    "period_start": review.period_start,
-                    "period_end": review.period_end,
-                    "stats": review.stats,
-                    "distribution_stats": review.distribution_stats,
-                    "items": review.rows,
-                    "coverage": matrix.coverage,
-                })))
-            }
-            Err(err) => Ok(error_json(format!(
-                "{err}. Fix COGS coverage (Menu + COGS columns matching sold menu names) \
-                 or ask the owner to update unit costs."
-            ))),
+        match load_weak_items_review(&path) {
+            Ok((loaded_pos, cogs_path, review, coverage)) => Ok(text_json(json!({
+                "pos": loaded_pos,
+                "workspace": path,
+                "cogs_path": cogs_path,
+                "period_start": review.period_start,
+                "period_end": review.period_end,
+                "stats": review.stats,
+                "distribution_stats": review.distribution_stats,
+                "items": review.rows,
+                "coverage": coverage,
+            }))),
+            Err(resp) => Ok(resp),
         }
     }
 
@@ -829,6 +915,27 @@ impl MenuyuktiMcp {
             Err(err) => Ok(error_json(err)),
         }
     }
+
+    #[tool(
+        description = "Render the weak items review widget (sortable weak-quadrant table with portfolio KPIs). Workspace folder under MENUYUKTI_DATA_DIR with files.sales and files.cogs required. Prefer this when the owner should see the weak items table; use get_weak_items_review for JSON-only answers. Never also redraw HTML via the Codex skill in the same turn.",
+        annotations(title = "Render weak items review", read_only_hint = true),
+        meta = weak_items_review_widget_meta()
+    )]
+    async fn render_weak_items_review(
+        &self,
+        Parameters(WorkspacePathArgs { path }): Parameters<WorkspacePathArgs>,
+    ) -> Result<CallToolResult, McpError> {
+        match load_weak_items_review(&path) {
+            Ok((loaded_pos, cogs_path, review, coverage)) => Ok(weak_items_review_tool_result(
+                &loaded_pos,
+                &path,
+                &cogs_path,
+                &review,
+                &coverage,
+            )),
+            Err(resp) => Ok(resp),
+        }
+    }
 }
 
 #[tool_handler]
@@ -859,6 +966,7 @@ impl ServerHandler for MenuyuktiMcp {
                 venue_slot_strength_resource(),
                 pair_lift_matrix_resource(),
                 menu_heatmaps_resource(),
+                weak_items_review_resource(),
             ],
             ..Default::default()
         })
@@ -877,6 +985,8 @@ impl ServerHandler for MenuyuktiMcp {
             pair_lift_matrix_resource_contents()
         } else if request.uri == MENU_HEATMAPS_WIDGET_URI {
             menu_heatmaps_resource_contents()
+        } else if request.uri == WEAK_ITEMS_REVIEW_WIDGET_URI {
+            weak_items_review_resource_contents()
         } else {
             return Err(McpError::resource_not_found(
                 format!("unknown resource URI: {}", request.uri),

@@ -15,6 +15,8 @@ const VENUE_SLOT_STRENGTH_WIDGET_SHELL: &str =
     include_str!("../assets/venue_slot_strength_widget.html");
 const PAIR_LIFT_MATRIX_WIDGET_SHELL: &str = include_str!("../assets/pair_lift_matrix_widget.html");
 const MENU_HEATMAPS_WIDGET_SHELL: &str = include_str!("../assets/menu_heatmaps_widget.html");
+const WEAK_ITEMS_REVIEW_WIDGET_SHELL: &str =
+    include_str!("../assets/weak_items_review_widget.html");
 
 /// Replace the shared-theme marker with `widget-theme.css` (no-op if absent).
 pub fn inline_shared_theme(html: &str) -> String {
@@ -51,6 +53,13 @@ pub fn menu_heatmaps_widget_html() -> &'static str {
         .as_str()
 }
 
+/// Weak items review table HTML with shared theme inlined.
+pub fn weak_items_review_widget_html() -> &'static str {
+    static HTML: OnceLock<String> = OnceLock::new();
+    HTML.get_or_init(|| inline_shared_theme(WEAK_ITEMS_REVIEW_WIDGET_SHELL))
+        .as_str()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -71,10 +80,12 @@ mod tests {
         assert!(VENUE_SLOT_STRENGTH_WIDGET_SHELL.contains(SHARED_THEME_MARKER));
         assert!(PAIR_LIFT_MATRIX_WIDGET_SHELL.contains(SHARED_THEME_MARKER));
         assert!(MENU_HEATMAPS_WIDGET_SHELL.contains(SHARED_THEME_MARKER));
+        assert!(WEAK_ITEMS_REVIEW_WIDGET_SHELL.contains(SHARED_THEME_MARKER));
         // Shells should not hard-code the shared pad token (lives in theme CSS).
         assert!(!VENUE_SLOT_STRENGTH_WIDGET_SHELL.contains("--pad-top: 48px"));
         assert!(!PAIR_LIFT_MATRIX_WIDGET_SHELL.contains("--pad-top: 48px"));
         assert!(!MENU_HEATMAPS_WIDGET_SHELL.contains("--pad-top: 48px"));
+        assert!(!WEAK_ITEMS_REVIEW_WIDGET_SHELL.contains("--pad-top: 48px"));
     }
 
     #[test]
@@ -97,6 +108,15 @@ mod tests {
         assert!(menus.contains("Menu heatmaps"));
         assert!(menus.contains("matrix_category") || menus.contains("data-category=\"weak\""));
         assert!(menus.contains("--heatmap-high"));
+
+        let weak = weak_items_review_widget_html();
+        assert!(!weak.contains(SHARED_THEME_MARKER));
+        assert!(weak.contains("--pad-top: 48px"));
+        assert!(weak.contains("Weak items review"));
+        assert!(weak.contains("contribution_margin_share"));
+        assert!(weak.contains("th.sortable"));
+        assert!(weak.contains("toggleSort"));
+        assert!(!weak.contains("label: \"Action\""));
     }
 
     #[test]

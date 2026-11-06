@@ -1,0 +1,25 @@
+{
+  "pos": "mock-preview",
+  "workspace": "mock-preview-empty",
+  "cogs_path": "cogs.xlsx",
+  "period_start": "2026-07-01",
+  "period_end": "2026-07-31",
+  "stats": {
+    "item_count": 0,
+    "item_share": 0.0,
+    "margin_share": 0.0,
+    "margin_amount": 0.0,
+    "total_menu_items": 12,
+    "period_days": 31
+  },
+  "distribution_stats": {
+    "item_count": 0,
+    "item_share": 0.0,
+    "margin_share": 0.0
+  },
+  "items": [],
+  "coverage": {
+    "matched_menus": 12,
+    "unmatched_menus": []
+  }
+}

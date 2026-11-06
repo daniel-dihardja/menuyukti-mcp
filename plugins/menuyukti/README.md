@@ -17,7 +17,7 @@ Synced from [`.agents/skills/`](../../.agents/skills/) via `make sync-plugin-ski
 | `menuyukti-mcp` | Setup ritual, goal → MCP tool map |
 | `menuyukti-venue-slot-strength` | Venue demand: MCP Apps widget or local HTML heatmap |
 | `menuyukti-visualize-menu-heatmaps` | Per-dish daily / weekly HTML heatmaps |
-| `menuyukti-visualize-weak-items` | Sortable weak-items HTML table |
+| `menuyukti-visualize-weak-items` | Codex fallback: sortable weak-items HTML table (prefer `render_weak_items_review` in ChatGPT) |
 
 ## Authoring
 

@@ -1,0 +1,54 @@
+{
+  "pos": "mock-preview",
+  "workspace": "mock-preview",
+  "cogs_path": "cogs.xlsx",
+  "period_start": "2026-07-01",
+  "period_end": "2026-07-31",
+  "stats": {
+    "item_count": 4,
+    "item_share": 0.2,
+    "margin_share": 0.045,
+    "margin_amount": 128.5,
+    "total_menu_items": 20,
+    "period_days": 31
+  },
+  "distribution_stats": {
+    "item_count": 4,
+    "item_share": 0.2,
+    "margin_share": 0.045
+  },
+  "items": [
+    {
+      "menu": "Iced Lemon Tea",
+      "units_sold": 42,
+      "avg_qty_per_day": 1.35,
+      "contribution_margin": 18.4,
+      "contribution_margin_share": 0.006
+    },
+    {
+      "menu": "Toast Keju",
+      "units_sold": 28,
+      "avg_qty_per_day": 0.9,
+      "contribution_margin": 32.1,
+      "contribution_margin_share": 0.011
+    },
+    {
+      "menu": "French Fries",
+      "units_sold": 55,
+      "avg_qty_per_day": 1.77,
+      "contribution_margin": 41.2,
+      "contribution_margin_share": 0.014
+    },
+    {
+      "menu": "Mineral Water",
+      "units_sold": 19,
+      "avg_qty_per_day": 0.61,
+      "contribution_margin": 36.8,
+      "contribution_margin_share": 0.014
+    }
+  ],
+  "coverage": {
+    "matched_menus": 20,
+    "unmatched_menus": []
+  }
+}
