@@ -175,12 +175,12 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
         .expect("render_venue_slot_strength tool entry");
     assert_eq!(
         venue_render["_meta"]["ui"]["resourceUri"].as_str(),
-        Some("ui://widget/venue-slot-strength-v4.html"),
+        Some("ui://widget/venue-slot-strength-v5.html"),
         "render_venue_slot_strength missing _meta.ui.resourceUri; tool={venue_render}"
     );
     assert_eq!(
         venue_render["_meta"]["openai/outputTemplate"].as_str(),
-        Some("ui://widget/venue-slot-strength-v4.html"),
+        Some("ui://widget/venue-slot-strength-v5.html"),
         "render_venue_slot_strength missing openai/outputTemplate; tool={venue_render}"
     );
     assert_eq!(
@@ -662,12 +662,12 @@ fn mcp_http_venue_slot_strength_widget_render_and_resource() {
     );
     assert_eq!(
         result["_meta"]["ui"]["resourceUri"].as_str(),
-        Some("ui://widget/venue-slot-strength-v4.html"),
+        Some("ui://widget/venue-slot-strength-v5.html"),
         "tool result must include template URI; call={call}"
     );
     assert_eq!(
         result["_meta"]["openai/outputTemplate"].as_str(),
-        Some("ui://widget/venue-slot-strength-v4.html"),
+        Some("ui://widget/venue-slot-strength-v5.html"),
         "tool result must include openai/outputTemplate; call={call}"
     );
     assert_eq!(
@@ -697,7 +697,7 @@ fn mcp_http_venue_slot_strength_widget_render_and_resource() {
         .unwrap_or_else(|| panic!("resources array missing; listed={listed}"));
     let venue = resources
         .iter()
-        .find(|r| r["uri"] == "ui://widget/venue-slot-strength-v4.html")
+        .find(|r| r["uri"] == "ui://widget/venue-slot-strength-v5.html")
         .unwrap_or_else(|| panic!("venue slot resource missing; listed={listed}"));
     assert_eq!(
         venue["mimeType"].as_str(),
@@ -711,7 +711,7 @@ fn mcp_http_venue_slot_strength_widget_render_and_resource() {
             "jsonrpc": "2.0",
             "id": 3,
             "method": "resources/read",
-            "params": { "uri": "ui://widget/venue-slot-strength-v4.html" }
+            "params": { "uri": "ui://widget/venue-slot-strength-v5.html" }
         }),
     );
     let contents = read["result"]["contents"]
@@ -744,6 +744,19 @@ fn mcp_http_venue_slot_strength_widget_render_and_resource() {
     assert!(
         html.contains("--color-background-primary") && html.contains("host-context-changed"),
         "widget HTML should apply host style tokens / context changes; html_len={}",
+        html.len()
+    );
+    assert!(
+        html.contains("metric-seg")
+            && html.contains("data-metric=\"demand\"")
+            && html.contains("data-metric=\"orders\"")
+            && html.contains("data-metric=\"share\""),
+        "widget HTML should offer Demand/Orders/Share metric selector; html_len={}",
+        html.len()
+    );
+    assert!(
+        html.contains("menuyukti-venue-slot-metric"),
+        "widget HTML should persist metric selection; html_len={}",
         html.len()
     );
 }

@@ -27,7 +27,7 @@ const MCP_PATH: &str = "/mcp";
 /// MCP Apps UI resource for the hello-world smoke widget.
 /// Bump the URI when the HTML changes so ChatGPT does not keep a cached blank template.
 const HELLO_WORLD_WIDGET_URI: &str = "ui://widget/hello-world-v3.html";
-const VENUE_SLOT_STRENGTH_WIDGET_URI: &str = "ui://widget/venue-slot-strength-v4.html";
+const VENUE_SLOT_STRENGTH_WIDGET_URI: &str = "ui://widget/venue-slot-strength-v5.html";
 /// ChatGPT Apps SDK examples still serve widgets as `text/html+skybridge`.
 /// Keep the MCP Apps profile MIME as a secondary compatibility note in docs/tests.
 const WIDGET_MIME_TYPE: &str = "text/html+skybridge";

@@ -15,6 +15,7 @@
         --color-text-secondary: light-dark(#64748b, #a3a3a3);
         --color-text-warning: light-dark(#92400e, #fcd34d);
         --color-border-primary: light-dark(#e2e8f0, #404040);
+        --color-background-info: light-dark(#eff6ff, #1e293b);
         --font-sans: "Segoe UI", system-ui, -apple-system, sans-serif;
         /* Sequential Blues: pale low → mid blue high (theme-aware). */
         --venue-low: light-dark(#dbeafe, #1e3a5f);
@@ -69,6 +70,56 @@
         margin: 10px 0 0;
         color: var(--color-text-secondary);
         font-size: 0.75rem;
+      }
+      .metric-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px 14px;
+        margin-top: 14px;
+      }
+      .metric-label {
+        color: var(--color-text-secondary);
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      .metric-seg {
+        display: inline-flex;
+        padding: 2px;
+        border: 1px solid var(--color-border-primary);
+        border-radius: 8px;
+        background: var(--color-background-secondary);
+        gap: 2px;
+      }
+      .metric-seg button {
+        appearance: none;
+        margin: 0;
+        border: 0;
+        border-radius: 6px;
+        padding: 6px 12px;
+        background: transparent;
+        color: var(--color-text-secondary);
+        font: inherit;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        line-height: 1.2;
+      }
+      .metric-seg button:hover {
+        color: var(--color-text-primary);
+      }
+      .metric-seg button[aria-checked="true"] {
+        background: var(--color-background-primary);
+        color: var(--color-text-primary);
+        box-shadow: 0 0 0 1px var(--color-border-primary);
+      }
+      .metric-seg button:focus-visible {
+        outline: 2px solid var(--venue-high);
+        outline-offset: 1px;
+      }
+      .showing {
+        color: var(--color-text-secondary);
+        font-size: 0.72rem;
       }
       .legend {
         display: flex;
@@ -147,7 +198,8 @@
       }
       td.cell {
         font-weight: 600;
-        min-width: 3.2rem;
+        min-width: 3.4rem;
+        font-variant-numeric: tabular-nums;
         color: var(--color-text-primary);
       }
       td.cell.light-text {
@@ -174,10 +226,51 @@
         slots. Use for staffing and when to promote.
       </p>
       <p id="meta" class="meta"></p>
+      <div id="metric-bar" class="metric-bar hidden">
+        <span class="metric-label" id="metric-label">Show</span>
+        <div
+          class="metric-seg"
+          role="radiogroup"
+          aria-labelledby="metric-label"
+          id="metric-seg"
+        >
+          <button
+            type="button"
+            role="radio"
+            data-metric="demand"
+            aria-checked="true"
+            aria-label="Demand index"
+          >
+            Demand
+          </button>
+          <button
+            type="button"
+            role="radio"
+            data-metric="orders"
+            aria-checked="false"
+            aria-label="Order count"
+            tabindex="-1"
+          >
+            Orders
+          </button>
+          <button
+            type="button"
+            role="radio"
+            data-metric="share"
+            aria-checked="false"
+            aria-label="Traffic share"
+            tabindex="-1"
+          >
+            Share
+          </button>
+        </div>
+        <span id="showing" class="showing"></span>
+      </div>
       <div id="legend" class="legend hidden">
         <span>Low</span>
         <div class="legend-bar" aria-hidden="true"></div>
         <span>High</span>
+        <span id="legend-metric" class="showing"></span>
       </div>
       <div id="tiers" class="tiers hidden">
         <span class="tier"
@@ -185,7 +278,7 @@
             class="tier-swatch"
             style="background: var(--venue-low)"
           ></span>
-          Low (&lt; 0.9)</span
+          Low (&lt; 0.9 demand)</span
         >
         <span class="tier"
           ><span
@@ -198,14 +291,14 @@
               );
             "
           ></span>
-          Average</span
+          Average demand</span
         >
         <span class="tier"
           ><span
             class="tier-swatch"
             style="background: var(--venue-high)"
           ></span>
-          High (&gt; 1.1)</span
+          High (&gt; 1.1 demand)</span
         >
       </div>
       <div id="scroll" class="scroll hidden">
@@ -238,11 +331,45 @@
         "dinner",
         "late_night",
       ];
+      const METRIC_KEY = "menuyukti-venue-slot-metric";
+      const METRICS = {
+        demand: {
+          id: "demand",
+          short: "Demand",
+          showing: "Showing demand index",
+          legend: "Color + number = demand index",
+          field: (c) => Number(c.demand_index ?? c.demandIndex ?? 0),
+          format: (n) =>
+            Number.isFinite(n) ? n.toFixed(2) : "—",
+        },
+        orders: {
+          id: "orders",
+          short: "Orders",
+          showing: "Showing order count",
+          legend: "Color + number = orders",
+          field: (c) => Number(c.order_count ?? c.orderCount ?? 0),
+          format: (n) =>
+            Number.isFinite(n) ? String(Math.round(n)) : "—",
+        },
+        share: {
+          id: "share",
+          short: "Share",
+          showing: "Showing traffic share",
+          legend: "Color + number = traffic share",
+          field: (c) => Number(c.traffic_share ?? c.trafficShare ?? 0),
+          format: (n) =>
+            Number.isFinite(n) ? `${(n * 100).toFixed(1)}%` : "—",
+        },
+      };
 
       const root = document.documentElement;
       const panelEl = document.getElementById("panel");
       const metaEl = document.getElementById("meta");
+      const metricBarEl = document.getElementById("metric-bar");
+      const metricSegEl = document.getElementById("metric-seg");
+      const showingEl = document.getElementById("showing");
       const legendEl = document.getElementById("legend");
+      const legendMetricEl = document.getElementById("legend-metric");
       const tiersEl = document.getElementById("tiers");
       const scrollEl = document.getElementById("scroll");
       const emptyEl = document.getElementById("empty");
@@ -251,6 +378,26 @@
 
       let nextRpcId = 1;
       let hostFontStyleEl = null;
+      let lastPayload = null;
+      let activeMetric = loadMetric();
+
+      function loadMetric() {
+        try {
+          const stored = localStorage.getItem(METRIC_KEY);
+          if (stored && METRICS[stored]) return stored;
+        } catch (_) {
+          /* ignore */
+        }
+        return "demand";
+      }
+
+      function saveMetric(id) {
+        try {
+          localStorage.setItem(METRIC_KEY, id);
+        } catch (_) {
+          /* ignore */
+        }
+      }
 
       function px(n) {
         const v = Number(n);
@@ -338,9 +485,33 @@
         }
       }
 
+      function syncMetricControls() {
+        const metric = METRICS[activeMetric] || METRICS.demand;
+        const buttons = metricSegEl.querySelectorAll("button[data-metric]");
+        buttons.forEach((btn) => {
+          const selected = btn.dataset.metric === metric.id;
+          btn.setAttribute("aria-checked", selected ? "true" : "false");
+          btn.tabIndex = selected ? 0 : -1;
+        });
+        showingEl.textContent = metric.showing;
+        legendMetricEl.textContent = metric.legend;
+      }
+
+      function setMetric(id) {
+        if (!METRICS[id] || id === activeMetric) {
+          syncMetricControls();
+          return;
+        }
+        activeMetric = id;
+        saveMetric(id);
+        syncMetricControls();
+        if (lastPayload) renderFromStructured(lastPayload);
+      }
+
       function showEmpty(message) {
         emptyEl.textContent = message;
         emptyEl.classList.remove("hidden");
+        metricBarEl.classList.add("hidden");
         legendEl.classList.add("hidden");
         tiersEl.classList.add("hidden");
         scrollEl.classList.add("hidden");
@@ -351,9 +522,11 @@
 
       function showGrid() {
         emptyEl.classList.add("hidden");
+        metricBarEl.classList.remove("hidden");
         legendEl.classList.remove("hidden");
         tiersEl.classList.remove("hidden");
         scrollEl.classList.remove("hidden");
+        syncMetricControls();
         notifySize();
       }
 
@@ -383,6 +556,7 @@
 
       function renderFromStructured(data) {
         try {
+          lastPayload = data;
           if (!data || typeof data !== "object") {
             showEmpty("No venue slot demand data yet.");
             return;
@@ -402,6 +576,7 @@
             return;
           }
 
+          const metric = METRICS[activeMetric] || METRICS.demand;
           const byKey = new Map();
           for (const cell of profile) {
             const day = String(cell.day || "").toLowerCase();
@@ -412,19 +587,34 @@
             byKey.set(`${day}:${period}`, cell);
           }
 
-          const indexes = profile
+          const metricValues = profile
+            .map((c) => metric.field(c))
+            .filter((n) => Number.isFinite(n));
+          const min = metricValues.length ? Math.min(...metricValues) : 0;
+          const max = metricValues.length ? Math.max(...metricValues) : 1;
+
+          const demandValues = profile
             .map((c) => Number(c.demand_index ?? c.demandIndex))
             .filter((n) => Number.isFinite(n));
-          const min = indexes.length ? Math.min(...indexes) : 0;
-          const max = indexes.length ? Math.max(...indexes) : 1;
+          const demandMin = demandValues.length ? Math.min(...demandValues) : 0;
+          const demandMax = demandValues.length ? Math.max(...demandValues) : 1;
 
           const pos = data.pos ? String(data.pos) : "";
           const slotCount =
             data.slot_count ?? data.slotCount ?? profile.length;
+          const rangeLabel =
+            metric.id === "demand"
+              ? `index range ${formatIndex(min)}–${formatIndex(max)}`
+              : metric.id === "orders"
+                ? `orders ${metric.format(min)}–${metric.format(max)}`
+                : `share ${metric.format(min)}–${metric.format(max)}`;
           metaEl.textContent = [
             pos ? `POS: ${pos}` : null,
             `${slotCount} slots`,
-            `index range ${formatIndex(min)}–${formatIndex(max)}`,
+            rangeLabel,
+            metric.id !== "demand"
+              ? `demand ${formatIndex(demandMin)}–${formatIndex(demandMax)}`
+              : null,
           ]
             .filter(Boolean)
             .join(" · ");
@@ -466,11 +656,12 @@
               ).toLowerCase();
               const orders = Number(cell.order_count ?? cell.orderCount ?? 0);
               const share = Number(cell.traffic_share ?? cell.trafficShare ?? 0);
-              const t = intensity(index, min, max);
+              const value = metric.field(cell);
+              const t = intensity(value, min, max);
               td.dataset.relative = relative;
               td.style.backgroundColor = cellBackground(t);
               if (t > 0.75) td.classList.add("light-text");
-              td.textContent = formatIndex(index);
+              td.textContent = metric.format(value);
               td.title = `${DAY_LABELS[day]} · ${periodLabel(cell) || period}
 Orders: ${orders}
 Traffic share: ${(share * 100).toFixed(1)}%
@@ -506,7 +697,7 @@ Relative: ${relative}`;
               params: {
                 appInfo: {
                   name: "menuyukti-venue-slot-strength",
-                  version: "4",
+                  version: "5",
                 },
                 appCapabilities: {
                   availableDisplayModes: ["inline", "fullscreen"],
@@ -522,7 +713,6 @@ Relative: ${relative}`;
       }
 
       function applyFallbackThemeFromEnvironment() {
-        // Local preview / hosts that omit theme: follow OS preference.
         try {
           const prefersDark =
             typeof window.matchMedia === "function" &&
@@ -533,10 +723,41 @@ Relative: ${relative}`;
         }
       }
 
+      function wireMetricControl() {
+        const buttons = [
+          ...metricSegEl.querySelectorAll("button[data-metric]"),
+        ];
+        buttons.forEach((btn, index) => {
+          btn.addEventListener("click", () => setMetric(btn.dataset.metric));
+          btn.addEventListener("keydown", (event) => {
+            let next = null;
+            if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+              next = buttons[(index + 1) % buttons.length];
+            } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+              next = buttons[(index - 1 + buttons.length) % buttons.length];
+            } else if (event.key === "Home") {
+              next = buttons[0];
+            } else if (event.key === "End") {
+              next = buttons[buttons.length - 1];
+            } else if (event.key === " " || event.key === "Enter") {
+              event.preventDefault();
+              setMetric(btn.dataset.metric);
+              return;
+            }
+            if (next) {
+              event.preventDefault();
+              setMetric(next.dataset.metric);
+              next.focus();
+            }
+          });
+        });
+        syncMetricControls();
+      }
+
       try {
         applyFallbackThemeFromEnvironment();
+        wireMetricControl();
 
-        // ChatGPT compatibility aliases.
         if (typeof window !== "undefined" && window.openai) {
           if (window.openai.theme) applyDocumentTheme(window.openai.theme);
           if (window.openai.toolOutput) {
@@ -567,7 +788,6 @@ Relative: ${relative}`;
               applyHostContext(message.params?.hostContext || message.params);
               return;
             }
-            // ui/initialize response
             if (message.result?.hostContext) {
               applyHostContext(message.result.hostContext);
             }
@@ -575,7 +795,6 @@ Relative: ${relative}`;
           { passive: true }
         );
 
-        // Report size once after first paint (hosts that auto-resize).
         requestAnimationFrame(() => notifySize());
       } catch (err) {
         showEmpty(`Bridge error: ${String(err)}`);
