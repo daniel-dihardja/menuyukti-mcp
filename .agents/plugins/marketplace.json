@@ -1,0 +1,21 @@
+{
+  "name": "menuyukti-repo",
+  "interface": {
+    "displayName": "Menuyukti (this repo)"
+  },
+  "plugins": [
+    {
+      "name": "menuyukti",
+      "source": {
+        "source": "local",
+        "path": "./plugins/menuyukti"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity",
+      "description": "Local POS analytics for Codex (Desktop-only localhost MCP). Requires the Menuyukti MCP binary running at http://127.0.0.1:8787/mcp."
+    }
+  ]
+}

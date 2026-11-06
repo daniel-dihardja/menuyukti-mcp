@@ -27,7 +27,7 @@ const MCP_PATH: &str = "/mcp";
 /// MCP Apps UI resource for the hello-world smoke widget.
 /// Bump the URI when the HTML changes so ChatGPT does not keep a cached blank template.
 const HELLO_WORLD_WIDGET_URI: &str = "ui://widget/hello-world-v3.html";
-const VENUE_SLOT_STRENGTH_WIDGET_URI: &str = "ui://widget/venue-slot-strength-v1.html";
+const VENUE_SLOT_STRENGTH_WIDGET_URI: &str = "ui://widget/venue-slot-strength-v5.html";
 /// ChatGPT Apps SDK examples still serve widgets as `text/html+skybridge`.
 /// Keep the MCP Apps profile MIME as a secondary compatibility note in docs/tests.
 const WIDGET_MIME_TYPE: &str = "text/html+skybridge";
@@ -51,8 +51,9 @@ const INSTRUCTIONS: &str = concat!(
     // Goal → tool map
     "Goal→tool: how did we do → summarize_local_sales; ",
     "when each dish sells → get_menu_heatmaps; ",
-    "when is the venue busy / staffing by daypart → render_venue_slot_strength for show/chart/heatmap, ",
-    "get_venue_slot_strength for numbers-only JSON; ",
+    "when is the venue busy / staffing by daypart → for show/chart/heatmap pick ONE path: ",
+    "render_venue_slot_strength (MCP Apps widget) OR get_venue_slot_strength for a skill redraw — never both in the same turn; ",
+    "get_venue_slot_strength alone for numbers-only JSON; ",
     "combo / upsell ideas → get_pair_lift_matrix (sales alone; COGS upgrades focus to stars when ≥2); ",
     "stars/plow horses/puzzles/weak matrix → analyze_menu_engineering (needs sales+COGS); ",
     "reprice/improve/remove weak dishes → get_weak_items_review (needs sales+COGS); ",
@@ -62,9 +63,11 @@ const INSTRUCTIONS: &str = concat!(
     "COGS gate: menu engineering and weak-items need a unit-cost Excel mapped as files.cogs. ",
     "If missing, ask the owner to drop COGS Excel, then list_workspace_files and write_workspace_config. ",
     "Sales-only tools still work without COGS. ",
-    // Widgets + smoke
-    "Prefer render_venue_slot_strength when the owner says show/chart/heatmap; ",
-    "prefer get_venue_slot_strength for text/numbers only. ",
+    // Widgets + smoke — one chart only
+    "For show/chart/heatmap: prefer render_venue_slot_strength when the host mounts MCP Apps widgets; ",
+    "otherwise use get_venue_slot_strength and let a presentation skill draw once. ",
+    "Never call render_venue_slot_strength and also redraw a markdown/HTML heatmap in the same turn — narrate only after a widget. ",
+    "prefer get_venue_slot_strength alone for text/numbers. ",
     "render_hello_world_widget is UI smoke only (mock data) — never use it for analytics."
 );
 
@@ -127,13 +130,19 @@ fn venue_slot_strength_widget_meta() -> MetaObject {
     let mut meta = MetaObject::new();
     meta.insert(
         "ui".to_string(),
-        json!({ "resourceUri": VENUE_SLOT_STRENGTH_WIDGET_URI }),
+        json!({
+            "resourceUri": VENUE_SLOT_STRENGTH_WIDGET_URI,
+            // Ask the host for a bordered card + outer padding (ChatGPT/Codex).
+            "prefersBorder": true,
+        }),
     );
     meta.insert(
         "openai/outputTemplate".to_string(),
         json!(VENUE_SLOT_STRENGTH_WIDGET_URI),
     );
     meta.insert("openai/widgetAccessible".to_string(), json!(true));
+    // ChatGPT compatibility alias for `_meta.ui.prefersBorder`.
+    meta.insert("openai/widgetPrefersBorder".to_string(), json!(true));
     meta.insert(
         "openai/toolInvocation/invoking".to_string(),
         json!("Rendering venue slot strength…"),

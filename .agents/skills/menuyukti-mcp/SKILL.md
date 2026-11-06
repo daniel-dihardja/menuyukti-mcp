@@ -28,7 +28,7 @@ Keep POS / COGS files on the user’s machine. Do not upload spreadsheets to rem
 When unclear or path/config fails:
 
 1. Call `get_setup_status` (and `list_workspaces` if useful).
-2. If nothing is configured, offer `demo-cafe-july-2026` with example asks: summarize; show venue slot strength chart; menu engineering (needs COGS).
+2. If nothing is configured, offer `demo-cafe-july-2026` with example asks: summarize; show venue slot strength; show menu heatmaps; show weak items table (needs COGS); menu engineering (needs COGS).
 
 ## Onboard a new folder
 
@@ -39,23 +39,27 @@ When unclear or path/config fails:
 
 ## Goal → tool (prefer MCP)
 
-| Goal | Tool |
+| Goal | Tool / skill |
 | --- | --- |
 | Setup / diagnosis | `get_setup_status` |
 | How did we do? | `summarize_local_sales` |
-| When each dish sells | `get_menu_heatmaps` |
-| Venue busy / staffing chart | `render_venue_slot_strength` |
-| Venue busy (numbers only) | `get_venue_slot_strength` |
+| When each dish sells (numbers) | `get_menu_heatmaps` |
+| When each dish sells (show / chart) | `get_menu_heatmaps`, then **`menuyukti-visualize-menu-heatmaps`** |
+| Venue busy / staffing (show / chart) | **One path only:** `render_venue_slot_strength` (widget) **or** `get_venue_slot_strength` + **`menuyukti-venue-slot-strength`** redraw — never both |
+| Venue busy / staffing (numbers only) | `get_venue_slot_strength` |
 | Combos / upsells | `get_pair_lift_matrix` (sales alone; COGS upgrades star focus) |
 | Stars / plow horses / puzzles / weak | `analyze_menu_engineering` (**sales + COGS**) |
-| Reprice / improve / remove | `get_weak_items_review` (**sales + COGS**) |
+| Reprice / improve / remove (numbers) | `get_weak_items_review` (**sales + COGS**) |
+| Weak items table / show weak dishes | `get_weak_items_review`, then **`menuyukti-visualize-weak-items`** (**sales + COGS**) |
 | Cleaned rows | `list_normalized_sales` |
 | Venue notes | `read_workspace_knowledge` then `write_workspace_knowledge` (full replace) |
+
+For charts: pick **one** presentation. If `render_venue_slot_strength` mounted a widget, narrate only — do not also write HTML. If using a visualisation skill, write **one local HTML** file from the recipe (no Python/render scripts; no second markdown grid for the same ask).
 
 ## COGS gate
 
 Menu engineering and weak-items need a unit-cost Excel as `files.cogs`. If missing: ask the owner to drop COGS, then `list_workspace_files` + `write_workspace_config`. Sales-only tools still work without COGS.
 
-## Offline venue slot strength
+## Visualisation skills
 
-If Menuyukti MCP is **not** available and the user only needs weekday × meal-period demand from a local Excel (especially custom columns), use the **`menuyukti-venue-slot-strength`** skill / script. Do **not** reimplement menu engineering, pair lift, or heatmaps in this skill.
+Charts come from MCP JSON + the matching skill’s HTML recipe (`menuyukti-venue-slot-strength`, `menuyukti-visualize-menu-heatmaps`, `menuyukti-visualize-weak-items`). Prefer MCP tools for all analytics math — do **not** reimplement menu engineering, pair lift, heatmaps, or slot strength by hand.

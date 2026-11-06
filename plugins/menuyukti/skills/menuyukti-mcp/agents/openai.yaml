@@ -1,0 +1,8 @@
+interface:
+  display_name: "Menuyukti MCP"
+  short_description: "Set up local POS workspaces and call Menuyukti MCP analytics tools."
+  brand_color: "#1F6F4A"
+  default_prompt: "Using this skill, check Menuyukti setup status and help me analyze my workspace with MCP tools."
+
+policy:
+  allow_implicit_invocation: true

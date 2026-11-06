@@ -11,8 +11,15 @@ make test
 make mcp
 make mcp-inspect
 make widgets-preview  # mock widget HTML + live reload (no Node)
+make sync-plugin-skills  # copy .agents/skills → plugins/menuyukti/skills
 make backlog   # Backlog.md board (optional)
 ```
+
+After editing Codex skills under `.agents/skills/`, run `make sync-plugin-skills` before committing so the installable plugin stays in sync. See [Codex plugin](./codex-plugin.md).
+
+## CI
+
+GitHub Actions runs the same `make check` gate on every **pull request** and on **push to `main`** (see [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)). Version-tag releases stay in [`release.yml`](../../.github/workflows/release.yml). The toolchain is pinned via [`rust-toolchain.toml`](../../rust-toolchain.toml) (stable + rustfmt + clippy).
 
 ## Crate layout
 

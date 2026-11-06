@@ -58,7 +58,9 @@ Open **`http://127.0.0.1:8790/`**, pick a widget (Hello World, venue slot streng
 ## Next steps
 
 - Put sales files in a [workspace](./workspaces.md).
-- In **ChatGPT Desktop** settings, add Menuyukti MCP as an MCP server at `http://127.0.0.1:8787/mcp`, then use it in chat.
+- Prefer installing the **[Menuyukti Codex plugin](./codex-plugin.md)** (skills + localhost MCP) from this repo’s marketplace in **ChatGPT Desktop / Codex**. The plugin is Desktop-only and still requires this binary to be running.
+- Manual alternative: in ChatGPT Desktop settings, add Menuyukti MCP as an MCP server at `http://127.0.0.1:8787/mcp`, then add skills from [`.agents/skills/`](../../.agents/skills/) one by one.
+- Ask *What’s my Menuyukti setup status?* or try `demo-cafe-july-2026`.
 - If your POS export isn’t recognized, see [Custom POS columns](./custom-pos-columns.md).
 
 ## MCP Apps widgets (Hello World / charts)

@@ -1,53 +1,47 @@
 ---
 name: menuyukti-venue-slot-strength
 description: >-
-  Compute Menuyukti venue slot strength (weekday × meal-period demand) from a
-  local POS Excel export using custom column mappings. Use when the user asks
-  about busy times, slot strength, demand index, staffing by daypart, or when
-  analyzing a restaurant sales.xlsx / POS export in Codex. Do not use for
-  menu-engineering, COGS, or pair-lift questions.
+  Visualize Menuyukti venue slot strength (weekday × meal-period demand) as a
+  local HTML heatmap from MCP get_venue_slot_strength (or narrate only when
+  render_venue_slot_strength already mounted a widget). Use when the user asks
+  about busy times, slot strength, demand index, staffing by daypart, or to
+  show/chart/heatmap venue demand. Do not use for menu-item heatmaps, pair
+  lift, or menu engineering.
 ---
 
 # Menuyukti venue slot strength
 
-Help the owner turn a local POS Excel file into a **35-cell** weekday × meal-period demand profile (order counts, traffic share, demand index, relative demand).
+Turn MCP venue-slot JSON into **one** chart: MCP Apps widget if already mounted, otherwise a **local HTML** heatmap. Never invent cells; never double-draw. Do **not** use Python or other scripts to render — write the HTML yourself from the recipe.
 
 ## When to use
 
-- User has a sales Excel (or CSV) and asks when the venue is busy
-- User mentions venue slot strength, daypart demand, or staffing by meal period
-- User needs custom Excel header → field mapping for an unrecognized POS
+- Busy times, slot strength, daypart demand, staffing by meal period
+- Show / chart / heatmap / visualize venue demand
 
-## Do not invent aggregates
+## Data (never invent)
 
-Never estimate order counts or demand indexes from a skim of the sheet. Always:
+Prefer this order for a **show / chart / heatmap** ask:
 
-1. Resolve column mapping
-2. Run `scripts/slot_strength.py`
-3. Narrate from the script JSON only
+1. **MCP Apps widget host** (tool mounts UI) → call **`render_venue_slot_strength` only**. Do not also call `get_venue_slot_strength` or redraw.
+2. **Otherwise** → call **`get_venue_slot_strength` only**, then write the HTML heatmap (below).
+3. Require exactly **35** cells in `slot_demand_profile` when drawing from JSON. If empty or wrong, say so — do not estimate.
 
-## Workflow
+For **numbers-only** asks, call `get_venue_slot_strength` and do not mount or redraw a chart.
 
-1. **Locate the sales file** the user named (workspace folder or `.xlsx` / `.xlsm` / `.csv`).
-2. **Resolve column mapping**
-   - If `pos-column-mapping.json` sits next to the file (or under the data dir), use it.
-   - Otherwise read the header row, map the eight required fields, and write a mapping JSON (see [references/column-mapping.md](references/column-mapping.md)). Copy [assets/pos-column-mapping.example.json](assets/pos-column-mapping.example.json) as a starting point.
-   - Slot strength only *needs* `bill_number` + `order_time`, but keep the full eight-field mapping so the same file works with Menuyukti MCP later.
-3. **Compute** (from this skill directory or via absolute paths):
+Do not recompute indexes by hand from a skim of the sheet or JSON. If MCP is unavailable, say so — do not invent a local compute path.
 
-   ```bash
-   python3 scripts/slot_strength.py \
-     --excel /path/to/sales.xlsx \
-     --mapping /path/to/pos-column-mapping.json
-   ```
+Definitions: [references/slot-strength.md](references/slot-strength.md). Custom POS headers for MCP workspaces: [references/column-mapping.md](references/column-mapping.md).
 
-   Optional: `--skip-rows N` overrides the mapping’s `skip_rows`. Requires `openpyxl` for Excel (`pip install openpyxl`). CSV needs no extra package.
-4. **Explain** the JSON: highlight high/low slots, suggest staffing or promo timing. Do not recompute cells by hand.
-5. If Menuyukti MCP is available and the file is under its data dir, prefer `get_venue_slot_strength` / `render_venue_slot_strength` instead of re-running the script.
+## Present (exactly one chart)
 
-## Output shape
+Follow [references/heatmap-recipe.md](references/heatmap-recipe.md). **Never** show two charts for the same ask.
 
-Fixed **35** cells (Mon–Sun × breakfast, lunch, afternoon, dinner, late_night). Full definitions: [references/slot-strength.md](references/slot-strength.md).
+1. If **`render_venue_slot_strength` already mounted a widget** → do **not** write HTML. Narrate only (peaks / staffing).
+2. Else from `get_venue_slot_strength` JSON: write a self-contained **HTML** color heatmap. Cells = `demand_index`; blue intensity min→max across the profile; **1.0 = average**. Tell the owner the path and to open it in a browser.
+3. Do **not** also print a markdown glyph grid for the same ask.
+4. Optionally list peak/trough slots with `order_count`.
+
+Then 3–5 bullets on staffing or promo timing from **high** / **low** cells only.
 
 ## Privacy
 

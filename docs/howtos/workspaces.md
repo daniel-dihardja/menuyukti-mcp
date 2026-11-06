@@ -72,12 +72,11 @@ Secondary reference for power users — owners can stick to the [What to ask](..
 - `write_workspace_knowledge` — create/update `knowledge.md` (full replace; ChatGPT reads first)
 - `summarize_local_sales` — totals and top items (folder or Excel path)
 - `list_normalized_sales` — cleaned line items
-- `get_menu_heatmaps` — when each dish sells during the day / week
-- `get_venue_slot_strength` — weekday × meal-period venue demand JSON for timing (**sales alone**)
-- `render_venue_slot_strength` — same demand data as a ChatGPT heatmap widget (**sales alone**)
+- `get_menu_heatmaps` — when each dish sells during the day / week (JSON; Codex: then use the **menuyukti-visualize-menu-heatmaps** skill)
+- `get_venue_slot_strength` — weekday × meal-period venue demand JSON for timing (**sales alone**; Codex: present with **`menuyukti-venue-slot-strength`**)
 - `get_pair_lift_matrix` — co-purchase lift matrix for combo / upsell ideas (**sales alone**; COGS optional)
 - `analyze_menu_engineering` — star / plow_horse / puzzle / weak matrix (**needs sales + COGS**)
-- `get_weak_items_review` — weak-quadrant depth review for reprice / improve / remove (**needs sales + COGS**)
+- `get_weak_items_review` — weak-quadrant depth review for reprice / improve / remove (**needs sales + COGS**; Codex: then use **menuyukti-visualize-weak-items** for a sortable HTML table)
 
 ## Location knowledge (`knowledge.md`)
 
@@ -87,7 +86,11 @@ Secondary reference for power users — owners can stick to the [What to ask](..
 
 `get_venue_slot_strength` summarizes how busy the venue is by weekday and meal period (breakfast through late night). Each of the 35 slots includes order count, traffic share, demand index (1.0 = average), and relative demand (`low` / `average` / `high`). Use it for staffing and when to promote. Sales alone is enough — no COGS.
 
-To **show the heatmap** in ChatGPT (MCP Apps widget), ask for the venue slot strength chart or call `render_venue_slot_strength` with the same workspace folder or sales Excel path (for example `demo-cafe-july-2026`). That tool returns the same 35-cell profile and links the weekday × meal-period visualisation. Keep `get_venue_slot_strength` when you only need the numbers in text.
+To **show the heatmap**, ask for the venue slot strength chart. The agent should use **one** path: `render_venue_slot_strength` (MCP Apps widget) **or** `get_venue_slot_strength` + **`menuyukti-venue-slot-strength`** (write one local HTML heatmap) — never both (see [`.agents/skills/menuyukti-venue-slot-strength/`](../../.agents/skills/menuyukti-venue-slot-strength/)).
+
+## Menu item heatmaps (sales alone)
+
+`get_menu_heatmaps` returns per-menu daily (hour) and weekly (weekday) unit quantities. In **Codex**, ask to show dish heatmaps; the agent should call that tool and write a daily/weekly **HTML** heatmap with the **menuyukti-visualize-menu-heatmaps** skill (see [`.agents/skills/menuyukti-visualize-menu-heatmaps/`](../../.agents/skills/menuyukti-visualize-menu-heatmaps/)). Sales alone is enough — no COGS.
 
 ## Pair lift index (sales alone)
 
@@ -110,3 +113,5 @@ If COGS is missing, drop a COGS Excel into the folder and ask ChatGPT to update 
 ## Weak items review (needs COGS)
 
 `get_weak_items_review` returns the **weak** quadrant only, with period depth (avg qty/day) and portfolio KPIs. Use it when deciding which dishes to **reprice, improve, or remove**. Same workspace COGS requirement as menu engineering.
+
+To **show a sortable table in Codex**, ask for the weak items table; the agent should call `get_weak_items_review` and write a local **HTML** table with clickable column headers via the **menuyukti-visualize-weak-items** skill (see [`.agents/skills/menuyukti-visualize-weak-items/`](../../.agents/skills/menuyukti-visualize-weak-items/)). There is no Action / keep / remove column. These visualisation skills ship with the [Codex plugin](./codex-plugin.md).

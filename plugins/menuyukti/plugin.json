@@ -1,0 +1,40 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "menuyukti",
+  "version": "0.1.3",
+  "description": "Local restaurant POS analytics for Codex: workspaces, menu engineering, heatmaps, and weak-items review via Menuyukti MCP on your machine.",
+  "author": {
+    "name": "Daniel Dihardja",
+    "url": "https://github.com/daniel-dihardja/menuyukti-mcp"
+  },
+  "homepage": "https://github.com/daniel-dihardja/menuyukti-mcp",
+  "repository": "https://github.com/daniel-dihardja/menuyukti-mcp",
+  "license": "MIT",
+  "keywords": [
+    "restaurant",
+    "pos",
+    "analytics",
+    "mcp",
+    "menu-engineering",
+    "codex"
+  ],
+  "extensions": {
+    "com.openai": {
+      "hooks": "./hooks/hooks.json",
+      "interface": {
+        "displayName": "Menuyukti",
+        "shortDescription": "Analyze local POS Excel sales privately with Codex.",
+        "longDescription": "Connects Codex to a local Menuyukti MCP server on your computer. Bundle includes coaching and visualisation skills for venue slot strength, menu heatmaps, and weak items. Requires the Menuyukti MCP binary running at http://127.0.0.1:8787/mcp and MENUYUKTI_DATA_DIR with your workspaces. Desktop only (localhost MCP).",
+        "developerName": "Menuyukti",
+        "category": "Productivity",
+        "capabilities": ["Read"],
+        "defaultPrompt": [
+          "Using Menuyukti, check setup status and summarize demo-cafe-july-2026."
+        ],
+        "brandColor": "#1F6F4A",
+        "composerIcon": "./assets/icon.svg",
+        "logo": "./assets/logo.svg"
+      }
+    }
+  }
+}
