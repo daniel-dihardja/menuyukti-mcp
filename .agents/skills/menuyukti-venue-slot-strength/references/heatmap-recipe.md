@@ -2,7 +2,7 @@
 
 Matches Menuyukti v3 `VenueDemandHeatmap` / `OrderMetricsVenueHeatmap`: cell value is **`demand_index`**; detail includes **`order_count`** and **`relative_demand`**.
 
-Definitions: [slot-strength.md](../../menuyukti-venue-slot-strength/references/slot-strength.md) and `crates/menuyukti/src/analytics/slot_demand.rs`.
+Definitions: [slot-strength.md](slot-strength.md) and `crates/menuyukti/src/analytics/slot_demand.rs`.
 
 ## Required fields per cell
 

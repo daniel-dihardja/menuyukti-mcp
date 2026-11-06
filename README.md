@@ -27,10 +27,9 @@ The plugin is **Desktop-only** (localhost MCP). It does **not** start the binary
 | Skill | Role |
 | --- | --- |
 | `menuyukti-mcp` | Setup ritual and goal → tool map |
-| `menuyukti-visualize-venue-slot-strength` | How to draw weekday × meal-period demand from `get_venue_slot_strength` |
+| `menuyukti-venue-slot-strength` | Venue slot strength: MCP or offline Excel → markdown heatmap |
 | `menuyukti-visualize-menu-heatmaps` | How to draw per-dish daily / weekly heatmaps from `get_menu_heatmaps` |
 | `menuyukti-visualize-weak-items` | How to draw a sortable weak-items table from `get_weak_items_review` (**needs COGS**) |
-| `menuyukti-venue-slot-strength` | Offline / custom-column slot strength compute (no MCP) |
 
 Authoring lives under [`.agents/skills/`](.agents/skills/); `make sync-plugin-skills` copies into [`plugins/menuyukti/`](plugins/menuyukti/).
 
@@ -60,7 +59,7 @@ Tool names and advanced options live in [Workspaces](docs/howtos/workspaces.md).
 
 Menuyukti MCP returns **structured analytics JSON** (for example `get_venue_slot_strength`, `get_menu_heatmaps`, `get_weak_items_review`). It does **not** return chart widgets or MCP Apps UI.
 
-The bundled **visualisation skills** tell Codex how to present that JSON in chat (markdown heatmaps/tables, or a local HTML file for the weak-items sortable table). Flow: call the data tool → apply the matching `menuyukti-visualize-*` skill.
+Bundled skills tell Codex how to present that JSON in chat (markdown heatmaps/tables, or a local HTML file for the weak-items sortable table). Venue slot strength is one skill (`menuyukti-venue-slot-strength`); menu heatmaps and weak items use `menuyukti-visualize-*`.
 
 ## Documentation
 

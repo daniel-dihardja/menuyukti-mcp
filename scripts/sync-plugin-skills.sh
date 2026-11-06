@@ -8,10 +8,9 @@ DEST="${ROOT}/plugins/menuyukti/skills"
 
 SKILLS=(
   menuyukti-mcp
-  menuyukti-visualize-venue-slot-strength
+  menuyukti-venue-slot-strength
   menuyukti-visualize-menu-heatmaps
   menuyukti-visualize-weak-items
-  menuyukti-venue-slot-strength
 )
 
 mkdir -p "${DEST}"

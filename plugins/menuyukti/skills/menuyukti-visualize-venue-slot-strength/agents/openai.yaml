@@ -1,8 +1,0 @@
-interface:
-  display_name: "Menuyukti visualize venue slot strength"
-  short_description: "Draw a weekday × meal-period demand heatmap from slot strength JSON."
-  brand_color: "#1F6F4A"
-  default_prompt: "Using this skill, fetch venue slot strength and show it as a heatmap."
-
-policy:
-  allow_implicit_invocation: true
