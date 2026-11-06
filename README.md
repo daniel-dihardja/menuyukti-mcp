@@ -20,10 +20,11 @@ Licensed under the [MIT License](LICENSE).
 
 A sample cafe month is included so you can try the flow before using your own export.
 
-For **Codex heatmaps in chat** (markdown, no MCP Apps iframe), also add:
+For **Codex charts in chat** (markdown / local HTML, no MCP Apps iframe), also add:
 
 - [`menuyukti-visualize-venue-slot-strength`](.agents/skills/menuyukti-visualize-venue-slot-strength/) — weekday × meal-period demand
 - [`menuyukti-visualize-menu-heatmaps`](.agents/skills/menuyukti-visualize-menu-heatmaps/) — per-dish daily / weekly units
+- [`menuyukti-visualize-weak-items`](.agents/skills/menuyukti-visualize-weak-items/) — sortable weak-items table (**needs COGS**)
 
 Offline / custom-column venue slot strength (without MCP) stays in [`menuyukti-venue-slot-strength`](.agents/skills/menuyukti-venue-slot-strength/); present that JSON with the venue-slot visualise skill.
 
@@ -36,7 +37,7 @@ Offline / custom-column venue slot strength (without MCP) stays in [`menuyukti-v
 | When is the venue busy? | “Show venue slot strength for demo-cafe-july-2026” (Codex markdown heatmap, or ChatGPT MCP Apps widget) |
 | When does each dish sell? | “Show heatmaps for demo-cafe-july-2026” (Codex daily/weekly markdown) |
 | Combo / upsell ideas | “Which dishes pair well? Pair lift for demo-cafe-july-2026” |
-| Stars / weak items (needs COGS) | “Run menu engineering” / “Which weak items should I reprice or remove?” |
+| Stars / weak items (needs COGS) | “Run menu engineering” / “Show weak items table for demo-cafe-july-2026” |
 | Remember venue facts | “Save our hours and seating in knowledge for this workspace” |
 
 ### Sales alone vs COGS
@@ -53,7 +54,7 @@ Tool names and advanced options live in [Workspaces](docs/howtos/workspaces.md).
 
 Menuyukti MCP can return MCP Apps UI templates (for example venue slot strength). ChatGPT must mount the iframe after the tool runs — status text alone is not the chart. If a tool succeeds but no widget appears, see [Install and run → MCP Apps widgets](docs/howtos/install-and-run.md#mcp-apps-widgets-hello-world--charts).
 
-In **Codex**, prefer the visualisation skills above: call `get_venue_slot_strength` / `get_menu_heatmaps`, then draw the markdown heatmap from that JSON.
+In **Codex**, prefer the visualisation skills above: call `get_venue_slot_strength` / `get_menu_heatmaps` / `get_weak_items_review`, then draw from that JSON (markdown heatmaps, or the weak-items sortable HTML table).
 
 ## Documentation
 

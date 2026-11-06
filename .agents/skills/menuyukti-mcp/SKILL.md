@@ -28,7 +28,7 @@ Keep POS / COGS files on the user’s machine. Do not upload spreadsheets to rem
 When unclear or path/config fails:
 
 1. Call `get_setup_status` (and `list_workspaces` if useful).
-2. If nothing is configured, offer `demo-cafe-july-2026` with example asks: summarize; show venue slot strength chart (visualise skill); show menu heatmaps (visualise skill); menu engineering (needs COGS).
+2. If nothing is configured, offer `demo-cafe-july-2026` with example asks: summarize; show venue slot strength chart (visualise skill); show menu heatmaps (visualise skill); show weak items table (visualise skill, needs COGS); menu engineering (needs COGS).
 
 ## Onboard a new folder
 
@@ -50,7 +50,8 @@ When unclear or path/config fails:
 | Venue busy (numbers only) | `get_venue_slot_strength` |
 | Combos / upsells | `get_pair_lift_matrix` (sales alone; COGS upgrades star focus) |
 | Stars / plow horses / puzzles / weak | `analyze_menu_engineering` (**sales + COGS**) |
-| Reprice / improve / remove | `get_weak_items_review` (**sales + COGS**) |
+| Reprice / improve / remove (numbers) | `get_weak_items_review` (**sales + COGS**) |
+| Weak items table / show weak dishes | `get_weak_items_review`, then **`menuyukti-visualize-weak-items`** (**sales + COGS**) |
 | Cleaned rows | `list_normalized_sales` |
 | Venue notes | `read_workspace_knowledge` then `write_workspace_knowledge` (full replace) |
 

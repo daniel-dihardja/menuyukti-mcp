@@ -77,7 +77,7 @@ Secondary reference for power users — owners can stick to the [What to ask](..
 - `render_venue_slot_strength` — same demand data as a ChatGPT MCP Apps heatmap widget (**sales alone**; not required for Codex markdown charts)
 - `get_pair_lift_matrix` — co-purchase lift matrix for combo / upsell ideas (**sales alone**; COGS optional)
 - `analyze_menu_engineering` — star / plow_horse / puzzle / weak matrix (**needs sales + COGS**)
-- `get_weak_items_review` — weak-quadrant depth review for reprice / improve / remove (**needs sales + COGS**)
+- `get_weak_items_review` — weak-quadrant depth review for reprice / improve / remove (**needs sales + COGS**; Codex: then use **menuyukti-visualize-weak-items** for a sortable table)
 
 ## Location knowledge (`knowledge.md`)
 
@@ -116,3 +116,5 @@ If COGS is missing, drop a COGS Excel into the folder and ask ChatGPT to update 
 ## Weak items review (needs COGS)
 
 `get_weak_items_review` returns the **weak** quadrant only, with period depth (avg qty/day) and portfolio KPIs. Use it when deciding which dishes to **reprice, improve, or remove**. Same workspace COGS requirement as menu engineering.
+
+To **show a sortable table in Codex**, ask for the weak items table; the agent should call `get_weak_items_review` and present it with the **menuyukti-visualize-weak-items** skill (markdown in chat and/or a local HTML file with clickable column headers — see [`.agents/skills/menuyukti-visualize-weak-items/`](../../.agents/skills/menuyukti-visualize-weak-items/)). There is no Action / keep / remove column.

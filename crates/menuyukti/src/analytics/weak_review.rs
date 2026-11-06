@@ -10,8 +10,6 @@ use crate::analytics::menu_engineering::{
 };
 use crate::line_item::LineItem;
 
-const VALID_ACTIONS: &[&str] = &["keep", "promote", "reprice", "remove"];
-
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct WeakDisplayRow {
     pub menu: String,
@@ -20,7 +18,6 @@ pub struct WeakDisplayRow {
     pub avg_qty_per_day: Option<f64>,
     pub contribution_margin: f64,
     pub contribution_margin_share: f64,
-    pub action: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
@@ -47,15 +44,6 @@ pub struct WeakReviewResult {
     pub distribution_stats: WeakDistributionStats,
     pub period_start: Option<String>,
     pub period_end: Option<String>,
-}
-
-fn normalize_action(raw: &str) -> Option<String> {
-    let lower = raw.trim().to_lowercase();
-    if VALID_ACTIONS.contains(&lower.as_str()) {
-        Some(lower)
-    } else {
-        None
-    }
 }
 
 fn parse_iso_date_only(value: &str) -> Option<NaiveDate> {
@@ -140,7 +128,6 @@ fn to_display_row(item: &MenuEngineeringMatrixItem, period_days: Option<i64>) ->
         avg_qty_per_day,
         contribution_margin,
         contribution_margin_share,
-        action: normalize_action(&item.action),
     }
 }
 
@@ -342,7 +329,6 @@ mod tests {
             .find(|r| r.menu == "Weak Salad")
             .expect("salad");
         assert!((salad.avg_qty_per_day.unwrap() - 1.0).abs() < 1e-9);
-        assert_eq!(salad.action.as_deref(), Some("remove"));
         assert!((salad.contribution_margin_share - 0.02).abs() < 1e-9);
 
         let soup = model
