@@ -28,7 +28,7 @@ The plugin is **Desktop-only** (localhost MCP). It does **not** start the binary
 | --- | --- |
 | `menuyukti-mcp` | Setup ritual and goal → tool map |
 | `menuyukti-venue-slot-strength` | Present venue demand: prefer MCP Apps widget, else local HTML heatmap |
-| `menuyukti-visualize-menu-heatmaps` | Draw per-dish daily / weekly HTML heatmaps from `get_menu_heatmaps` |
+| `menuyukti-visualize-menu-heatmaps` | Codex fallback: draw per-dish HTML heatmaps from `get_menu_heatmaps` (prefer `render_menu_heatmaps` in ChatGPT) |
 | `menuyukti-visualize-weak-items` | Draw a sortable weak-items HTML table from `get_weak_items_review` (**needs COGS**) |
 
 Authoring lives under [`.agents/skills/`](.agents/skills/); `make sync-plugin-skills` copies into [`plugins/menuyukti/`](plugins/menuyukti/).
@@ -63,7 +63,8 @@ Menuyukti MCP returns **structured analytics JSON** (for example `get_venue_slot
 | --- | --- |
 | Venue slot strength | `render_venue_slot_strength` (MCP Apps widget) when the host mounts it; otherwise `get_venue_slot_strength` + skill → **one** local HTML file |
 | Pair lift index | `render_pair_lift_matrix` (MCP Apps widget) when the host mounts it; otherwise `get_pair_lift_matrix` for numbers |
-| Menu heatmaps / weak items | Matching visualisation skill → **one** local HTML file (no MCP Apps widget yet) |
+| Menu heatmaps | `render_menu_heatmaps` (MCP Apps widget) when the host mounts it; otherwise `get_menu_heatmaps` + skill → **one** local HTML file |
+| Weak items | Matching visualisation skill → **one** local HTML table |
 
 **One chart per ask.** If a widget already mounted, narrate only — do not also write HTML. Skills never emit a second markdown grid for the same ask.
 

@@ -72,3 +72,32 @@ fn pair_lift_matrix_empty_fixture_has_empty_focus() {
     assert_eq!(v["matrix_lift"].as_array().map(|a| a.len()), Some(0));
     assert_eq!(v["pairs"].as_array().map(|a| a.len()), Some(0));
 }
+
+#[test]
+fn menu_heatmaps_fixture_has_daily_weekly_and_categories() {
+    let v = read_fixture("menu_heatmaps.json");
+    let heatmaps = v["heatmaps"].as_array().expect("heatmaps array");
+    assert!(!heatmaps.is_empty(), "expected populated heatmaps");
+    assert_eq!(v["menu_count"].as_u64(), Some(heatmaps.len() as u64));
+    let first = &heatmaps[0];
+    assert!(first["menu"].is_string());
+    assert_eq!(first["daily_heatmap"].as_array().map(|a| a.len()), Some(24));
+    assert_eq!(first["weekly_heatmap"].as_array().map(|a| a.len()), Some(7));
+    let cats: std::collections::HashSet<_> = heatmaps
+        .iter()
+        .filter_map(|item| item["matrix_category"].as_str())
+        .collect();
+    for required in ["star", "plow_horse", "puzzle", "weak"] {
+        assert!(
+            cats.contains(required),
+            "fixture missing matrix_category={required}; cats={cats:?}"
+        );
+    }
+}
+
+#[test]
+fn menu_heatmaps_empty_fixture_has_empty_list() {
+    let v = read_fixture("menu_heatmaps_empty.json");
+    assert_eq!(v["menu_count"], 0);
+    assert_eq!(v["heatmaps"].as_array().map(|a| a.len()), Some(0));
+}

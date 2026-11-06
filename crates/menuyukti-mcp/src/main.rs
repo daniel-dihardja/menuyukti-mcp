@@ -29,6 +29,7 @@ const MCP_PATH: &str = "/mcp";
 const HELLO_WORLD_WIDGET_URI: &str = "ui://widget/hello-world-v3.html";
 const VENUE_SLOT_STRENGTH_WIDGET_URI: &str = "ui://widget/venue-slot-strength-v6.html";
 const PAIR_LIFT_MATRIX_WIDGET_URI: &str = "ui://widget/pair-lift-matrix-v5.html";
+const MENU_HEATMAPS_WIDGET_URI: &str = "ui://widget/menu-heatmaps-v2.html";
 /// ChatGPT Apps SDK examples still serve widgets as `text/html+skybridge`.
 /// Keep the MCP Apps profile MIME as a secondary compatibility note in docs/tests.
 const WIDGET_MIME_TYPE: &str = "text/html+skybridge";
@@ -48,7 +49,9 @@ const INSTRUCTIONS: &str = concat!(
     "write_workspace_config → summarize_local_sales. ",
     // Goal → tool map
     "Goal→tool: how did we do → summarize_local_sales; ",
-    "when each dish sells → get_menu_heatmaps; ",
+    "when each dish sells → for show/chart/heatmap pick ONE path: ",
+    "render_menu_heatmaps (MCP Apps widget) OR get_menu_heatmaps for numbers/skill redraw — never both; ",
+    "get_menu_heatmaps alone for numbers-only JSON (sales alone; workspace COGS adds matrix_category star/plow_horse/puzzle/weak); ",
     "when is the venue busy / staffing by daypart → for show/chart/heatmap pick ONE path: ",
     "render_venue_slot_strength (MCP Apps widget) OR get_venue_slot_strength for a skill redraw — never both in the same turn; ",
     "get_venue_slot_strength alone for numbers-only JSON; ",
@@ -64,10 +67,10 @@ const INSTRUCTIONS: &str = concat!(
     "If missing, ask the owner to drop COGS Excel, then list_workspace_files and write_workspace_config. ",
     "Sales-only tools still work without COGS. ",
     // Widgets + smoke — one chart only
-    "For show/chart/heatmap: prefer render_venue_slot_strength or render_pair_lift_matrix when the host mounts MCP Apps widgets; ",
-    "otherwise use get_venue_slot_strength / get_pair_lift_matrix and let a presentation skill draw once. ",
+    "For show/chart/heatmap: prefer render_venue_slot_strength, render_pair_lift_matrix, or render_menu_heatmaps when the host mounts MCP Apps widgets; ",
+    "otherwise use get_venue_slot_strength / get_pair_lift_matrix / get_menu_heatmaps and let a presentation skill draw once. ",
     "Never call a render_* widget tool and also redraw a markdown/HTML heatmap in the same turn — narrate only after a widget. ",
-    "prefer get_venue_slot_strength / get_pair_lift_matrix alone for text/numbers. ",
+    "prefer get_venue_slot_strength / get_pair_lift_matrix / get_menu_heatmaps alone for text/numbers. ",
     "render_hello_world_widget is UI smoke only (mock data) — never use it for analytics."
 );
 
@@ -264,6 +267,69 @@ fn pair_lift_matrix_tool_result(
     result
 }
 
+fn menu_heatmaps_widget_meta() -> MetaObject {
+    let mut meta = MetaObject::new();
+    meta.insert(
+        "ui".to_string(),
+        json!({
+            "resourceUri": MENU_HEATMAPS_WIDGET_URI,
+            "prefersBorder": true,
+        }),
+    );
+    meta.insert(
+        "openai/outputTemplate".to_string(),
+        json!(MENU_HEATMAPS_WIDGET_URI),
+    );
+    meta.insert("openai/widgetAccessible".to_string(), json!(true));
+    meta.insert("openai/widgetPrefersBorder".to_string(), json!(true));
+    meta.insert(
+        "openai/toolInvocation/invoking".to_string(),
+        json!("Rendering menu heatmaps…"),
+    );
+    meta.insert(
+        "openai/toolInvocation/invoked".to_string(),
+        json!("Menu heatmaps ready."),
+    );
+    meta
+}
+
+fn menu_heatmaps_resource() -> Resource {
+    Resource::new(MENU_HEATMAPS_WIDGET_URI, "menu-heatmaps-widget")
+        .with_title("Menu heatmaps")
+        .with_description(
+            "MCP Apps widget: per-menu daily/weekly unit quantity heatmaps from heatmaps[].",
+        )
+        .with_mime_type(WIDGET_MIME_TYPE)
+        .with_meta(menu_heatmaps_widget_meta())
+}
+
+fn menu_heatmaps_resource_contents() -> ResourceContents {
+    ResourceContents::text(
+        menuyukti_mcp::widget_assets::menu_heatmaps_widget_html(),
+        MENU_HEATMAPS_WIDGET_URI,
+    )
+    .with_mime_type(WIDGET_MIME_TYPE)
+    .with_meta(menu_heatmaps_widget_meta())
+}
+
+fn menu_heatmaps_tool_result(
+    pos: &str,
+    heatmaps: &[menuyukti::MenuHeatmapPayload],
+) -> CallToolResult {
+    let payload = json!({
+        "pos": pos,
+        "menu_count": heatmaps.len(),
+        "heatmaps": heatmaps,
+    });
+    let mut result =
+        CallToolResult::structured(payload).with_meta(Some(menu_heatmaps_widget_meta()));
+    result.content = vec![ContentBlock::text(format!(
+        "Showing menu heatmaps ({pos}, {} menus).",
+        heatmaps.len()
+    ))];
+    result
+}
+
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 struct PathArgs {
     /// Workspace folder (uses workspace.yaml sales role) or Excel file under MENUYUKTI_DATA_DIR.
@@ -364,19 +430,44 @@ fn load_or_error(path: &str) -> Result<menuyukti::NormalizedSales, CallToolResul
 
 /// Prefer menu-engineering stars as focus when workspace COGS is available.
 fn optional_star_focus(path: &str, rows: &[menuyukti::LineItem]) -> Option<Vec<String>> {
-    let cogs = menuyukti::load_workspace_cogs(path, None).ok()?;
-    let matrix = menuyukti::compute_menu_engineering_from_orders(rows, &cogs.unit_costs).ok()?;
-    let stars: Vec<String> = matrix
-        .items
+    let categories = optional_matrix_categories(path, rows)?;
+    let stars: Vec<String> = categories
         .into_iter()
-        .filter(|item| item.category == "star")
-        .map(|item| item.menu)
+        .filter(|(_, category)| category == "star")
+        .map(|(menu, _)| menu)
         .collect();
     if stars.len() >= 2 {
         Some(stars)
     } else {
         None
     }
+}
+
+/// Menu → matrix category when workspace COGS can classify the menu.
+fn optional_matrix_categories(
+    path: &str,
+    rows: &[menuyukti::LineItem],
+) -> Option<std::collections::HashMap<String, String>> {
+    let cogs = menuyukti::load_workspace_cogs(path, None).ok()?;
+    let matrix = menuyukti::compute_menu_engineering_from_orders(rows, &cogs.unit_costs).ok()?;
+    Some(
+        matrix
+            .items
+            .into_iter()
+            .map(|item| (item.menu, item.category))
+            .collect(),
+    )
+}
+
+fn enriched_menu_heatmaps(
+    path: &str,
+    rows: &[menuyukti::LineItem],
+) -> Result<Vec<menuyukti::MenuHeatmapPayload>, String> {
+    let mut heatmaps = menuyukti::calculate_menu_heatmaps(rows)?;
+    if let Some(categories) = optional_matrix_categories(path, rows) {
+        menuyukti::apply_matrix_categories(&mut heatmaps, &categories);
+    }
+    Ok(heatmaps)
 }
 
 fn role_from_args(role: WorkspaceFileRoleArgs) -> menuyukti::WorkspaceFileRole {
@@ -525,7 +616,7 @@ impl MenuyuktiMcp {
     }
 
     #[tool(
-        description = "Return per-menu daily (hourly) and weekly demand heatmaps from local POS sales. Path may be a workspace folder (workspace.yaml sales role) or an Excel file under MENUYUKTI_DATA_DIR. Useful for when each dish sells most."
+        description = "Return per-menu daily (hourly) and weekly demand heatmaps from local POS sales. Path may be a workspace folder (workspace.yaml sales role) or an Excel file under MENUYUKTI_DATA_DIR. Sales alone is enough. When the path is a workspace with usable COGS, each item also includes matrix_category (star / plow_horse / puzzle / weak). Useful for when each dish sells most."
     )]
     async fn get_menu_heatmaps(
         &self,
@@ -535,7 +626,7 @@ impl MenuyuktiMcp {
             Ok(v) => v,
             Err(resp) => return Ok(resp),
         };
-        match menuyukti::calculate_menu_heatmaps(&loaded.rows) {
+        match enriched_menu_heatmaps(&path, &loaded.rows) {
             Ok(heatmaps) => Ok(text_json(json!({
                 "pos": loaded.pos,
                 "menu_count": heatmaps.len(),
@@ -719,6 +810,25 @@ impl MenuyuktiMcp {
         );
         Ok(pair_lift_matrix_tool_result(&loaded.pos, &affinities))
     }
+
+    #[tool(
+        description = "Render the menu heatmaps widget (per-menu daily hour and weekly weekday unit quantities). Path may be a workspace folder (workspace.yaml sales role) or an Excel file under MENUYUKTI_DATA_DIR. Sales alone is enough; workspace COGS adds matrix_category filters (weak off by default). Prefer this when the owner should see the dish timing chart; use get_menu_heatmaps for JSON-only answers.",
+        annotations(title = "Render menu heatmaps", read_only_hint = true),
+        meta = menu_heatmaps_widget_meta()
+    )]
+    async fn render_menu_heatmaps(
+        &self,
+        Parameters(PathArgs { path }): Parameters<PathArgs>,
+    ) -> Result<CallToolResult, McpError> {
+        let loaded = match load_or_error(&path) {
+            Ok(v) => v,
+            Err(resp) => return Ok(resp),
+        };
+        match enriched_menu_heatmaps(&path, &loaded.rows) {
+            Ok(heatmaps) => Ok(menu_heatmaps_tool_result(&loaded.pos, &heatmaps)),
+            Err(err) => Ok(error_json(err)),
+        }
+    }
 }
 
 #[tool_handler]
@@ -748,6 +858,7 @@ impl ServerHandler for MenuyuktiMcp {
                 hello_world_resource(),
                 venue_slot_strength_resource(),
                 pair_lift_matrix_resource(),
+                menu_heatmaps_resource(),
             ],
             ..Default::default()
         })
@@ -764,6 +875,8 @@ impl ServerHandler for MenuyuktiMcp {
             venue_slot_strength_resource_contents()
         } else if request.uri == PAIR_LIFT_MATRIX_WIDGET_URI {
             pair_lift_matrix_resource_contents()
+        } else if request.uri == MENU_HEATMAPS_WIDGET_URI {
+            menu_heatmaps_resource_contents()
         } else {
             return Err(McpError::resource_not_found(
                 format!("unknown resource URI: {}", request.uri),

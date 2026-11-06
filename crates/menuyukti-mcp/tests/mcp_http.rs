@@ -146,6 +146,7 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
         "render_hello_world_widget",
         "render_venue_slot_strength",
         "render_pair_lift_matrix",
+        "render_menu_heatmaps",
     ] {
         assert!(
             names.contains(&required),
@@ -217,6 +218,30 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
         pair_render["_meta"]["openai/widgetPrefersBorder"].as_bool(),
         Some(true),
         "render_pair_lift_matrix missing openai/widgetPrefersBorder; tool={pair_render}"
+    );
+    let menu_render = tools
+        .iter()
+        .find(|t| t["name"] == "render_menu_heatmaps")
+        .expect("render_menu_heatmaps tool entry");
+    assert_eq!(
+        menu_render["_meta"]["ui"]["resourceUri"].as_str(),
+        Some("ui://widget/menu-heatmaps-v2.html"),
+        "render_menu_heatmaps missing _meta.ui.resourceUri; tool={menu_render}"
+    );
+    assert_eq!(
+        menu_render["_meta"]["openai/outputTemplate"].as_str(),
+        Some("ui://widget/menu-heatmaps-v2.html"),
+        "render_menu_heatmaps missing openai/outputTemplate; tool={menu_render}"
+    );
+    assert_eq!(
+        menu_render["_meta"]["ui"]["prefersBorder"].as_bool(),
+        Some(true),
+        "render_menu_heatmaps should prefer host border/padding; tool={menu_render}"
+    );
+    assert_eq!(
+        menu_render["_meta"]["openai/widgetPrefersBorder"].as_bool(),
+        Some(true),
+        "render_menu_heatmaps missing openai/widgetPrefersBorder; tool={menu_render}"
     );
     for analytics in [
         "summarize_local_sales",
@@ -337,6 +362,69 @@ fn mcp_http_lists_tools_and_summarizes_demo() {
     assert!(
         weak["period_start"].as_str().is_some(),
         "tool=get_weak_items_review period_start; payload={weak}"
+    );
+
+    let heatmaps = tool_payload(
+        server.addr,
+        "get_menu_heatmaps",
+        json!({"path": "demo-cafe-july-2026"}),
+    );
+    assert!(
+        heatmaps.get("error").is_none(),
+        "tool=get_menu_heatmaps demo cafe error payload={heatmaps}"
+    );
+    let heatmap_items = heatmaps["heatmaps"].as_array().expect("heatmaps array");
+    assert!(
+        !heatmap_items.is_empty(),
+        "tool=get_menu_heatmaps expected items; payload={heatmaps}"
+    );
+    let matrix_by_menu: std::collections::HashMap<&str, &str> = matrix["items"]
+        .as_array()
+        .expect("matrix items")
+        .iter()
+        .filter_map(|item| Some((item["menu"].as_str()?, item["category"].as_str()?)))
+        .collect();
+    let mut enriched = 0;
+    for item in heatmap_items {
+        let menu = item["menu"].as_str().expect("heatmap menu");
+        let category = item["matrix_category"].as_str();
+        if let Some(expected) = matrix_by_menu.get(menu) {
+            assert_eq!(
+                category,
+                Some(*expected),
+                "tool=get_menu_heatmaps menu={menu} matrix_category mismatch; item={item}"
+            );
+            enriched += 1;
+        }
+    }
+    assert_eq!(
+        enriched,
+        matrix_by_menu.len(),
+        "tool=get_menu_heatmaps expected every matrix menu enriched; payload={heatmaps}"
+    );
+
+    let heatmaps_sales_only = tool_payload(
+        server.addr,
+        "get_menu_heatmaps",
+        json!({"path": "demo-cafe-july-2026/sales.xlsx"}),
+    );
+    assert!(
+        heatmaps_sales_only.get("error").is_none(),
+        "tool=get_menu_heatmaps sales Excel should succeed without COGS; payload={heatmaps_sales_only}"
+    );
+    let sales_only_items = heatmaps_sales_only["heatmaps"]
+        .as_array()
+        .expect("sales-only heatmaps array");
+    assert!(
+        !sales_only_items.is_empty(),
+        "tool=get_menu_heatmaps sales Excel expected items; payload={heatmaps_sales_only}"
+    );
+    assert!(
+        sales_only_items
+            .iter()
+            .all(|item| item.get("matrix_category").is_none()
+                || item["matrix_category"].is_null()),
+        "tool=get_menu_heatmaps sales Excel must leave matrix_category null; payload={heatmaps_sales_only}"
     );
 
     let slots = tool_payload(
@@ -927,6 +1015,132 @@ fn mcp_http_pair_lift_matrix_widget_render_and_resource() {
 }
 
 #[test]
+fn mcp_http_menu_heatmaps_widget_render_and_resource() {
+    let _guard = port_lock().lock().unwrap();
+    let data_dir = repo_root().join("workspaces");
+    let server = start_server(&data_dir);
+
+    let call = http_post_json(
+        server.addr,
+        json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+                "name": "render_menu_heatmaps",
+                "arguments": { "path": "demo-cafe-july-2026" }
+            }
+        }),
+    );
+    let result = &call["result"];
+    assert!(
+        result.get("isError").and_then(|v| v.as_bool()) != Some(true),
+        "render_menu_heatmaps error; call={call}"
+    );
+    let heatmaps = result["structuredContent"]["heatmaps"]
+        .as_array()
+        .unwrap_or_else(|| panic!("heatmaps missing; call={call}"));
+    assert!(!heatmaps.is_empty(), "expected heatmap items; call={call}");
+    assert!(
+        heatmaps
+            .iter()
+            .any(|item| item["matrix_category"].as_str().is_some()),
+        "demo cafe render should enrich matrix_category; call={call}"
+    );
+    assert_eq!(
+        result["_meta"]["ui"]["resourceUri"].as_str(),
+        Some("ui://widget/menu-heatmaps-v2.html"),
+        "tool result must include template URI; call={call}"
+    );
+    assert_eq!(
+        result["_meta"]["openai/outputTemplate"].as_str(),
+        Some("ui://widget/menu-heatmaps-v2.html"),
+        "tool result must include openai/outputTemplate; call={call}"
+    );
+    assert_eq!(
+        result["_meta"]["ui"]["prefersBorder"].as_bool(),
+        Some(true),
+        "tool result should prefer host border/padding; call={call}"
+    );
+    let text = result["content"][0]["text"]
+        .as_str()
+        .unwrap_or_else(|| panic!("missing text content; call={call}"));
+    assert!(
+        text.to_lowercase().contains("menu heatmap"),
+        "content text should mention menu heatmaps; text={text}"
+    );
+
+    let listed = http_post_json(
+        server.addr,
+        json!({"jsonrpc":"2.0","id":2,"method":"resources/list","params":{}}),
+    );
+    let resources = listed["result"]["resources"]
+        .as_array()
+        .unwrap_or_else(|| panic!("resources array missing; listed={listed}"));
+    let menus = resources
+        .iter()
+        .find(|r| r["uri"] == "ui://widget/menu-heatmaps-v2.html")
+        .unwrap_or_else(|| panic!("menu heatmaps resource missing; listed={listed}"));
+    assert_eq!(
+        menus["mimeType"].as_str(),
+        Some("text/html+skybridge"),
+        "resources/list mimeType; resource={menus}"
+    );
+
+    let read = http_post_json(
+        server.addr,
+        json!({
+            "jsonrpc": "2.0",
+            "id": 3,
+            "method": "resources/read",
+            "params": { "uri": "ui://widget/menu-heatmaps-v2.html" }
+        }),
+    );
+    let contents = read["result"]["contents"]
+        .as_array()
+        .unwrap_or_else(|| panic!("contents array missing; read={read}"));
+    assert_eq!(contents.len(), 1, "expected one content block; read={read}");
+    assert_eq!(
+        contents[0]["mimeType"].as_str(),
+        Some("text/html+skybridge"),
+        "resources/read mimeType; read={read}"
+    );
+    let html = contents[0]["text"]
+        .as_str()
+        .unwrap_or_else(|| panic!("missing HTML text; read={read}"));
+    assert!(
+        html.contains("Menu heatmaps") && html.contains("heatmaps"),
+        "widget HTML should render menu heatmaps; html_len={}",
+        html.len()
+    );
+    assert!(
+        html.contains("--pad-top: 48px"),
+        "widget HTML should keep extra top padding for ChatGPT/Codex; html_len={}",
+        html.len()
+    );
+    assert!(
+        html.contains("data-category=\"weak\"") && html.contains("data-category=\"star\""),
+        "widget HTML should offer matrix category filters; html_len={}",
+        html.len()
+    );
+    assert!(
+        html.contains("data-view=\"weekly\"") && html.contains("data-view=\"daily\""),
+        "widget HTML should offer daily/weekly view toggle; html_len={}",
+        html.len()
+    );
+    assert!(
+        html.contains("totals-row") && html.contains("peak-total"),
+        "widget HTML should include totals row with peak highlight; html_len={}",
+        html.len()
+    );
+    assert!(
+        html.contains("th.sortable") && html.contains("toggleSort"),
+        "widget HTML should support sortable columns; html_len={}",
+        html.len()
+    );
+}
+
+#[test]
 fn mcp_http_menu_engineering_requires_cogs() {
     let _guard = port_lock().lock().unwrap();
     let tmp = tempfile::tempdir().unwrap();
@@ -1023,6 +1237,7 @@ fn mcp_http_setup_status_and_owner_playbook_instructions() {
         "write_workspace_config",
         "render_venue_slot_strength",
         "render_pair_lift_matrix",
+        "render_menu_heatmaps",
         "list_workspace_files",
     ] {
         assert!(

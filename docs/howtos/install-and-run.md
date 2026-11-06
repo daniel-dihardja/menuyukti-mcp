@@ -53,7 +53,7 @@ make widgets-preview
 # or: cargo run -p menuyukti-mcp --bin menuyukti-widget-preview
 ```
 
-Open **`http://127.0.0.1:8790/`**, pick a widget (Hello World, venue slot strength, pair lift, or an empty edge case). The page iframes the real HTML under `crates/menuyukti-mcp/assets/` (with shared `widget-theme.css` inlined for heatmaps) and injects mock `structuredContent`. Saving a watched asset or preview fixture reloads the browser. Node is not required for this path. Optional port override: `MENUYUKTI_WIDGET_PREVIEW_PORT`. See [Develop](./develop.md#mcp-apps-widget-theme) for the shared theme.
+Open **`http://127.0.0.1:8790/`**, pick a widget (Hello World, venue slot strength, pair lift, menu heatmaps, or an empty edge case). The page iframes the real HTML under `crates/menuyukti-mcp/assets/` (with shared `widget-theme.css` inlined for heatmaps) and injects mock `structuredContent`. Saving a watched asset or preview fixture reloads the browser. Node is not required for this path. Optional port override: `MENUYUKTI_WIDGET_PREVIEW_PORT`. See [Develop](./develop.md#mcp-apps-widget-theme) for the shared theme.
 
 ## Next steps
 

@@ -72,7 +72,8 @@ Secondary reference for power users — owners can stick to the [What to ask](..
 - `write_workspace_knowledge` — create/update `knowledge.md` (full replace; ChatGPT reads first)
 - `summarize_local_sales` — totals and top items (folder or Excel path)
 - `list_normalized_sales` — cleaned line items
-- `get_menu_heatmaps` — when each dish sells during the day / week (JSON; Codex: then use the **menuyukti-visualize-menu-heatmaps** skill)
+- `get_menu_heatmaps` — when each dish sells during the day / week (JSON; optional `matrix_category` with workspace COGS)
+- `render_menu_heatmaps` — same data as an MCP Apps heatmap widget (ChatGPT; category toggles, weak off by default)
 - `get_venue_slot_strength` — weekday × meal-period venue demand JSON for timing (**sales alone**; Codex: present with **`menuyukti-venue-slot-strength`**)
 - `get_pair_lift_matrix` — co-purchase lift matrix JSON for combo / upsell ideas (**sales alone**; COGS optional)
 - `render_pair_lift_matrix` — same data as an MCP Apps heatmap widget (ChatGPT)
@@ -89,9 +90,13 @@ Secondary reference for power users — owners can stick to the [What to ask](..
 
 To **show the heatmap**, ask for the venue slot strength chart. The agent should use **one** path: `render_venue_slot_strength` (MCP Apps widget) **or** `get_venue_slot_strength` + **`menuyukti-venue-slot-strength`** (write one local HTML heatmap) — never both (see [`.agents/skills/menuyukti-venue-slot-strength/`](../../.agents/skills/menuyukti-venue-slot-strength/)).
 
-## Menu item heatmaps (sales alone)
+## Menu item heatmaps (sales alone; COGS optional)
 
-`get_menu_heatmaps` returns per-menu daily (hour) and weekly (weekday) unit quantities. In **Codex**, ask to show dish heatmaps; the agent should call that tool and write a daily/weekly **HTML** heatmap with the **menuyukti-visualize-menu-heatmaps** skill (see [`.agents/skills/menuyukti-visualize-menu-heatmaps/`](../../.agents/skills/menuyukti-visualize-menu-heatmaps/)). Sales alone is enough — no COGS.
+`get_menu_heatmaps` returns per-menu daily (hour) and weekly (weekday) unit quantities. Sales alone is enough. When you call it on a **workspace folder** that also has usable COGS, each item includes `matrix_category` (`star` / `plow_horse` / `puzzle` / `weak`) so timing charts can filter by menu-engineering role without a second tool.
+
+To **show the heatmap**, ask for the menu / dish heatmaps chart. In ChatGPT the agent should call **`render_menu_heatmaps`** (MCP Apps widget) — prefer that over narrating raw JSON. The widget toggles daily/weekly views and matrix categories when present (**weak off by default**). Keep `get_menu_heatmaps` for numbers-only answers. In **Codex** (or when the host does not mount MCP Apps), use `get_menu_heatmaps` + the **menuyukti-visualize-menu-heatmaps** skill (see [`.agents/skills/menuyukti-visualize-menu-heatmaps/`](../../.agents/skills/menuyukti-visualize-menu-heatmaps/)) — never both widget and skill redraw in the same turn.
+
+Local styling: `make widgets-preview` lists **Menu heatmaps** fixtures at `http://127.0.0.1:8790/`.
 
 ## Pair lift index (sales alone)
 

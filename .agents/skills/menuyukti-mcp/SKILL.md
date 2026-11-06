@@ -43,8 +43,8 @@ When unclear or path/config fails:
 | --- | --- |
 | Setup / diagnosis | `get_setup_status` |
 | How did we do? | `summarize_local_sales` |
-| When each dish sells (numbers) | `get_menu_heatmaps` |
-| When each dish sells (show / chart) | `get_menu_heatmaps`, then **`menuyukti-visualize-menu-heatmaps`** |
+| When each dish sells (numbers) | `get_menu_heatmaps` (workspace path adds optional `matrix_category` when COGS is present) |
+| When each dish sells (show / chart) | Prefer **`render_menu_heatmaps`** (MCP Apps widget). Else `get_menu_heatmaps` + **`menuyukti-visualize-menu-heatmaps`**. Never both in one turn. |
 | Venue busy / staffing (show / chart) | **One path only:** `render_venue_slot_strength` (widget) **or** `get_venue_slot_strength` + **`menuyukti-venue-slot-strength`** redraw — never both |
 | Venue busy / staffing (numbers only) | `get_venue_slot_strength` |
 | Combos / upsells (show / chart) | **One path only:** `render_pair_lift_matrix` (widget) **or** `get_pair_lift_matrix` for numbers/skill redraw — never both (sales alone; COGS upgrades star focus) |

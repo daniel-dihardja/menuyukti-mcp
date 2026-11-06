@@ -14,6 +14,7 @@ const HELLO_WORLD_WIDGET_HTML: &str = include_str!("../assets/hello_world_widget
 const VENUE_SLOT_STRENGTH_WIDGET_SHELL: &str =
     include_str!("../assets/venue_slot_strength_widget.html");
 const PAIR_LIFT_MATRIX_WIDGET_SHELL: &str = include_str!("../assets/pair_lift_matrix_widget.html");
+const MENU_HEATMAPS_WIDGET_SHELL: &str = include_str!("../assets/menu_heatmaps_widget.html");
 
 /// Replace the shared-theme marker with `widget-theme.css` (no-op if absent).
 pub fn inline_shared_theme(html: &str) -> String {
@@ -43,6 +44,13 @@ pub fn pair_lift_matrix_widget_html() -> &'static str {
         .as_str()
 }
 
+/// Menu heatmaps HTML with shared theme inlined.
+pub fn menu_heatmaps_widget_html() -> &'static str {
+    static HTML: OnceLock<String> = OnceLock::new();
+    HTML.get_or_init(|| inline_shared_theme(MENU_HEATMAPS_WIDGET_SHELL))
+        .as_str()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -62,9 +70,11 @@ mod tests {
     fn venue_and_pair_shells_use_marker_not_full_chrome_tokens() {
         assert!(VENUE_SLOT_STRENGTH_WIDGET_SHELL.contains(SHARED_THEME_MARKER));
         assert!(PAIR_LIFT_MATRIX_WIDGET_SHELL.contains(SHARED_THEME_MARKER));
+        assert!(MENU_HEATMAPS_WIDGET_SHELL.contains(SHARED_THEME_MARKER));
         // Shells should not hard-code the shared pad token (lives in theme CSS).
         assert!(!VENUE_SLOT_STRENGTH_WIDGET_SHELL.contains("--pad-top: 48px"));
         assert!(!PAIR_LIFT_MATRIX_WIDGET_SHELL.contains("--pad-top: 48px"));
+        assert!(!MENU_HEATMAPS_WIDGET_SHELL.contains("--pad-top: 48px"));
     }
 
     #[test]
@@ -80,6 +90,13 @@ mod tests {
         assert!(pair.contains("--pad-top: 48px"));
         assert!(pair.contains("Pair lift index"));
         assert!(pair.contains("--heatmap-low"));
+
+        let menus = menu_heatmaps_widget_html();
+        assert!(!menus.contains(SHARED_THEME_MARKER));
+        assert!(menus.contains("--pad-top: 48px"));
+        assert!(menus.contains("Menu heatmaps"));
+        assert!(menus.contains("matrix_category") || menus.contains("data-category=\"weak\""));
+        assert!(menus.contains("--heatmap-high"));
     }
 
     #[test]

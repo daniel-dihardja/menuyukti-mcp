@@ -11,7 +11,8 @@ Source tool: `get_menu_heatmaps` → `{ pos, menu_count, heatmaps: MenuHeatmapPa
 Per menu item:
 
 - `menu` (row key / label)
-- `menu_category` / `menu_category_detail` (optional filters)
+- `menu_category` / `menu_category_detail` (optional POS filters)
+- `matrix_category` — optional menu-engineering quadrant: `star` | `plow_horse` | `puzzle` | `weak` (present when the tool path is a workspace with usable COGS; otherwise `null` / omitted)
 - `daily_heatmap`: 24 rows `{ hour: 0..23, quantity }`
 - `weekly_heatmap`: 7 rows `{ day: mon..sun, quantity }`
 - `reporting_period` (e.g. `YYYY-MM`)
@@ -22,7 +23,7 @@ Per menu item:
 2. Otherwise sort by **weekly total** `sum(weekly_heatmap.quantity)` descending (MCP already sorts this way; re-check after filters).
 3. Default pool size **N = 25** (v3 `MENU_HEATMAP_CHAT_TOP_N`).
 4. Daily display may show top **10** of that pool; weekly may show all 25 if readable.
-5. Optional ME filter when matrix categories exist: keep `star`, `plow_horse`, `puzzle` (exclude `weak` unless asked). State the filter in one line above the chart / in the HTML title.
+5. Prefer a **workspace folder** path so `matrix_category` is populated. Do not invent categories when the field is missing.
 
 ## Daily matrix
 
@@ -49,23 +50,36 @@ Let `max_q` = maximum quantity among **cells you are drawing** (0 → show `0` w
 - Cell background = sequential intensity from **0 → max_q** in the drawn matrix
   - Suggested scale: light slate / sky (`#f1f5f9` or `#e0f2fe`) → strong blue (`#0369a1` or `#2563eb`)
   - Light text when intensity is high (roughly top quartile)
-- Hover / `title` = menu · column label · quantity
+- Hover / `title` = menu · column label · quantity · matrix category when present
 - Legend: Low → High units within this table; note daily hour range when relevant
 - No external CDN
+
+### Menu-engineering category filter (required when `matrix_category` is present)
+
+If **any** selected row has a non-null `matrix_category`, add a filter bar above the table:
+
+- Four checkboxes labeled **Star**, **Plow horse**, **Puzzle**, **Weak** (values `star` / `plow_horse` / `puzzle` / `weak`)
+- Each row must carry its category (e.g. `data-matrix-category="star"`) so toggles can show/hide it with a few lines of inline JS
+- **Defaults on first open:** Star, Plow horse, Puzzle **checked**; Weak **unchecked** (weak rows hidden until enabled)
+- Rows with missing/`null` category stay visible whenever the filter bar is shown (or treat them as ungated)
+- If **no** row has `matrix_category`, omit the filter bar entirely — do not invent categories
+
+Suggested minimal JS pattern: listen to checkbox `change`, toggle `tr` display by `data-matrix-category`, and keep a short “Showing X of Y menus” counter in sync.
 
 ### Page chrome
 
 - Title: “Menu heatmaps — weekly units” or “Menu heatmaps — daily units (hours HH:00–HH:00)”
-- Meta: POS/workspace, item count shown / total, reporting period when present
-- Sticky first column for menu names; horizontally scrollable table for daily views
+- Meta: POS/workspace, item count shown / total, reporting period when present; note when matrix filters are active (weak hidden by default)
+- Sticky first column for menu names; optionally show a short category badge next to the name when `matrix_category` exists
+- Horizontally scrollable table for daily views
 
 ## Insights (required after the file)
 
-Compute only on the **selected** rows; put in chat (not a second grid):
+Compute only on the **selected** rows that are **visible under the default category filter** (exclude weak when categories exist); put in chat (not a second grid):
 
 1. **Peak column** — weekday or hour with the largest column sum.
 2. **Top item** — row with the largest row total (name + total units).
-3. **Item count** — how many menus are in the table.
+3. **Item count** — how many menus are in the table under the default filter.
 4. Optional per-item peak: for each shown menu, peak day and peak hour from its own series (useful when N is small).
 
 Example:
@@ -73,13 +87,14 @@ Example:
 ```markdown
 - Peak window: **Fri** (1,240 units across shown items)
 - Top item: **Espresso** (410 units)
-- Showing 10 of 98 menus (top by weekly total)
+- Showing 10 of 98 menus (top by weekly total; weak hidden by default)
 ```
 
 ## Do not
 
-- Invent unit counts or smooth empty hours.
+- Invent unit counts, matrix categories, or smooth empty hours.
 - Dump every menu when the catalogue is large — select first.
 - Use Mermaid heatmaps for large daily grids.
 - Paste a full markdown data table after writing HTML for the same ask.
+- Call `analyze_menu_engineering` solely to filter heatmaps when `matrix_category` is already on the payload.
 - Confuse this chart with **venue slot strength** (venue-level `demand_index`, not per-menu qty).

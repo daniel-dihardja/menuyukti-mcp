@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use menuyukti::{
-    calculate_menu_heatmaps, compute_menu_basket_affinities_from_orders,
+    apply_matrix_categories, calculate_menu_heatmaps, compute_menu_basket_affinities_from_orders,
     compute_menu_engineering_from_orders, compute_slot_demand_profile_from_orders,
     list_normalized_rows, load_normalized_sales, load_workspace_cogs, summarize_sales, BasketScope,
 };
@@ -107,6 +107,51 @@ fn heatmaps_for_esb_demo() {
     assert!(!heatmaps.is_empty(), "fixture={fixture}");
     assert_eq!(heatmaps[0].daily_heatmap.len(), 24);
     assert_eq!(heatmaps[0].weekly_heatmap.len(), 7);
+    assert!(
+        heatmaps.iter().all(|h| h.matrix_category.is_none()),
+        "sales-only heatmaps must leave matrix_category unset; fixture={fixture}"
+    );
+}
+
+#[test]
+fn heatmaps_matrix_categories_match_menu_engineering() {
+    let root = sales_reports();
+    let sales = load_normalized_sales("demo-cafe-july-2026", Some(&root)).unwrap();
+    let cogs = load_workspace_cogs("demo-cafe-july-2026", Some(&root)).unwrap();
+    let matrix = compute_menu_engineering_from_orders(&sales.rows, &cogs.unit_costs).unwrap();
+    let expected: std::collections::HashMap<_, _> = matrix
+        .items
+        .iter()
+        .map(|item| (item.menu.clone(), item.category.clone()))
+        .collect();
+
+    let mut heatmaps = calculate_menu_heatmaps(&sales.rows).unwrap();
+    apply_matrix_categories(&mut heatmaps, &expected);
+
+    let mut matched = 0;
+    for item in &heatmaps {
+        let Some(category) = item.matrix_category.as_deref() else {
+            continue;
+        };
+        matched += 1;
+        assert_eq!(
+            expected.get(&item.menu).map(String::as_str),
+            Some(category),
+            "menu={} heatmap matrix_category mismatch",
+            item.menu
+        );
+        assert!(
+            matches!(category, "star" | "plow_horse" | "puzzle" | "weak"),
+            "menu={} unexpected matrix_category={category}",
+            item.menu
+        );
+    }
+    assert_eq!(
+        matched,
+        expected.len(),
+        "expected every matrix menu to appear on a heatmap row"
+    );
+    assert!(matched > 0, "expected enriched heatmap categories");
 }
 
 #[test]
