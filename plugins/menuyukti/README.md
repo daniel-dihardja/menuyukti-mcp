@@ -1,6 +1,6 @@
 # Menuyukti Codex plugin
 
-Portable Agent Plugin for **ChatGPT Desktop / Codex**. Bundles coaching + visualisation skills and points at the **local** Menuyukti MCP server.
+Portable Agent Plugin for **ChatGPT Desktop / Codex** (version **0.9.0**, approaching 1.0). Bundles coaching + visualisation skills and points at the **local** Menuyukti MCP server.
 
 ## Prerequisites (still required)
 

@@ -2,7 +2,7 @@
 
 Analyze your restaurant sales on **your own computer** with **Codex in ChatGPT Desktop**. Menuyukti MCP reads your POS Excel exports locally — sales data stays on your machine, not on someone else’s server.
 
-**Menuyukti 1.0** helps restaurant owners **plan promotions** and **trim / compact the menu**, using four local analytics capabilities (each with tools + charts): venue slot strength, menu heatmaps, pair lift index, and weak items analysis.
+**Menuyukti 0.9** (plugin `0.9.0`, approaching 1.0) helps restaurant owners **plan promotions** and **trim / compact the menu**, using four local analytics capabilities (each with tools + charts): venue slot strength, menu heatmaps, pair lift index, and weak items analysis.
 
 Licensed under the [MIT License](LICENSE).
 

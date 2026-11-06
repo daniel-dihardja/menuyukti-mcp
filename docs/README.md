@@ -2,7 +2,7 @@
 
 Guides for setting up Menuyukti MCP with ChatGPT Desktop / Codex and working with your sales files.
 
-**Menuyukti 1.0** is for restaurant owners who want to **plan promotions** and **trim / compact the menu**. The product contract (capabilities → tools/visualisations) lives in [backlog/docs/product/doc-1](../backlog/docs/product/doc-1%20-%20Menuyukti-1.0-product-definition.md); owners can stick to the [What to ask](../README.md#what-to-ask) cheat sheet.
+**Menuyukti 0.9** (approaching 1.0) is for restaurant owners who want to **plan promotions** and **trim / compact the menu**. The target 1.0 product contract (capabilities → tools/visualisations) lives in [backlog/docs/product/doc-1](../backlog/docs/product/doc-1%20-%20Menuyukti-1.0-product-definition.md); owners can stick to the [What to ask](../README.md#what-to-ask) cheat sheet.
 
 ## Howtos
 

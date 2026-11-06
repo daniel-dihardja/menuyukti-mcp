@@ -62,7 +62,7 @@ Personal uploads under `workspaces/` are gitignored. Only the demo workspace is 
 
 ## What the tools can do
 
-Secondary reference for power users — owners can stick to the [What to ask](../../README.md#what-to-ask) prompts (1.0 outcomes: **plan promotions** and **trim / compact the menu**).
+Secondary reference for power users — owners can stick to the [What to ask](../../README.md#what-to-ask) prompts (0.9 / upcoming 1.0 outcomes: **plan promotions** and **trim / compact the menu**).
 
 - `get_setup_status` — first-run diagnosis (data dir, folders missing `workspace.yaml`, demo present)
 - `list_workspaces` — see folders and Excel files Menuyukti MCP can read
