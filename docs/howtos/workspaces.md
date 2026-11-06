@@ -16,7 +16,7 @@ You do **not** need to edit config by hand:
 2. Create a subdirectory under your data folder (for example `my-venue-aug-2026/`) and copy your **sales** Excel and optional **COGS** Excel into it.
 3. In ChatGPT, `@` Menuyukti MCP and ask it to **set up the new workspace**, then ask outcome questions (for example summarize `my-venue-aug-2026`).
 
-Menuyukti MCP can call `get_setup_status`, list the files, write `workspace.yaml`, then analyze using the sales role. Prefer the [What to ask](../../README.md#what-to-ask) cheat sheet over memorizing tool names.
+Menuyukti MCP can call `get_setup_status`, list the files, write `workspace.yaml`, then analyze using the sales role. Prefer the [What to ask](../../plugins/menuyukti/README.md#what-to-ask) cheat sheet over memorizing tool names.
 
 ## Workspace config (`workspace.yaml`)
 
@@ -62,7 +62,7 @@ Personal uploads under `workspaces/` are gitignored. Only the demo workspace is 
 
 ## What the tools can do
 
-Secondary reference for power users — owners can stick to the [What to ask](../../README.md#what-to-ask) prompts (0.9 / upcoming 1.0 outcomes: **plan promotions** and **trim / compact the menu**).
+Secondary reference for power users — owners can stick to the [What to ask](../../plugins/menuyukti/README.md#what-to-ask) prompts (0.9 / upcoming 1.0 outcomes: **plan promotions** and **trim / compact the menu**).
 
 - `get_setup_status` — first-run diagnosis (data dir, folders missing `workspace.yaml`, demo present)
 - `list_workspaces` — see folders and Excel files Menuyukti MCP can read
