@@ -8,7 +8,7 @@ Licensed under the [MIT License](LICENSE).
 
 - Keep sales files private on your laptop or office PC
 - Ask Codex natural questions about revenue, top dishes, demand patterns, combos, and the menu engineering matrix (stars / plow horses / puzzles / weak items — **requires COGS**)
-- Get analytics as **JSON from MCP tools**; Codex **visualisation skills** turn that data into local HTML heatmaps and tables (Menuyukti does not ship chart widgets / MCP Apps UI)
+- Get analytics as **JSON from MCP tools**; for charts, Codex either mounts the venue-slot **MCP Apps widget** or follows bundled skills to write a **local HTML** heatmap/table
 - Organize each venue and month in a simple **workspace** folder (sales, COGS, location notes)
 
 ## Quick start (Codex in ChatGPT Desktop)
@@ -27,9 +27,9 @@ The plugin is **Desktop-only** (localhost MCP). It does **not** start the binary
 | Skill | Role |
 | --- | --- |
 | `menuyukti-mcp` | Setup ritual and goal → tool map |
-| `menuyukti-venue-slot-strength` | How to draw venue slot strength as a local HTML color heatmap from MCP |
-| `menuyukti-visualize-menu-heatmaps` | How to draw per-dish daily / weekly HTML heatmaps from `get_menu_heatmaps` |
-| `menuyukti-visualize-weak-items` | How to draw a sortable weak-items HTML table from `get_weak_items_review` (**needs COGS**) |
+| `menuyukti-venue-slot-strength` | Present venue demand: prefer MCP Apps widget, else local HTML heatmap |
+| `menuyukti-visualize-menu-heatmaps` | Draw per-dish daily / weekly HTML heatmaps from `get_menu_heatmaps` |
+| `menuyukti-visualize-weak-items` | Draw a sortable weak-items HTML table from `get_weak_items_review` (**needs COGS**) |
 
 Authoring lives under [`.agents/skills/`](.agents/skills/); `make sync-plugin-skills` copies into [`plugins/menuyukti/`](plugins/menuyukti/).
 
@@ -57,9 +57,14 @@ Tool names and advanced options live in [Workspaces](docs/howtos/workspaces.md).
 
 ## How charts work in Codex
 
-Menuyukti MCP returns **structured analytics JSON** (for example `get_venue_slot_strength`, `get_menu_heatmaps`, `get_weak_items_review`). On hosts that mount MCP Apps, `render_venue_slot_strength` can show a widget — agents must not also redraw a skill chart in the same turn.
+Menuyukti MCP returns **structured analytics JSON** (for example `get_venue_slot_strength`, `get_menu_heatmaps`, `get_weak_items_review`). Presentation depends on the chart:
 
-Bundled skills present JSON when no widget mounted by writing **one local HTML** file per ask (venue slots, menu heatmaps, weak items). One chart per ask; chat narration only — no second markdown grid.
+| Chart | Preferred presentation |
+| --- | --- |
+| Venue slot strength | `render_venue_slot_strength` (MCP Apps widget) when the host mounts it; otherwise `get_venue_slot_strength` + skill → **one** local HTML file |
+| Menu heatmaps / weak items | Matching visualisation skill → **one** local HTML file (no MCP Apps widget yet) |
+
+**One chart per ask.** If a widget already mounted, narrate only — do not also write HTML. Skills never emit a second markdown grid for the same ask.
 
 ## Documentation
 
