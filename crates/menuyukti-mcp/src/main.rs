@@ -27,13 +27,13 @@ const MCP_PATH: &str = "/mcp";
 /// MCP Apps UI resource for the hello-world smoke widget.
 /// Bump the URI when the HTML changes so ChatGPT does not keep a cached blank template.
 const HELLO_WORLD_WIDGET_URI: &str = "ui://widget/hello-world-v3.html";
-const VENUE_SLOT_STRENGTH_WIDGET_URI: &str = "ui://widget/venue-slot-strength-v5.html";
+const VENUE_SLOT_STRENGTH_WIDGET_URI: &str = "ui://widget/venue-slot-strength-v6.html";
+const PAIR_LIFT_MATRIX_WIDGET_URI: &str = "ui://widget/pair-lift-matrix-v5.html";
+const MENU_HEATMAPS_WIDGET_URI: &str = "ui://widget/menu-heatmaps-v2.html";
+const WEAK_ITEMS_REVIEW_WIDGET_URI: &str = "ui://widget/weak-items-review-v2.html";
 /// ChatGPT Apps SDK examples still serve widgets as `text/html+skybridge`.
 /// Keep the MCP Apps profile MIME as a secondary compatibility note in docs/tests.
 const WIDGET_MIME_TYPE: &str = "text/html+skybridge";
-const HELLO_WORLD_WIDGET_HTML: &str = include_str!("../assets/hello_world_widget.html");
-const VENUE_SLOT_STRENGTH_WIDGET_HTML: &str =
-    include_str!("../assets/venue_slot_strength_widget.html");
 
 const INSTRUCTIONS: &str = concat!(
     "Local Menuyukti MCP: restaurant POS Excel analytics on the owner's machine. ",
@@ -50,13 +50,19 @@ const INSTRUCTIONS: &str = concat!(
     "write_workspace_config → summarize_local_sales. ",
     // Goal → tool map
     "Goal→tool: how did we do → summarize_local_sales; ",
-    "when each dish sells → get_menu_heatmaps; ",
+    "when each dish sells → for show/chart/heatmap pick ONE path: ",
+    "render_menu_heatmaps (MCP Apps widget) OR get_menu_heatmaps for numbers/skill redraw — never both; ",
+    "get_menu_heatmaps alone for numbers-only JSON (sales alone; workspace COGS adds matrix_category star/plow_horse/puzzle/weak); ",
     "when is the venue busy / staffing by daypart → for show/chart/heatmap pick ONE path: ",
     "render_venue_slot_strength (MCP Apps widget) OR get_venue_slot_strength for a skill redraw — never both in the same turn; ",
     "get_venue_slot_strength alone for numbers-only JSON; ",
-    "combo / upsell ideas → get_pair_lift_matrix (sales alone; COGS upgrades focus to stars when ≥2); ",
+    "combo / upsell ideas → for show/chart/heatmap pick ONE path: ",
+    "render_pair_lift_matrix (MCP Apps widget) OR get_pair_lift_matrix for numbers/skill redraw — never both; ",
+    "get_pair_lift_matrix alone for numbers-only JSON (sales alone; COGS upgrades focus to stars when ≥2); ",
     "stars/plow horses/puzzles/weak matrix → analyze_menu_engineering (needs sales+COGS); ",
-    "reprice/improve/remove weak dishes → get_weak_items_review (needs sales+COGS); ",
+    "reprice/improve/remove / show weak dishes → for show/table pick ONE path: ",
+    "render_weak_items_review (MCP Apps widget) OR get_weak_items_review for numbers/skill redraw — never both (needs sales+COGS); ",
+    "get_weak_items_review alone for numbers-only JSON; ",
     "cleaned line items → list_normalized_sales; ",
     "venue hours/seating/notes → read_workspace_knowledge then write_workspace_knowledge (full replace). ",
     // COGS gates
@@ -64,10 +70,10 @@ const INSTRUCTIONS: &str = concat!(
     "If missing, ask the owner to drop COGS Excel, then list_workspace_files and write_workspace_config. ",
     "Sales-only tools still work without COGS. ",
     // Widgets + smoke — one chart only
-    "For show/chart/heatmap: prefer render_venue_slot_strength when the host mounts MCP Apps widgets; ",
-    "otherwise use get_venue_slot_strength and let a presentation skill draw once. ",
-    "Never call render_venue_slot_strength and also redraw a markdown/HTML heatmap in the same turn — narrate only after a widget. ",
-    "prefer get_venue_slot_strength alone for text/numbers. ",
+    "For show/chart/heatmap/table: prefer render_venue_slot_strength, render_pair_lift_matrix, render_menu_heatmaps, or render_weak_items_review when the host mounts MCP Apps widgets; ",
+    "otherwise use get_venue_slot_strength / get_pair_lift_matrix / get_menu_heatmaps / get_weak_items_review and let a presentation skill draw once. ",
+    "Never call a render_* widget tool and also redraw a markdown/HTML chart or table in the same turn — narrate only after a widget. ",
+    "prefer get_venue_slot_strength / get_pair_lift_matrix / get_menu_heatmaps / get_weak_items_review alone for text/numbers. ",
     "render_hello_world_widget is UI smoke only (mock data) — never use it for analytics."
 );
 
@@ -114,9 +120,12 @@ fn hello_world_resource() -> Resource {
 }
 
 fn hello_world_resource_contents() -> ResourceContents {
-    ResourceContents::text(HELLO_WORLD_WIDGET_HTML, HELLO_WORLD_WIDGET_URI)
-        .with_mime_type(WIDGET_MIME_TYPE)
-        .with_meta(hello_world_widget_meta())
+    ResourceContents::text(
+        menuyukti_mcp::widget_assets::hello_world_widget_html(),
+        HELLO_WORLD_WIDGET_URI,
+    )
+    .with_mime_type(WIDGET_MIME_TYPE)
+    .with_meta(hello_world_widget_meta())
 }
 
 fn mock_hello_world_payload() -> serde_json::Value {
@@ -166,7 +175,7 @@ fn venue_slot_strength_resource() -> Resource {
 
 fn venue_slot_strength_resource_contents() -> ResourceContents {
     ResourceContents::text(
-        VENUE_SLOT_STRENGTH_WIDGET_HTML,
+        menuyukti_mcp::widget_assets::venue_slot_strength_widget_html(),
         VENUE_SLOT_STRENGTH_WIDGET_URI,
     )
     .with_mime_type(WIDGET_MIME_TYPE)
@@ -187,6 +196,211 @@ fn venue_slot_strength_tool_result(
     result.content = vec![ContentBlock::text(format!(
         "Showing venue slot strength heatmap ({pos}, {} slots).",
         profile.len()
+    ))];
+    result
+}
+
+fn pair_lift_matrix_widget_meta() -> MetaObject {
+    let mut meta = MetaObject::new();
+    meta.insert(
+        "ui".to_string(),
+        json!({
+            "resourceUri": PAIR_LIFT_MATRIX_WIDGET_URI,
+            // Ask the host for a bordered card + outer padding (ChatGPT/Codex).
+            "prefersBorder": true,
+        }),
+    );
+    meta.insert(
+        "openai/outputTemplate".to_string(),
+        json!(PAIR_LIFT_MATRIX_WIDGET_URI),
+    );
+    meta.insert("openai/widgetAccessible".to_string(), json!(true));
+    // ChatGPT compatibility alias for `_meta.ui.prefersBorder`.
+    meta.insert("openai/widgetPrefersBorder".to_string(), json!(true));
+    meta.insert(
+        "openai/toolInvocation/invoking".to_string(),
+        json!("Rendering pair lift matrix…"),
+    );
+    meta.insert(
+        "openai/toolInvocation/invoked".to_string(),
+        json!("Pair lift matrix ready."),
+    );
+    meta
+}
+
+fn pair_lift_matrix_resource() -> Resource {
+    Resource::new(PAIR_LIFT_MATRIX_WIDGET_URI, "pair-lift-matrix-widget")
+        .with_title("Pair lift index heatmap")
+        .with_description(
+            "MCP Apps widget: focus menu × focus menu co-purchase lift from matrix_lift.",
+        )
+        .with_mime_type(WIDGET_MIME_TYPE)
+        .with_meta(pair_lift_matrix_widget_meta())
+}
+
+fn pair_lift_matrix_resource_contents() -> ResourceContents {
+    ResourceContents::text(
+        menuyukti_mcp::widget_assets::pair_lift_matrix_widget_html(),
+        PAIR_LIFT_MATRIX_WIDGET_URI,
+    )
+    .with_mime_type(WIDGET_MIME_TYPE)
+    .with_meta(pair_lift_matrix_widget_meta())
+}
+
+fn pair_lift_matrix_tool_result(
+    pos: &str,
+    affinities: &menuyukti::MenuBasketAffinitiesResult,
+) -> CallToolResult {
+    let payload = json!({
+        "pos": pos,
+        "total_orders": affinities.total_orders,
+        "multi_item_order_count": affinities.multi_item_order_count,
+        "avg_distinct_items_per_order": affinities.avg_distinct_items_per_order,
+        "scope": affinities.scope,
+        "focus_menus": affinities.focus_menus,
+        "matrix_lift": affinities.matrix_lift,
+        "pairs": affinities.pairs,
+    });
+    let mut result =
+        CallToolResult::structured(payload).with_meta(Some(pair_lift_matrix_widget_meta()));
+    result.content = vec![ContentBlock::text(format!(
+        "Showing pair lift index heatmap ({pos}, {} focus menus).",
+        affinities.focus_menus.len()
+    ))];
+    result
+}
+
+fn menu_heatmaps_widget_meta() -> MetaObject {
+    let mut meta = MetaObject::new();
+    meta.insert(
+        "ui".to_string(),
+        json!({
+            "resourceUri": MENU_HEATMAPS_WIDGET_URI,
+            "prefersBorder": true,
+        }),
+    );
+    meta.insert(
+        "openai/outputTemplate".to_string(),
+        json!(MENU_HEATMAPS_WIDGET_URI),
+    );
+    meta.insert("openai/widgetAccessible".to_string(), json!(true));
+    meta.insert("openai/widgetPrefersBorder".to_string(), json!(true));
+    meta.insert(
+        "openai/toolInvocation/invoking".to_string(),
+        json!("Rendering menu heatmaps…"),
+    );
+    meta.insert(
+        "openai/toolInvocation/invoked".to_string(),
+        json!("Menu heatmaps ready."),
+    );
+    meta
+}
+
+fn menu_heatmaps_resource() -> Resource {
+    Resource::new(MENU_HEATMAPS_WIDGET_URI, "menu-heatmaps-widget")
+        .with_title("Menu heatmaps")
+        .with_description(
+            "MCP Apps widget: per-menu daily/weekly unit quantity heatmaps from heatmaps[].",
+        )
+        .with_mime_type(WIDGET_MIME_TYPE)
+        .with_meta(menu_heatmaps_widget_meta())
+}
+
+fn menu_heatmaps_resource_contents() -> ResourceContents {
+    ResourceContents::text(
+        menuyukti_mcp::widget_assets::menu_heatmaps_widget_html(),
+        MENU_HEATMAPS_WIDGET_URI,
+    )
+    .with_mime_type(WIDGET_MIME_TYPE)
+    .with_meta(menu_heatmaps_widget_meta())
+}
+
+fn menu_heatmaps_tool_result(
+    pos: &str,
+    heatmaps: &[menuyukti::MenuHeatmapPayload],
+) -> CallToolResult {
+    let payload = json!({
+        "pos": pos,
+        "menu_count": heatmaps.len(),
+        "heatmaps": heatmaps,
+    });
+    let mut result =
+        CallToolResult::structured(payload).with_meta(Some(menu_heatmaps_widget_meta()));
+    result.content = vec![ContentBlock::text(format!(
+        "Showing menu heatmaps ({pos}, {} menus).",
+        heatmaps.len()
+    ))];
+    result
+}
+
+fn weak_items_review_widget_meta() -> MetaObject {
+    let mut meta = MetaObject::new();
+    meta.insert(
+        "ui".to_string(),
+        json!({
+            "resourceUri": WEAK_ITEMS_REVIEW_WIDGET_URI,
+            "prefersBorder": true,
+        }),
+    );
+    meta.insert(
+        "openai/outputTemplate".to_string(),
+        json!(WEAK_ITEMS_REVIEW_WIDGET_URI),
+    );
+    meta.insert("openai/widgetAccessible".to_string(), json!(true));
+    meta.insert("openai/widgetPrefersBorder".to_string(), json!(true));
+    meta.insert(
+        "openai/toolInvocation/invoking".to_string(),
+        json!("Rendering weak items review…"),
+    );
+    meta.insert(
+        "openai/toolInvocation/invoked".to_string(),
+        json!("Weak items review ready."),
+    );
+    meta
+}
+
+fn weak_items_review_resource() -> Resource {
+    Resource::new(WEAK_ITEMS_REVIEW_WIDGET_URI, "weak-items-review-widget")
+        .with_title("Weak items review")
+        .with_description(
+            "MCP Apps widget: sortable weak-quadrant table with KPI strip from get_weak_items_review.",
+        )
+        .with_mime_type(WIDGET_MIME_TYPE)
+        .with_meta(weak_items_review_widget_meta())
+}
+
+fn weak_items_review_resource_contents() -> ResourceContents {
+    ResourceContents::text(
+        menuyukti_mcp::widget_assets::weak_items_review_widget_html(),
+        WEAK_ITEMS_REVIEW_WIDGET_URI,
+    )
+    .with_mime_type(WIDGET_MIME_TYPE)
+    .with_meta(weak_items_review_widget_meta())
+}
+
+fn weak_items_review_tool_result(
+    pos: &str,
+    workspace: &str,
+    cogs_path: &str,
+    review: &menuyukti::WeakReviewResult,
+    coverage: &menuyukti::MenuEngineeringCoverage,
+) -> CallToolResult {
+    let payload = json!({
+        "pos": pos,
+        "workspace": workspace,
+        "cogs_path": cogs_path,
+        "period_start": review.period_start,
+        "period_end": review.period_end,
+        "stats": review.stats,
+        "distribution_stats": review.distribution_stats,
+        "items": review.rows,
+        "coverage": coverage,
+    });
+    let mut result =
+        CallToolResult::structured(payload).with_meta(Some(weak_items_review_widget_meta()));
+    result.content = vec![ContentBlock::text(format!(
+        "Showing weak items review ({pos}, {} weak items).",
+        review.rows.len()
     ))];
     result
 }
@@ -291,19 +505,75 @@ fn load_or_error(path: &str) -> Result<menuyukti::NormalizedSales, CallToolResul
 
 /// Prefer menu-engineering stars as focus when workspace COGS is available.
 fn optional_star_focus(path: &str, rows: &[menuyukti::LineItem]) -> Option<Vec<String>> {
-    let cogs = menuyukti::load_workspace_cogs(path, None).ok()?;
-    let matrix = menuyukti::compute_menu_engineering_from_orders(rows, &cogs.unit_costs).ok()?;
-    let stars: Vec<String> = matrix
-        .items
+    let categories = optional_matrix_categories(path, rows)?;
+    let stars: Vec<String> = categories
         .into_iter()
-        .filter(|item| item.category == "star")
-        .map(|item| item.menu)
+        .filter(|(_, category)| category == "star")
+        .map(|(menu, _)| menu)
         .collect();
     if stars.len() >= 2 {
         Some(stars)
     } else {
         None
     }
+}
+
+/// Menu → matrix category when workspace COGS can classify the menu.
+fn optional_matrix_categories(
+    path: &str,
+    rows: &[menuyukti::LineItem],
+) -> Option<std::collections::HashMap<String, String>> {
+    let cogs = menuyukti::load_workspace_cogs(path, None).ok()?;
+    let matrix = menuyukti::compute_menu_engineering_from_orders(rows, &cogs.unit_costs).ok()?;
+    Some(
+        matrix
+            .items
+            .into_iter()
+            .map(|item| (item.menu, item.category))
+            .collect(),
+    )
+}
+
+fn enriched_menu_heatmaps(
+    path: &str,
+    rows: &[menuyukti::LineItem],
+) -> Result<Vec<menuyukti::MenuHeatmapPayload>, String> {
+    let mut heatmaps = menuyukti::calculate_menu_heatmaps(rows)?;
+    if let Some(categories) = optional_matrix_categories(path, rows) {
+        menuyukti::apply_matrix_categories(&mut heatmaps, &categories);
+    }
+    Ok(heatmaps)
+}
+
+/// Load weak-items review for a workspace path (sales + COGS required).
+fn load_weak_items_review(
+    path: &str,
+) -> Result<
+    (
+        String,
+        String,
+        menuyukti::WeakReviewResult,
+        menuyukti::MenuEngineeringCoverage,
+    ),
+    CallToolResult,
+> {
+    let cogs = menuyukti::load_workspace_cogs(path, None).map_err(|err| {
+        error_json(format!(
+            "{err} Weak items review needs sales + a unit-cost (COGS) Excel: \
+             ask the owner to drop COGS into the folder, then list_workspace_files \
+             and write_workspace_config (or call get_setup_status)."
+        ))
+    })?;
+    let loaded = load_or_error(path)?;
+    let matrix = menuyukti::compute_menu_engineering_from_orders(&loaded.rows, &cogs.unit_costs)
+        .map_err(|err| {
+            error_json(format!(
+                "{err}. Fix COGS coverage (Menu + COGS columns matching sold menu names) \
+                 or ask the owner to update unit costs."
+            ))
+        })?;
+    let review = menuyukti::adapt_weak_review_from_orders(&matrix, &loaded.rows);
+    Ok((loaded.pos, cogs.path, review, matrix.coverage))
 }
 
 fn role_from_args(role: WorkspaceFileRoleArgs) -> menuyukti::WorkspaceFileRole {
@@ -452,7 +722,7 @@ impl MenuyuktiMcp {
     }
 
     #[tool(
-        description = "Return per-menu daily (hourly) and weekly demand heatmaps from local POS sales. Path may be a workspace folder (workspace.yaml sales role) or an Excel file under MENUYUKTI_DATA_DIR. Useful for when each dish sells most."
+        description = "Return per-menu daily (hourly) and weekly demand heatmaps from local POS sales. Path may be a workspace folder (workspace.yaml sales role) or an Excel file under MENUYUKTI_DATA_DIR. Sales alone is enough. When the path is a workspace with usable COGS, each item also includes matrix_category (star / plow_horse / puzzle / weak). Useful for when each dish sells most."
     )]
     async fn get_menu_heatmaps(
         &self,
@@ -462,7 +732,7 @@ impl MenuyuktiMcp {
             Ok(v) => v,
             Err(resp) => return Ok(resp),
         };
-        match menuyukti::calculate_menu_heatmaps(&loaded.rows) {
+        match enriched_menu_heatmaps(&path, &loaded.rows) {
             Ok(heatmaps) => Ok(text_json(json!({
                 "pos": loaded.pos,
                 "menu_count": heatmaps.len(),
@@ -530,45 +800,25 @@ impl MenuyuktiMcp {
     }
 
     #[tool(
-        description = "Return Weak items review analytics for reprice / improve / remove decisions. Workspace folder under MENUYUKTI_DATA_DIR with files.sales and files.cogs required. Filters the menu-engineering matrix to the weak quadrant and adds period depth (avg qty/day, portfolio item/margin share). If COGS is missing, list_workspace_files / write_workspace_config or ask the owner for unit costs first."
+        description = "Return Weak items review analytics for reprice / improve / remove decisions. Workspace folder under MENUYUKTI_DATA_DIR with files.sales and files.cogs required. Filters the menu-engineering matrix to the weak quadrant and adds period depth (avg qty/day, portfolio item/margin share). If COGS is missing, list_workspace_files / write_workspace_config or ask the owner for unit costs first. JSON-only — use render_weak_items_review to mount the sortable table widget."
     )]
     async fn get_weak_items_review(
         &self,
         Parameters(WorkspacePathArgs { path }): Parameters<WorkspacePathArgs>,
     ) -> Result<CallToolResult, McpError> {
-        let cogs = match menuyukti::load_workspace_cogs(&path, None) {
-            Ok(v) => v,
-            Err(err) => {
-                return Ok(error_json(format!(
-                    "{err} Weak items review needs sales + a unit-cost (COGS) Excel: \
-                     ask the owner to drop COGS into the folder, then list_workspace_files \
-                     and write_workspace_config (or call get_setup_status)."
-                )));
-            }
-        };
-        let loaded = match load_or_error(&path) {
-            Ok(v) => v,
-            Err(resp) => return Ok(resp),
-        };
-        match menuyukti::compute_menu_engineering_from_orders(&loaded.rows, &cogs.unit_costs) {
-            Ok(matrix) => {
-                let review = menuyukti::adapt_weak_review_from_orders(&matrix, &loaded.rows);
-                Ok(text_json(json!({
-                    "pos": loaded.pos,
-                    "workspace": path,
-                    "cogs_path": cogs.path,
-                    "period_start": review.period_start,
-                    "period_end": review.period_end,
-                    "stats": review.stats,
-                    "distribution_stats": review.distribution_stats,
-                    "items": review.rows,
-                    "coverage": matrix.coverage,
-                })))
-            }
-            Err(err) => Ok(error_json(format!(
-                "{err}. Fix COGS coverage (Menu + COGS columns matching sold menu names) \
-                 or ask the owner to update unit costs."
-            ))),
+        match load_weak_items_review(&path) {
+            Ok((loaded_pos, cogs_path, review, coverage)) => Ok(text_json(json!({
+                "pos": loaded_pos,
+                "workspace": path,
+                "cogs_path": cogs_path,
+                "period_start": review.period_start,
+                "period_end": review.period_end,
+                "stats": review.stats,
+                "distribution_stats": review.distribution_stats,
+                "items": review.rows,
+                "coverage": coverage,
+            }))),
+            Err(resp) => Ok(resp),
         }
     }
 
@@ -625,6 +875,67 @@ impl MenuyuktiMcp {
         let profile = menuyukti::compute_slot_demand_profile_from_orders(&loaded.rows);
         Ok(venue_slot_strength_tool_result(&loaded.pos, &profile))
     }
+
+    #[tool(
+        description = "Render the pair lift index heatmap widget (focus menu × focus menu co-purchase lift). Path may be a workspace folder (workspace.yaml sales role) or an Excel file under MENUYUKTI_DATA_DIR. Sales alone is enough; COGS upgrades focus to stars when ≥2. Prefer this when the owner should see the combo chart; use get_pair_lift_matrix for JSON-only answers.",
+        annotations(title = "Render pair lift matrix", read_only_hint = true),
+        meta = pair_lift_matrix_widget_meta()
+    )]
+    async fn render_pair_lift_matrix(
+        &self,
+        Parameters(PathArgs { path }): Parameters<PathArgs>,
+    ) -> Result<CallToolResult, McpError> {
+        let loaded = match load_or_error(&path) {
+            Ok(v) => v,
+            Err(resp) => return Ok(resp),
+        };
+        let star_focus = optional_star_focus(&path, &loaded.rows);
+        let affinities = menuyukti::compute_menu_basket_affinities_from_orders(
+            &loaded.rows,
+            star_focus.as_deref(),
+        );
+        Ok(pair_lift_matrix_tool_result(&loaded.pos, &affinities))
+    }
+
+    #[tool(
+        description = "Render the menu heatmaps widget (per-menu daily hour and weekly weekday unit quantities). Path may be a workspace folder (workspace.yaml sales role) or an Excel file under MENUYUKTI_DATA_DIR. Sales alone is enough; workspace COGS adds matrix_category filters (weak off by default). Prefer this when the owner should see the dish timing chart; use get_menu_heatmaps for JSON-only answers.",
+        annotations(title = "Render menu heatmaps", read_only_hint = true),
+        meta = menu_heatmaps_widget_meta()
+    )]
+    async fn render_menu_heatmaps(
+        &self,
+        Parameters(PathArgs { path }): Parameters<PathArgs>,
+    ) -> Result<CallToolResult, McpError> {
+        let loaded = match load_or_error(&path) {
+            Ok(v) => v,
+            Err(resp) => return Ok(resp),
+        };
+        match enriched_menu_heatmaps(&path, &loaded.rows) {
+            Ok(heatmaps) => Ok(menu_heatmaps_tool_result(&loaded.pos, &heatmaps)),
+            Err(err) => Ok(error_json(err)),
+        }
+    }
+
+    #[tool(
+        description = "Render the weak items review widget (sortable weak-quadrant table with portfolio KPIs). Workspace folder under MENUYUKTI_DATA_DIR with files.sales and files.cogs required. Prefer this when the owner should see the weak items table; use get_weak_items_review for JSON-only answers. Never also redraw HTML via the Codex skill in the same turn.",
+        annotations(title = "Render weak items review", read_only_hint = true),
+        meta = weak_items_review_widget_meta()
+    )]
+    async fn render_weak_items_review(
+        &self,
+        Parameters(WorkspacePathArgs { path }): Parameters<WorkspacePathArgs>,
+    ) -> Result<CallToolResult, McpError> {
+        match load_weak_items_review(&path) {
+            Ok((loaded_pos, cogs_path, review, coverage)) => Ok(weak_items_review_tool_result(
+                &loaded_pos,
+                &path,
+                &cogs_path,
+                &review,
+                &coverage,
+            )),
+            Err(resp) => Ok(resp),
+        }
+    }
 }
 
 #[tool_handler]
@@ -650,7 +961,13 @@ impl ServerHandler for MenuyuktiMcp {
         _context: rmcp::service::RequestContext<rmcp::RoleServer>,
     ) -> Result<ListResourcesResult, McpError> {
         Ok(ListResourcesResult {
-            resources: vec![hello_world_resource(), venue_slot_strength_resource()],
+            resources: vec![
+                hello_world_resource(),
+                venue_slot_strength_resource(),
+                pair_lift_matrix_resource(),
+                menu_heatmaps_resource(),
+                weak_items_review_resource(),
+            ],
             ..Default::default()
         })
     }
@@ -664,6 +981,12 @@ impl ServerHandler for MenuyuktiMcp {
             hello_world_resource_contents()
         } else if request.uri == VENUE_SLOT_STRENGTH_WIDGET_URI {
             venue_slot_strength_resource_contents()
+        } else if request.uri == PAIR_LIFT_MATRIX_WIDGET_URI {
+            pair_lift_matrix_resource_contents()
+        } else if request.uri == MENU_HEATMAPS_WIDGET_URI {
+            menu_heatmaps_resource_contents()
+        } else if request.uri == WEAK_ITEMS_REVIEW_WIDGET_URI {
+            weak_items_review_resource_contents()
         } else {
             return Err(McpError::resource_not_found(
                 format!("unknown resource URI: {}", request.uri),

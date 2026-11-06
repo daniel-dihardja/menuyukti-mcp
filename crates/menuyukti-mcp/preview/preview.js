@@ -1,8 +1,8 @@
 /**
  * Widget preview harness: inject mock structuredContent into the iframe
- * the same way ChatGPT MCP Apps does, and reload when the preview server
- * bumps its watch version.
+ * the same way ChatGPT MCP Apps does.
  *
+ * No live reload — refresh the browser after editing widget HTML or fixtures.
  * Optional theme toggle (`#theme-toggle` or `data-theme` on body) posts a
  * mock host-context-changed notification so widgets can be checked in dark mode.
  */
@@ -14,6 +14,11 @@
   const statusEl = document.getElementById("status");
   const themeToggle = document.getElementById("theme-toggle");
   const THEME_KEY = "menuyukti-widget-preview-theme";
+
+  if (!widgetSrc || !fixtureSrc || !frame) {
+    setStatus("Missing data-widget / data-fixture / #widget-frame");
+    return;
+  }
 
   function setStatus(text) {
     if (statusEl) statusEl.textContent = text;
@@ -43,25 +48,22 @@
       themeToggle.textContent = mode === "dark" ? "Light mode" : "Dark mode";
       themeToggle.setAttribute("aria-pressed", mode === "dark" ? "true" : "false");
     }
-    if (frame) {
-      frame.style.background = mode === "dark" ? "#171717" : "#ffffff";
-    }
+    frame.style.background = mode === "dark" ? "#171717" : "#ffffff";
     postHostContext(mode);
   }
 
   function postHostContext(theme) {
-    if (!frame?.contentWindow) return;
-    const hostContext = {
-      theme: theme || currentTheme(),
-      styles: {
-        variables: {},
-      },
-    };
+    if (!frame.contentWindow) return;
     frame.contentWindow.postMessage(
       {
         jsonrpc: "2.0",
         method: "ui/notifications/host-context-changed",
-        params: { hostContext },
+        params: {
+          hostContext: {
+            theme: theme || currentTheme(),
+            styles: { variables: {} },
+          },
+        },
       },
       "*"
     );
@@ -76,26 +78,38 @@
   }
 
   function postToolResult(structuredContent) {
-    const message = {
-      jsonrpc: "2.0",
-      method: "ui/notifications/tool-result",
-      params: { structuredContent },
-    };
-    frame.contentWindow.postMessage(message, "*");
+    frame.contentWindow.postMessage(
+      {
+        jsonrpc: "2.0",
+        method: "ui/notifications/tool-result",
+        params: { structuredContent },
+      },
+      "*"
+    );
   }
 
-  async function injectMock() {
+  let cachedStructured = null;
+  let injectGeneration = 0;
+
+  async function injectMock(reason) {
+    const generation = ++injectGeneration;
     try {
       postHostContext(currentTheme());
-      const structuredContent = await loadFixture();
-      postToolResult(structuredContent);
-      setStatus(`Mock injected from ${fixtureSrc} · theme ${currentTheme()}`);
+      if (!cachedStructured) {
+        cachedStructured = await loadFixture();
+      }
+      if (generation !== injectGeneration) return;
+      postToolResult(cachedStructured);
+      setStatus(
+        `Mock injected from ${fixtureSrc} · theme ${currentTheme()}` +
+          (reason ? ` · ${reason}` : "")
+      );
     } catch (err) {
       setStatus(`Mock inject failed: ${String(err)}`);
     }
   }
 
-  // Answer ui/initialize the way a host would (theme in hostContext).
+  // Handshake + inject once the widget has attached its listener.
   window.addEventListener("message", (event) => {
     if (event.source !== frame.contentWindow) return;
     const message = event.data;
@@ -112,12 +126,16 @@
         },
         "*"
       );
+      injectMock("handshake");
     }
   });
 
   if (themeToggle) {
     themeToggle.addEventListener("click", () => {
       setTheme(currentTheme() === "dark" ? "light" : "dark");
+      if (cachedStructured) {
+        postToolResult(cachedStructured);
+      }
       setStatus(`Theme → ${currentTheme()}`);
     });
   }
@@ -125,37 +143,8 @@
   setTheme(currentTheme());
   frame.src = widgetSrc;
   frame.addEventListener("load", () => {
-    // Give the widget module a tick to attach its message listener.
-    setTimeout(injectMock, 0);
+    cachedStructured = null;
+    setTimeout(() => injectMock("load"), 0);
+    setTimeout(() => injectMock("retry"), 100);
   });
-
-  // Live reload via SSE (falls back to version polling).
-  let watchVersion = null;
-  try {
-    const source = new EventSource("/__reload");
-    source.addEventListener("reload", () => {
-      location.reload();
-    });
-    source.onerror = () => {
-      /* EventSource reconnects; polling covers hard failures */
-    };
-  } catch (_) {
-    /* ignore */
-  }
-
-  async function pollWatch() {
-    try {
-      const res = await fetch("/__watch", { cache: "no-store" });
-      if (!res.ok) return;
-      const data = await res.json();
-      if (watchVersion === null) {
-        watchVersion = data.version;
-      } else if (data.version !== watchVersion) {
-        location.reload();
-      }
-    } catch (_) {
-      /* server may restart briefly */
-    }
-  }
-  setInterval(pollWatch, 500);
 })();

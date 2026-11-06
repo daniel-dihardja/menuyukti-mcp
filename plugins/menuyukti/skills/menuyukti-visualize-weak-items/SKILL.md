@@ -1,11 +1,12 @@
 ---
 name: menuyukti-visualize-weak-items
 description: >-
-  Turn Menuyukti get_weak_items_review JSON into a sortable weak-items HTML table
-  in Codex. Use when the user asks to show, chart, table, or visualize weak items,
-  dishes to reprice/improve/remove, or weak-quadrant review. Do not use for
-  venue slot strength, menu heatmaps, pair lift, or the full menu-engineering
-  matrix chart.
+  Codex fallback: turn Menuyukti get_weak_items_review JSON into a sortable
+  weak-items HTML table. Prefer render_weak_items_review when the host mounts
+  MCP Apps widgets. Use when the user asks to show, chart, table, or visualize
+  weak items, dishes to reprice/improve/remove, or weak-quadrant review. Do not
+  use for venue slot strength, menu heatmaps, pair lift, or the full
+  menu-engineering matrix chart.
 ---
 
 # Visualize weak items review
@@ -16,7 +17,10 @@ Present the **weak** menu-engineering quadrant as a **local HTML table** with so
 
 - User asks to **show / table / visualize** weak items
 - Questions about which dishes to reprice, improve, or cut (after data is loaded)
+- Host does **not** mount MCP Apps widgets (Codex local HTML path)
 - You have (or can fetch) `get_weak_items_review` JSON
+
+**Prefer the widget:** when ChatGPT / an MCP Apps host can mount UI, call **`render_weak_items_review`** instead and narrate only. Never call the render tool **and** write HTML in the same turn.
 
 ## Data (never invent)
 

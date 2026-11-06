@@ -19,7 +19,7 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub use analytics::{
     adapt_weak_review, adapt_weak_review_from_matrix, adapt_weak_review_from_orders,
-    calculate_menu_heatmaps, compute_menu_basket_affinities_from_orders,
+    apply_matrix_categories, calculate_menu_heatmaps, compute_menu_basket_affinities_from_orders,
     compute_menu_engineering_from_orders, compute_slot_demand_profile_from_orders,
     inclusive_calendar_days, list_normalized_rows, period_from_line_items, summarize_sales,
     BasketScope, DailyHeatmapRow, MenuBasketAffinitiesResult, MenuBasketPair,

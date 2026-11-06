@@ -24,9 +24,23 @@ pub struct MenuHeatmapPayload {
     pub menu: String,
     pub menu_category: Option<String>,
     pub menu_category_detail: Option<String>,
+    /// Menu-engineering quadrant (`star` / `plow_horse` / `puzzle` / `weak`) when COGS enrichment ran.
+    pub matrix_category: Option<String>,
     pub daily_heatmap: Vec<DailyHeatmapRow>,
     pub weekly_heatmap: Vec<WeeklyHeatmapRow>,
     pub reporting_period: String,
+}
+
+/// Attach menu-engineering categories onto heatmap rows by menu name.
+///
+/// Menus missing from `categories_by_menu` keep `matrix_category = None`.
+pub fn apply_matrix_categories(
+    heatmaps: &mut [MenuHeatmapPayload],
+    categories_by_menu: &HashMap<String, String>,
+) {
+    for item in heatmaps {
+        item.matrix_category = categories_by_menu.get(&item.menu).cloned();
+    }
 }
 
 pub fn calculate_menu_heatmaps(rows: &[LineItem]) -> Result<Vec<MenuHeatmapPayload>, String> {
@@ -78,6 +92,7 @@ pub fn calculate_menu_heatmaps(rows: &[LineItem]) -> Result<Vec<MenuHeatmapPaylo
             menu,
             menu_category,
             menu_category_detail,
+            matrix_category: None,
             daily_heatmap: (0..24)
                 .map(|hour| DailyHeatmapRow {
                     hour,

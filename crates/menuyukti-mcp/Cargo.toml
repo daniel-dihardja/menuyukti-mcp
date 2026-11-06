@@ -7,6 +7,10 @@ description = "Local Menuyukti MCP server for sales analytics"
 readme = "../../README.md"
 default-run = "menuyukti-mcp"
 
+[lib]
+name = "menuyukti_mcp"
+path = "src/lib.rs"
+
 [[bin]]
 name = "menuyukti-mcp"
 path = "src/main.rs"
@@ -20,7 +24,6 @@ anyhow = { workspace = true }
 axum = { workspace = true }
 futures-util = { workspace = true }
 menuyukti = { workspace = true }
-notify = { workspace = true }
 rmcp = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true }

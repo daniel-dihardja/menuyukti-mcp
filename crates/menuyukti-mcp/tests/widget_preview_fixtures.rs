@@ -45,3 +45,84 @@ fn venue_slot_strength_empty_fixture_has_empty_profile() {
         Some(0)
     );
 }
+
+#[test]
+fn pair_lift_matrix_fixture_is_square_with_null_diagonal() {
+    let v = read_fixture("pair_lift_matrix.json");
+    let focus = v["focus_menus"].as_array().expect("focus_menus array");
+    let matrix = v["matrix_lift"].as_array().expect("matrix_lift array");
+    assert!(focus.len() >= 2, "expected >=2 focus menus");
+    assert_eq!(matrix.len(), focus.len());
+    for (i, row) in matrix.iter().enumerate() {
+        let cells = row.as_array().expect("matrix row");
+        assert_eq!(cells.len(), focus.len());
+        assert!(cells[i].is_null(), "diagonal at {i} must be null");
+    }
+    assert!(v["pairs"]
+        .as_array()
+        .map(|a| !a.is_empty())
+        .unwrap_or(false));
+    assert!(v["scope"].is_string());
+}
+
+#[test]
+fn pair_lift_matrix_empty_fixture_has_empty_focus() {
+    let v = read_fixture("pair_lift_matrix_empty.json");
+    assert_eq!(v["focus_menus"].as_array().map(|a| a.len()), Some(0));
+    assert_eq!(v["matrix_lift"].as_array().map(|a| a.len()), Some(0));
+    assert_eq!(v["pairs"].as_array().map(|a| a.len()), Some(0));
+}
+
+#[test]
+fn menu_heatmaps_fixture_has_daily_weekly_and_categories() {
+    let v = read_fixture("menu_heatmaps.json");
+    let heatmaps = v["heatmaps"].as_array().expect("heatmaps array");
+    assert!(!heatmaps.is_empty(), "expected populated heatmaps");
+    assert_eq!(v["menu_count"].as_u64(), Some(heatmaps.len() as u64));
+    let first = &heatmaps[0];
+    assert!(first["menu"].is_string());
+    assert_eq!(first["daily_heatmap"].as_array().map(|a| a.len()), Some(24));
+    assert_eq!(first["weekly_heatmap"].as_array().map(|a| a.len()), Some(7));
+    let cats: std::collections::HashSet<_> = heatmaps
+        .iter()
+        .filter_map(|item| item["matrix_category"].as_str())
+        .collect();
+    for required in ["star", "plow_horse", "puzzle", "weak"] {
+        assert!(
+            cats.contains(required),
+            "fixture missing matrix_category={required}; cats={cats:?}"
+        );
+    }
+}
+
+#[test]
+fn menu_heatmaps_empty_fixture_has_empty_list() {
+    let v = read_fixture("menu_heatmaps_empty.json");
+    assert_eq!(v["menu_count"], 0);
+    assert_eq!(v["heatmaps"].as_array().map(|a| a.len()), Some(0));
+}
+
+#[test]
+fn weak_items_review_fixture_has_items_and_stats() {
+    let v = read_fixture("weak_items_review.json");
+    let items = v["items"].as_array().expect("items array");
+    assert!(!items.is_empty(), "expected populated weak items");
+    assert_eq!(v["stats"]["item_count"].as_u64(), Some(items.len() as u64));
+    assert!(v["stats"]["period_days"].as_i64().unwrap_or(0) > 0);
+    assert!(v["period_start"].as_str().is_some());
+    assert!(v["period_end"].as_str().is_some());
+    let first = &items[0];
+    assert!(first["menu"].is_string());
+    assert!(first["units_sold"].is_number());
+    assert!(first["avg_qty_per_day"].is_number());
+    assert!(first["contribution_margin"].is_number());
+    assert!(first["contribution_margin_share"].is_number());
+    assert!(first.get("action").is_none());
+}
+
+#[test]
+fn weak_items_review_empty_fixture_has_empty_items() {
+    let v = read_fixture("weak_items_review_empty.json");
+    assert_eq!(v["items"].as_array().map(|a| a.len()), Some(0));
+    assert_eq!(v["stats"]["item_count"], 0);
+}

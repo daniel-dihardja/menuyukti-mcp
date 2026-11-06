@@ -57,8 +57,9 @@
     <h1>Menuyukti widget preview</h1>
     <p>
       Local harness for MCP Apps widget HTML under
-      <code>crates/menuyukti-mcp/assets/</code>. Edit a widget file and this page
-      reloads. No ChatGPT or MCP server required (Rust preview binary only).
+      <code>crates/menuyukti-mcp/assets/</code>. Refresh the browser after
+      editing assets. No ChatGPT, MCP server, or live-reload required (Rust
+      static preview binary only).
     </p>
     <ul>
       <li>
@@ -79,23 +80,42 @@
           <span>Empty profile / edge-state mock</span></a
         >
       </li>
+      <li>
+        <a href="/preview/pair-lift-matrix.html"
+          >Pair lift index
+          <span>Populated focus × focus lift heatmap mock</span></a
+        >
+      </li>
+      <li>
+        <a href="/preview/pair-lift-matrix-empty.html"
+          >Pair lift index (empty)
+          <span>Empty focus / edge-state mock</span></a
+        >
+      </li>
+      <li>
+        <a href="/preview/menu-heatmaps.html"
+          >Menu heatmaps
+          <span>Per-dish daily/weekly quantity heatmap + category filters</span></a
+        >
+      </li>
+      <li>
+        <a href="/preview/menu-heatmaps-empty.html"
+          >Menu heatmaps (empty)
+          <span>Empty heatmaps / edge-state mock</span></a
+        >
+      </li>
+      <li>
+        <a href="/preview/weak-items-review.html"
+          >Weak items review
+          <span>Sortable weak-quadrant table + KPI strip (needs COGS)</span></a
+        >
+      </li>
+      <li>
+        <a href="/preview/weak-items-review-empty.html"
+          >Weak items review (empty)
+          <span>Empty weak quadrant / edge-state mock</span></a
+        >
+      </li>
     </ul>
-    <script>
-      // Index also reloads when assets change.
-      try {
-        const source = new EventSource("/__reload");
-        source.addEventListener("reload", () => location.reload());
-      } catch (_) {}
-      let watchVersion = null;
-      setInterval(async () => {
-        try {
-          const res = await fetch("/__watch", { cache: "no-store" });
-          if (!res.ok) return;
-          const data = await res.json();
-          if (watchVersion === null) watchVersion = data.version;
-          else if (data.version !== watchVersion) location.reload();
-        } catch (_) {}
-      }, 500);
-    </script>
   </body>
 </html>

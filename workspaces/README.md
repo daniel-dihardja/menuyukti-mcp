@@ -4,7 +4,7 @@ Put venue/period folders here. Each folder can hold sales exports, COGS, and loc
 
 Menuyukti MCP reads files from here by default (`MENUYUKTI_DATA_DIR=workspaces`).
 
-**Owner ritual:** run the MCP server → drop sales (+ optional COGS) into a folder → in ChatGPT ask Menuyukti to set up the workspace, then ask outcome questions. See **[Workspaces howto](../docs/howtos/workspaces.md)** and the **[What to ask](../README.md#what-to-ask)** cheat sheet.
+**Owner ritual:** run the MCP server → drop sales (+ optional COGS) into a folder → in ChatGPT ask Menuyukti to set up the workspace, then ask outcome questions (**plan promotions** or **trim / compact the menu**). See **[Workspaces howto](../docs/howtos/workspaces.md)** and the **[What to ask](../README.md#what-to-ask)** cheat sheet.
 
 ## Default demo workspace
 
@@ -23,9 +23,9 @@ Owners only drop Excel files; ChatGPT writes `workspace.yaml` and maintains `kno
 }
 ```
 
-Menu engineering (`analyze_menu_engineering`) and weak items review (`get_weak_items_review`) need both sales and COGS roles configured. Summary, heatmaps, venue slot strength (`get_venue_slot_strength`), and pair lift (`get_pair_lift_matrix`) work with sales alone; COGS only upgrades pair-lift focus to menu-engineering stars when available.
+Menu engineering (`analyze_menu_engineering`) and weak items review (`get_weak_items_review` / `render_weak_items_review`) need both sales and COGS roles configured. Summary, heatmaps (`get_menu_heatmaps` / `render_menu_heatmaps`), venue slot strength (`get_venue_slot_strength` / `render_venue_slot_strength`), and pair lift (`get_pair_lift_matrix` / `render_pair_lift_matrix`) work with sales alone; COGS upgrades pair-lift focus to stars and adds `matrix_category` on menu heatmaps when available.
 
-In Codex, ask to **show venue slot strength** on `demo-cafe-july-2026`; MCP returns JSON and the **`menuyukti-venue-slot-strength`** skill draws the weekday × meal-period heatmap in chat.
+In ChatGPT, ask to **show menu heatmaps**, **show the pair lift heatmap**, **show venue slot strength**, or **show weak items** on `demo-cafe-july-2026` — the agent should call `render_menu_heatmaps`, `render_pair_lift_matrix`, `render_venue_slot_strength`, or `render_weak_items_review` for the MCP Apps widget. In Codex, ask to **show venue slot strength**, **show menu heatmaps**, or **show weak items**; MCP returns JSON and the matching visualisation skill draws local HTML.
 
 ## Your own workspaces
 

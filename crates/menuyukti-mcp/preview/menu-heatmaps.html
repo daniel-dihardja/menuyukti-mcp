@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Preview · Menu heatmaps</title>
+    <style>
+      :root {
+        color: #0f172a;
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        background: #0f172a;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 10px 16px;
+        background: #1e293b;
+        color: #e2e8f0;
+        font-size: 0.85rem;
+      }
+      a {
+        color: #5eead4;
+      }
+      #status {
+        margin-left: auto;
+        color: #94a3b8;
+      }
+      #theme-toggle {
+        border: 1px solid #475569;
+        background: #334155;
+        color: #e2e8f0;
+        border-radius: 6px;
+        padding: 4px 10px;
+        cursor: pointer;
+        font: inherit;
+      }
+      iframe {
+        flex: 1;
+        width: 100%;
+        border: 0;
+        background: #fff;
+      }
+    </style>
+  </head>
+  <body
+    data-widget="/widgets/menu_heatmaps_widget.html"
+    data-fixture="/fixtures/menu_heatmaps.json"
+    data-theme="light"
+  >
+    <header>
+      <a href="/">← Previews</a>
+      <strong>Menu heatmaps</strong>
+      <button type="button" id="theme-toggle" aria-pressed="false">
+        Dark mode
+      </button>
+      <span id="status">Loading…</span>
+    </header>
+    <iframe id="widget-frame" title="Menu heatmaps widget"></iframe>
+    <script src="/preview.js"></script>
+  </body>
+</html>

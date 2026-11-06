@@ -55,7 +55,15 @@ Codex **skips** plugin hooks until you review and trust them (CLI: `/hooks`). Pr
 ## Maintainers
 
 - Author skills in [`.agents/skills/`](../../.agents/skills/).
-- Refresh the installable copies:
+- Refresh the installable copies, then reinstall into Codex CLI:
+
+```bash
+make sync-codex-plugin
+```
+
+That runs `make sync-plugin-skills`, ensures the repo marketplace is registered, and re-runs `codex plugin add menuyukti@menuyukti-repo` so `~/.codex/plugins/cache` picks up local changes. Start a **new** Codex session afterward.
+
+Skills-only (no Codex reinstall):
 
 ```bash
 make sync-plugin-skills

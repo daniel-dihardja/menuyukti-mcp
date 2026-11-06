@@ -1,5 +1,5 @@
 # Menuyukti MCP — local developer commands (no Node/npm required for the product path).
-.PHONY: help mcp mcp-inspect widgets-preview sync-plugin-skills backlog test check fmt clippy
+.PHONY: help mcp mcp-inspect widgets-preview sync-plugin-skills sync-codex-plugin backlog test check fmt clippy
 
 MENUYUKTI_DATA_DIR ?= $(CURDIR)/workspaces
 export MENUYUKTI_DATA_DIR
@@ -8,8 +8,9 @@ help:
 	@echo "Targets:"
 	@echo "  make mcp                 Start the Rust MCP server (http://127.0.0.1:8787/mcp)"
 	@echo "  make mcp-inspect         Start the server and open MCP Inspector (needs npx)"
-	@echo "  make widgets-preview     Local widget HTML preview with mock data + reload"
+	@echo "  make widgets-preview     Local widget HTML preview with mock data (refresh after edits)"
 	@echo "  make sync-plugin-skills  Copy .agents/skills into plugins/menuyukti/skills"
+	@echo "  make sync-codex-plugin   Sync skills, then reinstall Menuyukti into Codex CLI"
 	@echo "  make test                Run Cargo tests"
 	@echo "  make check               fmt --check + clippy -D warnings + tests"
 	@echo "  make fmt                 Format Rust sources (CHECK=1 to verify only)"
@@ -27,6 +28,9 @@ widgets-preview:
 
 sync-plugin-skills:
 	bash scripts/sync-plugin-skills.sh
+
+sync-codex-plugin:
+	bash scripts/sync-codex-plugin.sh
 
 backlog:
 	backlog browser --port 6421 --no-open

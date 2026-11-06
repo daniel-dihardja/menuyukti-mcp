@@ -12,7 +12,8 @@ pub use basket_affinities::{
     MenuBasketPair, MAX_FOCUS_ITEMS, MAX_TOP_PAIRS, MIN_CO_OCCURRENCE,
 };
 pub use heatmaps::{
-    calculate_menu_heatmaps, DailyHeatmapRow, MenuHeatmapPayload, WeeklyHeatmapRow,
+    apply_matrix_categories, calculate_menu_heatmaps, DailyHeatmapRow, MenuHeatmapPayload,
+    WeeklyHeatmapRow,
 };
 pub use menu_engineering::{
     compute_menu_engineering_from_orders, MenuEngineeringCoverage, MenuEngineeringDistributionItem,

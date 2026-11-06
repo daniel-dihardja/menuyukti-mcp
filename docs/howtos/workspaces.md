@@ -62,7 +62,7 @@ Personal uploads under `workspaces/` are gitignored. Only the demo workspace is 
 
 ## What the tools can do
 
-Secondary reference for power users — owners can stick to the [What to ask](../../README.md#what-to-ask) prompts.
+Secondary reference for power users — owners can stick to the [What to ask](../../README.md#what-to-ask) prompts (0.9 / upcoming 1.0 outcomes: **plan promotions** and **trim / compact the menu**).
 
 - `get_setup_status` — first-run diagnosis (data dir, folders missing `workspace.yaml`, demo present)
 - `list_workspaces` — see folders and Excel files Menuyukti MCP can read
@@ -72,11 +72,15 @@ Secondary reference for power users — owners can stick to the [What to ask](..
 - `write_workspace_knowledge` — create/update `knowledge.md` (full replace; ChatGPT reads first)
 - `summarize_local_sales` — totals and top items (folder or Excel path)
 - `list_normalized_sales` — cleaned line items
-- `get_menu_heatmaps` — when each dish sells during the day / week (JSON; Codex: then use the **menuyukti-visualize-menu-heatmaps** skill)
+- `get_menu_heatmaps` — when each dish sells during the day / week (JSON; optional `matrix_category` with workspace COGS)
+- `render_menu_heatmaps` — same data as an MCP Apps heatmap widget (ChatGPT; category toggles, weak off by default)
 - `get_venue_slot_strength` — weekday × meal-period venue demand JSON for timing (**sales alone**; Codex: present with **`menuyukti-venue-slot-strength`**)
-- `get_pair_lift_matrix` — co-purchase lift matrix for combo / upsell ideas (**sales alone**; COGS optional)
+- `render_venue_slot_strength` — same data as an MCP Apps heatmap widget (ChatGPT)
+- `get_pair_lift_matrix` — co-purchase lift matrix JSON for combo / upsell ideas (**sales alone**; COGS optional)
+- `render_pair_lift_matrix` — same data as an MCP Apps heatmap widget (ChatGPT)
 - `analyze_menu_engineering` — star / plow_horse / puzzle / weak matrix (**needs sales + COGS**)
-- `get_weak_items_review` — weak-quadrant depth review for reprice / improve / remove (**needs sales + COGS**; Codex: then use **menuyukti-visualize-weak-items** for a sortable HTML table)
+- `get_weak_items_review` — weak-quadrant depth review JSON for reprice / improve / remove (**needs sales + COGS**)
+- `render_weak_items_review` — same data as an MCP Apps sortable table widget (ChatGPT; needs sales + COGS)
 
 ## Location knowledge (`knowledge.md`)
 
@@ -88,9 +92,13 @@ Secondary reference for power users — owners can stick to the [What to ask](..
 
 To **show the heatmap**, ask for the venue slot strength chart. The agent should use **one** path: `render_venue_slot_strength` (MCP Apps widget) **or** `get_venue_slot_strength` + **`menuyukti-venue-slot-strength`** (write one local HTML heatmap) — never both (see [`.agents/skills/menuyukti-venue-slot-strength/`](../../.agents/skills/menuyukti-venue-slot-strength/)).
 
-## Menu item heatmaps (sales alone)
+## Menu item heatmaps (sales alone; COGS optional)
 
-`get_menu_heatmaps` returns per-menu daily (hour) and weekly (weekday) unit quantities. In **Codex**, ask to show dish heatmaps; the agent should call that tool and write a daily/weekly **HTML** heatmap with the **menuyukti-visualize-menu-heatmaps** skill (see [`.agents/skills/menuyukti-visualize-menu-heatmaps/`](../../.agents/skills/menuyukti-visualize-menu-heatmaps/)). Sales alone is enough — no COGS.
+`get_menu_heatmaps` returns per-menu daily (hour) and weekly (weekday) unit quantities. Sales alone is enough. When you call it on a **workspace folder** that also has usable COGS, each item includes `matrix_category` (`star` / `plow_horse` / `puzzle` / `weak`) so timing charts can filter by menu-engineering role without a second tool.
+
+To **show the heatmap**, ask for the menu / dish heatmaps chart. In ChatGPT the agent should call **`render_menu_heatmaps`** (MCP Apps widget) — prefer that over narrating raw JSON. The widget toggles daily/weekly views and matrix categories when present (**weak off by default**). Keep `get_menu_heatmaps` for numbers-only answers. In **Codex** (or when the host does not mount MCP Apps), use `get_menu_heatmaps` + the **menuyukti-visualize-menu-heatmaps** skill (see [`.agents/skills/menuyukti-visualize-menu-heatmaps/`](../../.agents/skills/menuyukti-visualize-menu-heatmaps/)) — never both widget and skill redraw in the same turn.
+
+Local styling: `make widgets-preview` lists **Menu heatmaps** fixtures at `http://127.0.0.1:8790/`.
 
 ## Pair lift index (sales alone)
 
@@ -100,6 +108,8 @@ To **show the heatmap**, ask for the venue slot strength chart. The agent should
 - **With COGS:** if menu engineering finds at least two **stars**, those stars become the focus (same idea as the cloud pair-lift chart).
 
 COGS is optional here — unlike menu engineering, missing unit costs does not block the tool.
+
+To **show the heatmap**, ask for the pair lift chart / combo heatmap. In ChatGPT the agent should call **`render_pair_lift_matrix`** (MCP Apps widget). Prefer that over narrating the raw matrix; keep `get_pair_lift_matrix` for numbers-only answers.
 
 ## Menu engineering (needs COGS)
 
@@ -114,4 +124,6 @@ If COGS is missing, drop a COGS Excel into the folder and ask ChatGPT to update 
 
 `get_weak_items_review` returns the **weak** quadrant only, with period depth (avg qty/day) and portfolio KPIs. Use it when deciding which dishes to **reprice, improve, or remove**. Same workspace COGS requirement as menu engineering.
 
-To **show a sortable table in Codex**, ask for the weak items table; the agent should call `get_weak_items_review` and write a local **HTML** table with clickable column headers via the **menuyukti-visualize-weak-items** skill (see [`.agents/skills/menuyukti-visualize-weak-items/`](../../.agents/skills/menuyukti-visualize-weak-items/)). There is no Action / keep / remove column. These visualisation skills ship with the [Codex plugin](./codex-plugin.md).
+To **show the sortable table**, ask for the weak items table / chart. In ChatGPT the agent should call **`render_weak_items_review`** (MCP Apps widget) — prefer that over narrating raw JSON. Keep `get_weak_items_review` for numbers-only answers. In **Codex** (or when the host does not mount MCP Apps), use `get_weak_items_review` + the **menuyukti-visualize-weak-items** skill (see [`.agents/skills/menuyukti-visualize-weak-items/`](../../.agents/skills/menuyukti-visualize-weak-items/)) — never both widget and skill redraw in the same turn. There is no Action / keep / remove column.
+
+Local styling: `make widgets-preview` lists **Weak items review** fixtures at `http://127.0.0.1:8790/`.

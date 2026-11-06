@@ -1,6 +1,6 @@
 # Menuyukti Codex plugin
 
-Portable Agent Plugin for **ChatGPT Desktop / Codex**. Bundles coaching + visualisation skills and points at the **local** Menuyukti MCP server.
+Portable Agent Plugin for **ChatGPT Desktop / Codex** (version **0.9.0**, approaching 1.0). Bundles coaching + visualisation skills and points at the **local** Menuyukti MCP server.
 
 ## Prerequisites (still required)
 
@@ -17,14 +17,15 @@ Synced from [`.agents/skills/`](../../.agents/skills/) via `make sync-plugin-ski
 | `menuyukti-mcp` | Setup ritual, goal → MCP tool map |
 | `menuyukti-venue-slot-strength` | Venue demand: MCP Apps widget or local HTML heatmap |
 | `menuyukti-visualize-menu-heatmaps` | Per-dish daily / weekly HTML heatmaps |
-| `menuyukti-visualize-weak-items` | Sortable weak-items HTML table |
+| `menuyukti-visualize-weak-items` | Codex fallback: sortable weak-items HTML table (prefer `render_weak_items_review` in ChatGPT) |
 
 ## Authoring
 
 Edit skills under `.agents/skills/`, then run:
 
 ```bash
-make sync-plugin-skills
+make sync-plugin-skills   # package only
+make sync-codex-plugin    # package + reinstall into Codex CLI
 ```
 
 Do not hand-edit copies under `skills/` except for packaging smoke tests.

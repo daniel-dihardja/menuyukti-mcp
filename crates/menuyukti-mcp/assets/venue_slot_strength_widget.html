@@ -4,73 +4,9 @@
     <meta charset="utf-8" />
     <title>Venue slot strength</title>
     <style>
-      :root {
-        /* Host may override these via styles.variables; light-dark needs color-scheme. */
-        color-scheme: light dark;
-        --color-background-primary: light-dark(#ffffff, #171717);
-        --color-background-secondary: light-dark(#f8fafc, #212121);
-        --color-background-tertiary: light-dark(#f1f5f9, #2a2a2a);
-        --color-background-warning: light-dark(#fef3c7, #422006);
-        --color-text-primary: light-dark(#0f172a, #fafafa);
-        --color-text-secondary: light-dark(#64748b, #a3a3a3);
-        --color-text-warning: light-dark(#92400e, #fcd34d);
-        --color-border-primary: light-dark(#e2e8f0, #404040);
-        --color-background-info: light-dark(#eff6ff, #1e293b);
-        --font-sans: "Segoe UI", system-ui, -apple-system, sans-serif;
-        /* Sequential Blues: pale low → mid blue high (theme-aware). */
-        --venue-low: light-dark(#dbeafe, #1e3a5f);
-        --venue-high: light-dark(#2563eb, #60a5fa);
-        --venue-cell-ink-on-high: light-dark(#f8fafc, #0f172a);
-        /* Design inset lives on .panel — ChatGPT/Codex often crop body padding
-           when sizing the iframe to inner content. */
-        --pad-top: 48px;
-        --pad-x: 32px;
-        --pad-bottom: 32px;
-        --safe-top: 0px;
-        --safe-right: 0px;
-        --safe-bottom: 0px;
-        --safe-left: 0px;
-        color: var(--color-text-primary);
-        font-family: var(--font-sans);
-      }
-      html,
-      body {
-        margin: 0;
-        padding: 0;
-        background: var(--color-background-primary);
-      }
-      body {
-        box-sizing: border-box;
-      }
-      .panel {
-        box-sizing: border-box;
-        width: 100%;
-        padding: calc(var(--pad-top) + var(--safe-top))
-          calc(var(--pad-x) + var(--safe-right))
-          calc(var(--pad-bottom) + var(--safe-bottom))
-          calc(var(--pad-x) + var(--safe-left));
-        border: 0;
-        border-radius: 0;
-        background: var(--color-background-primary);
-        color: var(--color-text-primary);
-      }
-      h2 {
-        margin: 0;
-        font-size: 1rem;
-        font-weight: 700;
-        color: var(--color-text-primary);
-      }
-      .desc {
-        margin: 6px 0 0;
-        color: var(--color-text-secondary);
-        font-size: 0.8rem;
-        line-height: 1.4;
-      }
-      .meta {
-        margin: 10px 0 0;
-        color: var(--color-text-secondary);
-        font-size: 0.75rem;
-      }
+      /* __MENUYUKTI_SHARED_THEME__ */
+
+      /* Venue-specific: metric selector + wider daypart table. */
       .metric-bar {
         display: flex;
         flex-wrap: wrap;
@@ -114,107 +50,18 @@
         box-shadow: 0 0 0 1px var(--color-border-primary);
       }
       .metric-seg button:focus-visible {
-        outline: 2px solid var(--venue-high);
+        outline: 2px solid var(--heatmap-high);
         outline-offset: 1px;
       }
-      .showing {
-        color: var(--color-text-secondary);
-        font-size: 0.72rem;
-      }
-      .legend {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-top: 14px;
-        color: var(--color-text-secondary);
-        font-size: 0.75rem;
-      }
-      .legend-bar {
-        flex: 1;
-        min-width: 6rem;
-        height: 8px;
-        border-radius: 999px;
-        background: linear-gradient(
-          to right,
-          var(--venue-low),
-          color-mix(in srgb, var(--venue-high) 50%, var(--venue-low)),
-          var(--venue-high)
-        );
-      }
-      .tiers {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 8px;
-        font-size: 0.72rem;
-        color: var(--color-text-secondary);
-      }
-      .tier {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-      }
-      .tier-swatch {
-        width: 12px;
-        height: 12px;
-        border-radius: 3px;
-        border: 1px solid var(--color-border-primary);
-      }
-      .scroll {
-        margin-top: 14px;
-        overflow-x: auto;
-      }
       table {
-        border-collapse: separate;
-        border-spacing: 1px;
-        width: 100%;
         min-width: 520px;
-        font-size: 0.72rem;
-        background: var(--color-background-primary);
-        color: var(--color-text-primary);
       }
       th,
       td {
-        border: 0;
         padding: 12px 4px;
-        text-align: center;
-      }
-      th {
-        background: var(--color-background-tertiary);
-        font-weight: 600;
-        color: var(--color-text-primary);
-      }
-      th.row-label,
-      td.row-label {
-        text-align: left;
-        padding-left: 8px;
-        white-space: nowrap;
-        background: var(--color-background-secondary);
-        font-weight: 600;
-        color: var(--color-text-primary);
-        position: sticky;
-        left: 0;
-        z-index: 1;
       }
       td.cell {
-        font-weight: 600;
         min-width: 3.4rem;
-        font-variant-numeric: tabular-nums;
-        color: var(--color-text-primary);
-      }
-      td.cell.light-text {
-        color: var(--venue-cell-ink-on-high);
-      }
-      .empty {
-        margin-top: 16px;
-        padding: 16px;
-        border-radius: 8px;
-        background: var(--color-background-warning);
-        color: var(--color-text-warning);
-        font-size: 0.9rem;
-      }
-      .hidden {
-        display: none;
       }
     </style>
   </head>
@@ -276,7 +123,7 @@
         <span class="tier"
           ><span
             class="tier-swatch"
-            style="background: var(--venue-low)"
+            style="background: var(--heatmap-low)"
           ></span>
           Low (&lt; 0.9 demand)</span
         >
@@ -286,8 +133,8 @@
             style="
               background: color-mix(
                 in srgb,
-                var(--venue-high) 45%,
-                var(--venue-low)
+                var(--heatmap-high) 45%,
+                var(--heatmap-low)
               );
             "
           ></span>
@@ -296,7 +143,7 @@
         <span class="tier"
           ><span
             class="tier-swatch"
-            style="background: var(--venue-high)"
+            style="background: var(--heatmap-high)"
           ></span>
           High (&gt; 1.1 demand)</span
         >
@@ -537,7 +384,7 @@
 
       function cellBackground(t) {
         const pct = Math.round(Math.min(1, Math.max(0, t)) * 100);
-        return `color-mix(in srgb, var(--venue-high) ${pct}%, var(--venue-low))`;
+        return `color-mix(in srgb, var(--heatmap-high) ${pct}%, var(--heatmap-low))`;
       }
 
       function formatIndex(value) {
@@ -697,7 +544,7 @@ Relative: ${relative}`;
               params: {
                 appInfo: {
                   name: "menuyukti-venue-slot-strength",
-                  version: "5",
+                  version: "6",
                 },
                 appCapabilities: {
                   availableDisplayModes: ["inline", "fullscreen"],

@@ -43,18 +43,19 @@ When unclear or path/config fails:
 | --- | --- |
 | Setup / diagnosis | `get_setup_status` |
 | How did we do? | `summarize_local_sales` |
-| When each dish sells (numbers) | `get_menu_heatmaps` |
-| When each dish sells (show / chart) | `get_menu_heatmaps`, then **`menuyukti-visualize-menu-heatmaps`** |
+| When each dish sells (numbers) | `get_menu_heatmaps` (workspace path adds optional `matrix_category` when COGS is present) |
+| When each dish sells (show / chart) | Prefer **`render_menu_heatmaps`** (MCP Apps widget). Else `get_menu_heatmaps` + **`menuyukti-visualize-menu-heatmaps`**. Never both in one turn. |
 | Venue busy / staffing (show / chart) | **One path only:** `render_venue_slot_strength` (widget) **or** `get_venue_slot_strength` + **`menuyukti-venue-slot-strength`** redraw — never both |
 | Venue busy / staffing (numbers only) | `get_venue_slot_strength` |
-| Combos / upsells | `get_pair_lift_matrix` (sales alone; COGS upgrades star focus) |
+| Combos / upsells (show / chart) | **One path only:** `render_pair_lift_matrix` (widget) **or** `get_pair_lift_matrix` for numbers/skill redraw — never both (sales alone; COGS upgrades star focus) |
+| Combos / upsells (numbers only) | `get_pair_lift_matrix` (sales alone; COGS upgrades star focus) |
 | Stars / plow horses / puzzles / weak | `analyze_menu_engineering` (**sales + COGS**) |
 | Reprice / improve / remove (numbers) | `get_weak_items_review` (**sales + COGS**) |
-| Weak items table / show weak dishes | `get_weak_items_review`, then **`menuyukti-visualize-weak-items`** (**sales + COGS**) |
+| Weak items table / show weak dishes | Prefer **`render_weak_items_review`** (MCP Apps widget). Else `get_weak_items_review` + **`menuyukti-visualize-weak-items`**. Never both in one turn (**sales + COGS**) |
 | Cleaned rows | `list_normalized_sales` |
 | Venue notes | `read_workspace_knowledge` then `write_workspace_knowledge` (full replace) |
 
-For charts: pick **one** presentation. If `render_venue_slot_strength` mounted a widget, narrate only — do not also write HTML. If using a visualisation skill, write **one local HTML** file from the recipe (no Python/render scripts; no second markdown grid for the same ask).
+For charts: pick **one** presentation. If `render_venue_slot_strength`, `render_pair_lift_matrix`, `render_menu_heatmaps`, or `render_weak_items_review` mounted a widget, narrate only — do not also write HTML. If using a visualisation skill, write **one local HTML** file from the recipe (no Python/render scripts; no second markdown grid for the same ask).
 
 ## COGS gate
 

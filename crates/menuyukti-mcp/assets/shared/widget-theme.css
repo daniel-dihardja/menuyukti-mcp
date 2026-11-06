@@ -1,0 +1,198 @@
+/* Menuyukti MCP Apps shared widget theme.
+   Inlined into heatmap widgets at assemble time via the SHARED_THEME_MARKER.
+   Hosts may override --color-* via styles.variables. */
+
+:root {
+  /* Host may override these via styles.variables; light-dark needs color-scheme. */
+  color-scheme: light dark;
+  --color-background-primary: light-dark(#ffffff, #171717);
+  --color-background-secondary: light-dark(#f8fafc, #212121);
+  --color-background-tertiary: light-dark(#f1f5f9, #2a2a2a);
+  --color-background-warning: light-dark(#fef3c7, #422006);
+  --color-background-info: light-dark(#eff6ff, #1e293b);
+  --color-text-primary: light-dark(#0f172a, #fafafa);
+  --color-text-secondary: light-dark(#64748b, #a3a3a3);
+  --color-text-warning: light-dark(#92400e, #fcd34d);
+  --color-border-primary: light-dark(#e2e8f0, #404040);
+  --font-sans: "Segoe UI", system-ui, -apple-system, sans-serif;
+  /* Default sequential heatmap scale (blue). Charts may override. */
+  --heatmap-low: light-dark(#dbeafe, #1e3a5f);
+  --heatmap-high: light-dark(#2563eb, #60a5fa);
+  --heatmap-cell-ink-on-high: light-dark(#f8fafc, #0f172a);
+  --heatmap-null: light-dark(#e2e8f0, #2a2a2a);
+  /* Design inset lives on .panel — ChatGPT/Codex often crop body padding
+     when sizing the iframe to inner content. */
+  --pad-top: 48px;
+  --pad-x: 32px;
+  --pad-bottom: 32px;
+  --safe-top: 0px;
+  --safe-right: 0px;
+  --safe-bottom: 0px;
+  --safe-left: 0px;
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-background-primary);
+}
+
+body {
+  box-sizing: border-box;
+}
+
+.panel {
+  box-sizing: border-box;
+  width: 100%;
+  padding: calc(var(--pad-top) + var(--safe-top))
+    calc(var(--pad-x) + var(--safe-right))
+    calc(var(--pad-bottom) + var(--safe-bottom))
+    calc(var(--pad-x) + var(--safe-left));
+  border: 0;
+  border-radius: 0;
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+}
+
+h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.desc {
+  margin: 6px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.meta {
+  margin: 10px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+}
+
+.showing {
+  color: var(--color-text-secondary);
+  font-size: 0.72rem;
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+}
+
+.legend-bar {
+  flex: 1;
+  min-width: 6rem;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--heatmap-low),
+    color-mix(in srgb, var(--heatmap-high) 50%, var(--heatmap-low)),
+    var(--heatmap-high)
+  );
+}
+
+.tiers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 0.72rem;
+  color: var(--color-text-secondary);
+}
+
+.tier {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tier-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid var(--color-border-primary);
+}
+
+.scroll {
+  margin-top: 14px;
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: separate;
+  border-spacing: 1px;
+  width: 100%;
+  min-width: 420px;
+  font-size: 0.72rem;
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+}
+
+th,
+td {
+  border: 0;
+  padding: 10px 4px;
+  text-align: center;
+}
+
+th {
+  background: var(--color-background-tertiary);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+th.row-label,
+td.row-label {
+  text-align: left;
+  padding-left: 8px;
+  white-space: nowrap;
+  background: var(--color-background-secondary);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+
+td.cell {
+  font-weight: 600;
+  min-width: 3.2rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+td.cell.light-text {
+  color: var(--heatmap-cell-ink-on-high);
+}
+
+td.cell.null-cell {
+  background: var(--heatmap-null);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.empty {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--color-background-warning);
+  color: var(--color-text-warning);
+  font-size: 0.9rem;
+}
+
+.hidden {
+  display: none;
+}
