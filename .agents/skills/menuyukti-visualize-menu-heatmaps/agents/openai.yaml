@@ -1,0 +1,8 @@
+interface:
+  display_name: "Menuyukti visualize menu heatmaps"
+  short_description: "Draw daily and weekly dish-timing heatmaps from menu heatmap JSON."
+  brand_color: "#1F6F4A"
+  default_prompt: "Using this skill, fetch menu heatmaps and show when each dish sells."
+
+policy:
+  allow_implicit_invocation: true

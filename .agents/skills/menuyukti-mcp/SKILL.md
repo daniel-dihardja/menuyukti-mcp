@@ -28,7 +28,7 @@ Keep POS / COGS files on the user’s machine. Do not upload spreadsheets to rem
 When unclear or path/config fails:
 
 1. Call `get_setup_status` (and `list_workspaces` if useful).
-2. If nothing is configured, offer `demo-cafe-july-2026` with example asks: summarize; show venue slot strength chart; menu engineering (needs COGS).
+2. If nothing is configured, offer `demo-cafe-july-2026` with example asks: summarize; show venue slot strength chart (visualise skill); show menu heatmaps (visualise skill); menu engineering (needs COGS).
 
 ## Onboard a new folder
 
@@ -39,12 +39,14 @@ When unclear or path/config fails:
 
 ## Goal → tool (prefer MCP)
 
-| Goal | Tool |
+| Goal | Tool / skill |
 | --- | --- |
 | Setup / diagnosis | `get_setup_status` |
 | How did we do? | `summarize_local_sales` |
-| When each dish sells | `get_menu_heatmaps` |
-| Venue busy / staffing chart | `render_venue_slot_strength` |
+| When each dish sells (numbers) | `get_menu_heatmaps` |
+| When each dish sells (show / chart) | `get_menu_heatmaps`, then **`menuyukti-visualize-menu-heatmaps`** |
+| Venue busy / staffing chart (Codex) | `get_venue_slot_strength`, then **`menuyukti-visualize-venue-slot-strength`** |
+| Venue busy / staffing chart (ChatGPT MCP Apps widget) | `render_venue_slot_strength` |
 | Venue busy (numbers only) | `get_venue_slot_strength` |
 | Combos / upsells | `get_pair_lift_matrix` (sales alone; COGS upgrades star focus) |
 | Stars / plow horses / puzzles / weak | `analyze_menu_engineering` (**sales + COGS**) |
@@ -52,10 +54,12 @@ When unclear or path/config fails:
 | Cleaned rows | `list_normalized_sales` |
 | Venue notes | `read_workspace_knowledge` then `write_workspace_knowledge` (full replace) |
 
+For Codex, prefer markdown visualisation skills after the data tool. Keep `render_venue_slot_strength` for hosts that mount MCP Apps iframes (ChatGPT).
+
 ## COGS gate
 
 Menu engineering and weak-items need a unit-cost Excel as `files.cogs`. If missing: ask the owner to drop COGS, then `list_workspace_files` + `write_workspace_config`. Sales-only tools still work without COGS.
 
 ## Offline venue slot strength
 
-If Menuyukti MCP is **not** available and the user only needs weekday × meal-period demand from a local Excel (especially custom columns), use the **`menuyukti-venue-slot-strength`** skill / script. Do **not** reimplement menu engineering, pair lift, or heatmaps in this skill.
+If Menuyukti MCP is **not** available and the user only needs weekday × meal-period demand from a local Excel (especially custom columns), use the **`menuyukti-venue-slot-strength`** skill / script, then **`menuyukti-visualize-venue-slot-strength`** to draw the heatmap. Do **not** reimplement menu engineering, pair lift, or heatmap math in this skill.

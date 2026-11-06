@@ -72,9 +72,9 @@ Secondary reference for power users — owners can stick to the [What to ask](..
 - `write_workspace_knowledge` — create/update `knowledge.md` (full replace; ChatGPT reads first)
 - `summarize_local_sales` — totals and top items (folder or Excel path)
 - `list_normalized_sales` — cleaned line items
-- `get_menu_heatmaps` — when each dish sells during the day / week
-- `get_venue_slot_strength` — weekday × meal-period venue demand JSON for timing (**sales alone**)
-- `render_venue_slot_strength` — same demand data as a ChatGPT heatmap widget (**sales alone**)
+- `get_menu_heatmaps` — when each dish sells during the day / week (JSON; Codex: then use the **menuyukti-visualize-menu-heatmaps** skill)
+- `get_venue_slot_strength` — weekday × meal-period venue demand JSON for timing (**sales alone**; Codex: then use **menuyukti-visualize-venue-slot-strength**)
+- `render_venue_slot_strength` — same demand data as a ChatGPT MCP Apps heatmap widget (**sales alone**; not required for Codex markdown charts)
 - `get_pair_lift_matrix` — co-purchase lift matrix for combo / upsell ideas (**sales alone**; COGS optional)
 - `analyze_menu_engineering` — star / plow_horse / puzzle / weak matrix (**needs sales + COGS**)
 - `get_weak_items_review` — weak-quadrant depth review for reprice / improve / remove (**needs sales + COGS**)
@@ -87,7 +87,13 @@ Secondary reference for power users — owners can stick to the [What to ask](..
 
 `get_venue_slot_strength` summarizes how busy the venue is by weekday and meal period (breakfast through late night). Each of the 35 slots includes order count, traffic share, demand index (1.0 = average), and relative demand (`low` / `average` / `high`). Use it for staffing and when to promote. Sales alone is enough — no COGS.
 
-To **show the heatmap** in ChatGPT (MCP Apps widget), ask for the venue slot strength chart or call `render_venue_slot_strength` with the same workspace folder or sales Excel path (for example `demo-cafe-july-2026`). That tool returns the same 35-cell profile and links the weekday × meal-period visualisation. Keep `get_venue_slot_strength` when you only need the numbers in text.
+To **show the heatmap in Codex**, ask for the venue slot strength chart; the agent should call `get_venue_slot_strength` and draw the markdown grid with the **menuyukti-visualize-venue-slot-strength** skill (see [`.agents/skills/menuyukti-visualize-venue-slot-strength/`](../../.agents/skills/menuyukti-visualize-venue-slot-strength/)).
+
+To **show the heatmap in ChatGPT** (MCP Apps widget), ask for the venue slot strength chart or call `render_venue_slot_strength` with the same workspace folder or sales Excel path (for example `demo-cafe-july-2026`). That tool returns the same 35-cell profile and links the weekday × meal-period visualisation. Keep `get_venue_slot_strength` when you only need the numbers in text.
+
+## Menu item heatmaps (sales alone)
+
+`get_menu_heatmaps` returns per-menu daily (hour) and weekly (weekday) unit quantities. In **Codex**, ask to show dish heatmaps; the agent should call that tool and draw daily/weekly markdown tables with the **menuyukti-visualize-menu-heatmaps** skill (see [`.agents/skills/menuyukti-visualize-menu-heatmaps/`](../../.agents/skills/menuyukti-visualize-menu-heatmaps/)). Sales alone is enough — no COGS.
 
 ## Pair lift index (sales alone)
 

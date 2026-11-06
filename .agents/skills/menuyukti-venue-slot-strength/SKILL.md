@@ -42,8 +42,8 @@ Never estimate order counts or demand indexes from a skim of the sheet. Always:
    ```
 
    Optional: `--skip-rows N` overrides the mapping’s `skip_rows`. Requires `openpyxl` for Excel (`pip install openpyxl`). CSV needs no extra package.
-4. **Explain** the JSON: highlight high/low slots, suggest staffing or promo timing. Do not recompute cells by hand.
-5. If Menuyukti MCP is available and the file is under its data dir, prefer `get_venue_slot_strength` / `render_venue_slot_strength` instead of re-running the script.
+4. **Present** the JSON with the **`menuyukti-visualize-venue-slot-strength`** skill (markdown heatmap + staffing/promo notes). Do not recompute cells by hand.
+5. If Menuyukti MCP is available and the file is under its data dir, prefer `get_venue_slot_strength` (then the visualise skill) instead of re-running the script. Use `render_venue_slot_strength` only on ChatGPT hosts that mount MCP Apps widgets.
 
 ## Output shape
 
