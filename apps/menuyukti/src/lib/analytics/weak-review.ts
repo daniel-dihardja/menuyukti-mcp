@@ -50,9 +50,10 @@ export function inclusiveCalendarDays(
   return diff + 1;
 }
 
-export function periodFromLineItems(
-  rows: LineItem[],
-): { start: string | null; end: string | null } {
+export function periodFromLineItems(rows: LineItem[]): {
+  start: string | null;
+  end: string | null;
+} {
   let min: string | null = null;
   let max: string | null = null;
   for (const row of rows) {
@@ -65,12 +66,12 @@ export function periodFromLineItems(
   return { start: min, end: max };
 }
 
-function weakDistribution(
-  distribution: MenuEngineeringDistributionItem[],
-): { count: number; itemShare: number; marginShare: number } {
-  const d = distribution.find(
-    (x) => x.category.toLowerCase() === "weak",
-  );
+function weakDistribution(distribution: MenuEngineeringDistributionItem[]): {
+  count: number;
+  itemShare: number;
+  marginShare: number;
+} {
+  const d = distribution.find((x) => x.category.toLowerCase() === "weak");
   return d
     ? {
         count: d.item_count,

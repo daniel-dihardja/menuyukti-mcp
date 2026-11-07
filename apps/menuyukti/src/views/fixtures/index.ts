@@ -55,7 +55,9 @@ export const venueSlotEmpty = {
   slot_demand_profile: [] as SlotDemandCell[],
 };
 
-export const venueSlotError = { error: "Sales file not found under MENUYUKTI_DATA_DIR." };
+export const venueSlotError = {
+  error: "Sales file not found under MENUYUKTI_DATA_DIR.",
+};
 
 export const pairLiftPopulated = {
   pos: "esb",
@@ -202,7 +204,13 @@ export const weakItemsPopulated = {
 
 export const weakItemsEmpty = {
   ...weakItemsPopulated,
-  stats: { ...weakStats, item_count: 0, item_share: 0, margin_share: 0, margin_amount: 0 },
+  stats: {
+    ...weakStats,
+    item_count: 0,
+    item_share: 0,
+    margin_share: 0,
+    margin_amount: 0,
+  },
   distribution_stats: { item_count: 0, item_share: 0, margin_share: 0 },
   items: [] as WeakDisplayRow[],
 };

@@ -4,8 +4,8 @@ import {
   cellAsI64,
   cellAsString,
   getCell,
-  readTable,
   type RowMap,
+  readTable,
 } from "../excel.js";
 import type { LineItem } from "../line-item.js";
 import { harmonizeCategories, normalizeCategory } from "./category.js";

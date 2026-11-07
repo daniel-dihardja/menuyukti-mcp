@@ -21,9 +21,12 @@ pnpm mcp                  # Skybridge Vite dev + DevTools
 pnpm mcp:prod             # Production + self-contained widgets (Codex Desktop)
 pnpm mcp:skybridge        # Alias for pnpm mcp
 pnpm mcp:inspect          # Skybridge + MCP Inspector
-pnpm check                # tsc --noEmit + vitest (required quality gate)
+pnpm check                # biome + skill sync + tsc + vitest (required quality gate)
+pnpm lint                 # Biome check (lint + format)
+pnpm lint:fix            # Biome auto-fix
 pnpm typecheck
 pnpm test
+pnpm check:skills         # fail if plugins/menuyukti/skills ≠ .agents/skills
 pnpm sync:plugin-skills   # copy .agents/skills → plugins/menuyukti/skills
 pnpm sync:codex-plugin    # sync skills + reinstall Menuyukti into Codex CLI
 pnpm backlog              # Backlog.md board (optional)
@@ -39,7 +42,7 @@ pnpm check                      # vitest asserts CSP-clean HTML when dist exists
                                 # always covers the inliner fixture + view-name list
 ```
 
-`pnpm check` alone does **not** run `skybridge build` (dist is gitignored). The inliner fixture smoke still runs in CI; validating the real production blobs needs the build step above (or `pnpm mcp:prod`).
+`pnpm check` alone does **not** run `skybridge build` (dist is gitignored). The inliner fixture smoke still runs on every CI; **push to `main`** also runs `pnpm --filter menuyukti build` then `pnpm check` so real `dist/self-contained` blobs are validated.
 
 First time (or after lockfile changes):
 
@@ -59,7 +62,10 @@ pnpm dev      # same as pnpm mcp from root
 
 ## CI
 
-GitHub Actions runs `pnpm check` on every **pull request** and on **push to `main`** (see [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)): Node 24, `pnpm install --frozen-lockfile` at the repo root, then typecheck + vitest.
+GitHub Actions (see [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)):
+
+- **Every PR / push:** `pnpm check` — Biome, plugin-skill sync, `tsc --noEmit`, Vitest (Node 24, frozen lockfile).
+- **Push to `main` only:** after that gate, build self-contained widgets and re-run `pnpm check` so CSP smokes cover real `dist/self-contained/*.html`.
 
 Rust binary tag releases are retired (TASK-44.10).
 

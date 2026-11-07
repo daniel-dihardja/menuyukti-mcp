@@ -20,9 +20,9 @@ import {
   DATA_DIR_ENV,
   getDataDir,
   PathNotAllowedError,
+  ResolvePathError,
   resolveAllowedDir,
   resolveAllowedPath,
-  ResolvePathError,
 } from "./paths.js";
 
 export const WORKSPACE_CONFIG_FILENAME = "workspace.yaml";
@@ -269,7 +269,9 @@ function resolveWorkspaceDir(workspace: string, dataDir?: string) {
   try {
     dir = resolveAllowedDir(workspace, root);
   } catch (err) {
-    throw new WorkspaceConfigError(err instanceof Error ? err.message : String(err));
+    throw new WorkspaceConfigError(
+      err instanceof Error ? err.message : String(err),
+    );
   }
   const trimmed = workspace.trim();
   const workspaceLabel =

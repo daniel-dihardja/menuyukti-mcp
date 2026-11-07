@@ -1,9 +1,9 @@
 import { useMemo } from "react";
+import { useToolInfo } from "../helpers.js";
 import type {
   WeakDisplayRow,
   WeakPortfolioStats,
 } from "../lib/analytics/index.js";
-import { useToolInfo } from "../helpers.js";
 import {
   Empty,
   Loading,
@@ -73,7 +73,8 @@ export default function WeakItemsReview() {
       ? (output.stats as WeakPortfolioStats)
       : undefined;
   const showAvgQty = items.some(
-    (r) => r.avg_qty_per_day != null && Number.isFinite(Number(r.avg_qty_per_day)),
+    (r) =>
+      r.avg_qty_per_day != null && Number.isFinite(Number(r.avg_qty_per_day)),
   );
 
   const sorted = useMemo(() => {
@@ -83,8 +84,8 @@ export default function WeakItemsReview() {
         const cmp = String(a.menu ?? "").localeCompare(String(b.menu ?? ""));
         return sortDir === "asc" ? cmp : -cmp;
       }
-      let aVal = asNumber(a[sortKey]);
-      let bVal = asNumber(b[sortKey]);
+      const aVal = asNumber(a[sortKey]);
+      const bVal = asNumber(b[sortKey]);
       if (!Number.isFinite(aVal) && !Number.isFinite(bVal)) {
         return String(a.menu ?? "").localeCompare(String(b.menu ?? ""));
       }
@@ -109,18 +110,13 @@ export default function WeakItemsReview() {
   function header(key: SortKey, label: string, numeric = true) {
     const active = sortKey === key;
     return (
-      <th className={`sortable ${numeric ? "num" : "row-label"}`}>
-        <button
-          type="button"
-          aria-sort={
-            active
-              ? sortDir === "asc"
-                ? "ascending"
-                : "descending"
-              : "none"
-          }
-          onClick={() => toggleSort(key)}
-        >
+      <th
+        className={`sortable ${numeric ? "num" : "row-label"}`}
+        aria-sort={
+          active ? (sortDir === "asc" ? "ascending" : "descending") : "none"
+        }
+      >
+        <button type="button" onClick={() => toggleSort(key)}>
           <span className="sort-label">{label}</span>
           <span className="sort-ind">
             {active ? (sortDir === "asc" ? "↑" : "↓") : "↕"}
@@ -254,9 +250,7 @@ export default function WeakItemsReview() {
                     </td>
                   ) : null}
                   <td>{Math.round(Number(row.units_sold ?? 0))}</td>
-                  <td>
-                    {formatMoney(Number(row.contribution_margin ?? 0))}
-                  </td>
+                  <td>{formatMoney(Number(row.contribution_margin ?? 0))}</td>
                   <td>
                     {formatShare(Number(row.contribution_margin_share ?? 0))}
                   </td>

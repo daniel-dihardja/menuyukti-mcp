@@ -6,9 +6,9 @@ import {
   DATA_DIR_ENV,
   listWorkspaceFiles,
   listWorkspaces,
+  ResolvePathError,
   resolveAllowedDir,
   resolveAllowedPath,
-  ResolvePathError,
 } from "./paths.js";
 import { getSetupStatus } from "./setup.js";
 

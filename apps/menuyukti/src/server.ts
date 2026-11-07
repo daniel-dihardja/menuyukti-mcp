@@ -1,8 +1,6 @@
 import { Skybridge } from "skybridge/server";
 import { z } from "zod";
-import {
-  computeMenuEngineeringFromOrders,
-} from "./lib/analytics/index.js";
+import { computeMenuEngineeringFromOrders } from "./lib/analytics/index.js";
 import {
   buildMenuHeatmapsPayload,
   buildPairLiftPayload,
@@ -26,9 +24,9 @@ import { listNormalizedRows, summarizeSales } from "./lib/summary.js";
 import { VERSION } from "./lib/version.js";
 import {
   readWorkspaceKnowledge,
+  type WorkspaceConfig,
   writeWorkspaceConfig,
   writeWorkspaceKnowledge,
-  type WorkspaceConfig,
 } from "./lib/workspace.js";
 
 const workspacePathSchema = {
@@ -312,8 +310,7 @@ export const app = new Skybridge({
       .registerTool(
         {
           name: "get_menu_heatmaps",
-          description:
-            `Return per-menu daily (hourly) and weekly demand heatmaps from local POS sales. Path may be a workspace folder (workspace.yaml sales role) or an Excel file under MENUYUKTI_DATA_DIR. Sales alone is enough. When the path is a workspace with usable COGS, each item also includes matrix_category (star / plow_horse / puzzle / weak). Optional limit truncates to top menus by quantity; optional active_hours_only prunes empty daily hours. Response includes menu_total and limit_applied so agents know what was truncated. Prefer render_menu_heatmaps (default top ${DEFAULT_MENU_HEATMAP_TOP_N} + active hours) when the host mounts MCP Apps views.`,
+          description: `Return per-menu daily (hourly) and weekly demand heatmaps from local POS sales. Path may be a workspace folder (workspace.yaml sales role) or an Excel file under MENUYUKTI_DATA_DIR. Sales alone is enough. When the path is a workspace with usable COGS, each item also includes matrix_category (star / plow_horse / puzzle / weak). Optional limit truncates to top menus by quantity; optional active_hours_only prunes empty daily hours. Response includes menu_total and limit_applied so agents know what was truncated. Prefer render_menu_heatmaps (default top ${DEFAULT_MENU_HEATMAP_TOP_N} + active hours) when the host mounts MCP Apps views.`,
           inputSchema: menuHeatmapsPathSchema,
           outputSchema: menuHeatmapsPayloadSchema,
           annotations: {
@@ -373,7 +370,7 @@ export const app = new Skybridge({
         },
         async ({ path }) => {
           try {
-            let cogs;
+            let cogs: ReturnType<typeof loadWorkspaceCogs>;
             try {
               cogs = loadWorkspaceCogs(path);
             } catch (err) {
@@ -401,8 +398,7 @@ export const app = new Skybridge({
                 coverage: matrix.coverage,
               });
             } catch (err) {
-              const message =
-                err instanceof Error ? err.message : String(err);
+              const message = err instanceof Error ? err.message : String(err);
               return errJson(
                 `${message}. Fix COGS coverage (Menu + COGS columns matching sold menu names) or ask the owner to update unit costs.`,
               );
@@ -473,8 +469,7 @@ export const app = new Skybridge({
             openWorldHint: false,
           },
           _meta: {
-            "openai/toolInvocation/invoking":
-              "Rendering venue slot strength…",
+            "openai/toolInvocation/invoking": "Rendering venue slot strength…",
             "openai/toolInvocation/invoked": "Venue slot strength ready.",
           },
           view: {
@@ -533,8 +528,7 @@ export const app = new Skybridge({
       .registerTool(
         {
           name: "render_menu_heatmaps",
-          description:
-            `Render the menu heatmaps widget (per-menu daily hour and weekly weekday unit quantities). Path may be a workspace folder (workspace.yaml sales role) or an Excel file under MENUYUKTI_DATA_DIR. Sales alone is enough; workspace COGS adds matrix_category filters (weak off by default). Defaults to top ${DEFAULT_MENU_HEATMAP_TOP_N} menus by quantity and active daily hours only (override with limit / active_hours_only). Response fields menu_total and limit_applied describe truncation. Prefer this when the owner should see the dish timing chart; use get_menu_heatmaps for full JSON.`,
+          description: `Render the menu heatmaps widget (per-menu daily hour and weekly weekday unit quantities). Path may be a workspace folder (workspace.yaml sales role) or an Excel file under MENUYUKTI_DATA_DIR. Sales alone is enough; workspace COGS adds matrix_category filters (weak off by default). Defaults to top ${DEFAULT_MENU_HEATMAP_TOP_N} menus by quantity and active daily hours only (override with limit / active_hours_only). Response fields menu_total and limit_applied describe truncation. Prefer this when the owner should see the dish timing chart; use get_menu_heatmaps for full JSON.`,
           inputSchema: menuHeatmapsPathSchema,
           outputSchema: menuHeatmapsPayloadSchema,
           annotations: {
@@ -587,8 +581,7 @@ export const app = new Skybridge({
             openWorldHint: false,
           },
           _meta: {
-            "openai/toolInvocation/invoking":
-              "Rendering weak items review…",
+            "openai/toolInvocation/invoking": "Rendering weak items review…",
             "openai/toolInvocation/invoked": "Weak items review ready.",
           },
           view: {

@@ -23,10 +23,7 @@ export type NormalizedSalesList = {
   row_count: number;
 };
 
-export function summarizeSales(
-  pos: string,
-  rows: LineItem[],
-): SalesSummary {
+export function summarizeSales(pos: string, rows: LineItem[]): SalesSummary {
   if (rows.length === 0) {
     throw new Error("DataFrame is empty. Cannot calculate analytics.");
   }
@@ -95,11 +92,8 @@ function popularityIndex(rows: LineItem[]): TopItem[] {
   const items: TopItem[] = [...byMenu.entries()].map(([menu, quantity]) => ({
     menu,
     quantity,
-    popularity:
-      Math.round((quantity / totalQty) * 1_000_000) / 1_000_000,
+    popularity: Math.round((quantity / totalQty) * 1_000_000) / 1_000_000,
   }));
-  items.sort(
-    (a, b) => b.quantity - a.quantity || a.menu.localeCompare(b.menu),
-  );
+  items.sort((a, b) => b.quantity - a.quantity || a.menu.localeCompare(b.menu));
   return items;
 }

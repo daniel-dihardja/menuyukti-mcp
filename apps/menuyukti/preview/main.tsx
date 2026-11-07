@@ -1,4 +1,5 @@
-import React, { StrictMode, useMemo, useState } from "react";
+import type React from "react";
+import { StrictMode, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   type FixtureKind,
@@ -40,8 +41,7 @@ function readQuery(): { view: WidgetFixtureId; kind: FixtureKind } {
     viewParam && viewParam in widgetFixtures
       ? viewParam
       : "venue-slot-strength";
-  const kind =
-    kindParam && KINDS.includes(kindParam) ? kindParam : "populated";
+  const kind = kindParam && KINDS.includes(kindParam) ? kindParam : "populated";
   return { view, kind };
 }
 
@@ -82,9 +82,7 @@ function PreviewApp() {
           View{" "}
           <select
             value={view}
-            onChange={(e) =>
-              update(e.target.value as WidgetFixtureId, kind)
-            }
+            onChange={(e) => update(e.target.value as WidgetFixtureId, kind)}
           >
             {(Object.keys(VIEWS) as WidgetFixtureId[]).map((id) => (
               <option key={id} value={id}>

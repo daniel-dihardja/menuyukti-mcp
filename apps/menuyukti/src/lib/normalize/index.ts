@@ -30,9 +30,10 @@ export function normalizeForPos(
   }
 }
 
-export function detectAndNormalize(
-  data: Buffer | Uint8Array,
-): { pos: string; rows: LineItem[] } {
+export function detectAndNormalize(data: Buffer | Uint8Array): {
+  pos: string;
+  rows: LineItem[];
+} {
   const pos = detectPosFromExcelBytes(data) ?? "unknown";
   if (!configFor(pos)) {
     throw new NormalizeError(

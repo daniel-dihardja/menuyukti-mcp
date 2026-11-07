@@ -1,8 +1,8 @@
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { buildMenuHeatmapsPayload } from "../analytics-payloads.js";
 import { loadWorkspaceCogs } from "../cogs.js";
 import { loadNormalizedSales } from "../load.js";
-import { buildMenuHeatmapsPayload } from "../analytics-payloads.js";
 import {
   adaptWeakReviewFromOrders,
   applyMatrixCategories,
@@ -16,10 +16,7 @@ import {
   pruneMenuHeatmaps,
 } from "./index.js";
 
-const workspaces = resolve(
-  import.meta.dirname,
-  "../../../../../workspaces",
-);
+const workspaces = resolve(import.meta.dirname, "../../../../../workspaces");
 
 describe("demo-cafe-july-2026 analytics", () => {
   it("get_menu_heatmaps: 98 menus; COGS enriches matrix_category", () => {
@@ -71,7 +68,10 @@ describe("demo-cafe-july-2026 analytics", () => {
       workspaces,
     );
     const cogs = loadWorkspaceCogs("demo-cafe-july-2026", workspaces);
-    const matrix = computeMenuEngineeringFromOrders(sales.rows, cogs.unit_costs);
+    const matrix = computeMenuEngineeringFromOrders(
+      sales.rows,
+      cogs.unit_costs,
+    );
     const expected = new Map(
       matrix.items.map((item) => [item.menu, item.category]),
     );
@@ -90,9 +90,15 @@ describe("demo-cafe-july-2026 analytics", () => {
     const copy = calculateMenuHeatmaps(sales.rows);
     applyMatrixCategories(copy, expected);
     expect(
-      copy.filter((h) => h.matrix_category).map((h) => h.menu).sort(),
+      copy
+        .filter((h) => h.matrix_category)
+        .map((h) => h.menu)
+        .sort(),
     ).toEqual(
-      enriched.filter((h) => h.matrix_category).map((h) => h.menu).sort(),
+      enriched
+        .filter((h) => h.matrix_category)
+        .map((h) => h.menu)
+        .sort(),
     );
   });
 
@@ -110,7 +116,10 @@ describe("demo-cafe-july-2026 analytics", () => {
   it("analyze_menu_engineering: all four quadrants on demo cafe", () => {
     const sales = loadNormalizedSales("demo-cafe-july-2026", workspaces);
     const cogs = loadWorkspaceCogs("demo-cafe-july-2026", workspaces);
-    const matrix = computeMenuEngineeringFromOrders(sales.rows, cogs.unit_costs);
+    const matrix = computeMenuEngineeringFromOrders(
+      sales.rows,
+      cogs.unit_costs,
+    );
     expect(matrix.items.length).toBeGreaterThan(0);
     expect(matrix.coverage.matched_menus).toBeGreaterThan(0);
     const cats = new Set(matrix.items.map((i) => i.category));
@@ -122,7 +131,10 @@ describe("demo-cafe-july-2026 analytics", () => {
   it("get_weak_items_review: weak quadrant + period depth", () => {
     const sales = loadNormalizedSales("demo-cafe-july-2026", workspaces);
     const cogs = loadWorkspaceCogs("demo-cafe-july-2026", workspaces);
-    const matrix = computeMenuEngineeringFromOrders(sales.rows, cogs.unit_costs);
+    const matrix = computeMenuEngineeringFromOrders(
+      sales.rows,
+      cogs.unit_costs,
+    );
     const review = adaptWeakReviewFromOrders(matrix, sales.rows);
     expect(review.rows.length).toBeGreaterThan(0);
     expect(review.stats.item_count).toBe(review.rows.length);
@@ -137,11 +149,16 @@ describe("demo-cafe-july-2026 analytics", () => {
     const withoutFocus = computeMenuBasketAffinitiesFromOrders(sales.rows);
     expect(withoutFocus.focus_menus.length).toBeGreaterThanOrEqual(2);
     expect(withoutFocus.scope).toBe("top_by_presence");
-    expect(withoutFocus.matrix_lift).toHaveLength(withoutFocus.focus_menus.length);
+    expect(withoutFocus.matrix_lift).toHaveLength(
+      withoutFocus.focus_menus.length,
+    );
     expect(withoutFocus.matrix_lift[0]?.[0]).toBeNull();
 
     const cogs = loadWorkspaceCogs("demo-cafe-july-2026", workspaces);
-    const matrix = computeMenuEngineeringFromOrders(sales.rows, cogs.unit_costs);
+    const matrix = computeMenuEngineeringFromOrders(
+      sales.rows,
+      cogs.unit_costs,
+    );
     const stars = matrix.items
       .filter((i) => i.category === "star")
       .map((i) => i.menu);

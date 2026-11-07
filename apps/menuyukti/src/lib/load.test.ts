@@ -4,10 +4,7 @@ import { loadWorkspaceCogs } from "./cogs.js";
 import { loadNormalizedSales } from "./load.js";
 import { listNormalizedRows, summarizeSales } from "./summary.js";
 
-const workspaces = resolve(
-  import.meta.dirname,
-  "../../../../workspaces",
-);
+const workspaces = resolve(import.meta.dirname, "../../../../workspaces");
 
 describe("demo-cafe-july-2026 sales load", () => {
   it("matches Rust summarize baselines via workspace path", () => {

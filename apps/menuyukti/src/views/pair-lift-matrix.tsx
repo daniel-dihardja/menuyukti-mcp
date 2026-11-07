@@ -1,15 +1,15 @@
 import { useMemo } from "react";
-import type { MenuBasketPair } from "../lib/analytics/index.js";
 import { useToolInfo } from "../helpers.js";
+import type { MenuBasketPair } from "../lib/analytics/index.js";
 import {
+  cellStyle,
   Empty,
+  intensity,
   Legend,
   Loading,
+  lightTextClass,
   Panel,
   ToolError,
-  cellStyle,
-  intensity,
-  lightTextClass,
   toolErrorMessage,
   usePersistedJson,
 } from "./shared.js";
@@ -20,7 +20,9 @@ type SortState = { key: SortKey; dir: "asc" | "desc" };
 function isSortState(value: unknown): value is SortState {
   if (!value || typeof value !== "object") return false;
   const v = value as { key?: unknown; dir?: unknown };
-  const keyOk = v.key === "label" || (typeof v.key === "number" && Number.isInteger(v.key) && v.key >= 0);
+  const keyOk =
+    v.key === "label" ||
+    (typeof v.key === "number" && Number.isInteger(v.key) && v.key >= 0);
   const dirOk = v.dir === "asc" || v.dir === "desc";
   return keyOk && dirOk;
 }
@@ -49,8 +51,7 @@ function findPair(
 ): MenuBasketPair | undefined {
   return pairs.find(
     (p) =>
-      (p.menu_a === a && p.menu_b === b) ||
-      (p.menu_a === b && p.menu_b === a),
+      (p.menu_a === a && p.menu_b === b) || (p.menu_a === b && p.menu_b === a),
   );
 }
 
@@ -173,18 +174,17 @@ export default function PairLiftMatrix() {
         <table className="myk-table">
           <thead>
             <tr>
-              <th className="sortable row-label">
-                <button
-                  type="button"
-                  aria-sort={
-                    sortKey === "label"
-                      ? sortDir === "asc"
-                        ? "ascending"
-                        : "descending"
-                      : "none"
-                  }
-                  onClick={() => toggleSort("label")}
-                >
+              <th
+                className="sortable row-label"
+                aria-sort={
+                  sortKey === "label"
+                    ? sortDir === "asc"
+                      ? "ascending"
+                      : "descending"
+                    : "none"
+                }
+              >
+                <button type="button" onClick={() => toggleSort("label")}>
                   <span>Menu</span>
                   <span className="sort-ind">
                     {sortKey === "label"
@@ -196,26 +196,25 @@ export default function PairLiftMatrix() {
                 </button>
               </th>
               {focus.map((menu, col) => (
-                <th key={menu} className="sortable">
+                <th
+                  key={menu}
+                  className="sortable"
+                  aria-sort={
+                    sortKey === col
+                      ? sortDir === "asc"
+                        ? "ascending"
+                        : "descending"
+                      : "none"
+                  }
+                >
                   <button
                     type="button"
                     title={`Sort rows by lift with ${menu}`}
-                    aria-sort={
-                      sortKey === col
-                        ? sortDir === "asc"
-                          ? "ascending"
-                          : "descending"
-                        : "none"
-                    }
                     onClick={() => toggleSort(col)}
                   >
                     <span>{menu}</span>
                     <span className="sort-ind">
-                      {sortKey === col
-                        ? sortDir === "asc"
-                          ? "↑"
-                          : "↓"
-                        : "↕"}
+                      {sortKey === col ? (sortDir === "asc" ? "↑" : "↓") : "↕"}
                     </span>
                   </button>
                 </th>

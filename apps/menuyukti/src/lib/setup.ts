@@ -1,10 +1,12 @@
-import { existsSync, readdirSync, realpathSync, statSync } from "node:fs";
-import { extname, join } from "node:path";
 import {
-  DATA_DIR_ENV,
-  getDataDir,
-  PathNotAllowedError,
-} from "./paths.js";
+  type Dirent,
+  existsSync,
+  readdirSync,
+  realpathSync,
+  statSync,
+} from "node:fs";
+import { extname, join } from "node:path";
+import { DATA_DIR_ENV, getDataDir, PathNotAllowedError } from "./paths.js";
 import { VERSION } from "./version.js";
 import { WORKSPACE_CONFIG_FILENAME } from "./workspace.js";
 
@@ -69,7 +71,7 @@ export function getSetupStatus(dataDir?: string): SetupStatus {
 function countExcelFiles(dir: string): number {
   let count = 0;
   const walk = (d: string) => {
-    let entries;
+    let entries: Dirent[];
     try {
       entries = readdirSync(d, { withFileTypes: true });
     } catch {

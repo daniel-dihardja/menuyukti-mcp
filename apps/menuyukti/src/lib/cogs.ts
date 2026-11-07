@@ -3,11 +3,11 @@ import {
   cellAsF64,
   cellAsString,
   ExcelError,
+  type RowMap,
   readTable,
   readTableSheet,
-  type RowMap,
 } from "./excel.js";
-import { getDataDir, resolveAllowedPath, ResolvePathError } from "./paths.js";
+import { getDataDir, ResolvePathError, resolveAllowedPath } from "./paths.js";
 import { resolveWorkspaceCogsPath, WorkspaceConfigError } from "./workspace.js";
 
 export const COGS_SHEET_NAME = "COGS";
@@ -44,9 +44,7 @@ export function loadWorkspaceCogs(
     const payload = readFileSync(allowed);
     const unitCosts = parseCogsExcel(payload);
     if (Object.keys(unitCosts).length === 0) {
-      throw new CogsError(
-        `COGS file has no usable Menu/COGS rows: ${cogsRel}`,
-      );
+      throw new CogsError(`COGS file has no usable Menu/COGS rows: ${cogsRel}`);
     }
     return { path: cogsRel, unit_costs: unitCosts };
   } catch (err) {
@@ -56,9 +54,7 @@ export function loadWorkspaceCogs(
       err instanceof WorkspaceConfigError ||
       err instanceof ExcelError
     ) {
-      throw err instanceof CogsError
-        ? err
-        : new CogsError(err.message);
+      throw err instanceof CogsError ? err : new CogsError(err.message);
     }
     throw new CogsError(err instanceof Error ? err.message : String(err));
   }

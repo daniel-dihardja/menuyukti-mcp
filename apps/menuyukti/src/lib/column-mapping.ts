@@ -8,10 +8,10 @@ import {
   cellAsString,
   getCell,
   normalizeHeader,
-  readTable,
   type RowMap,
+  readTable,
 } from "./excel.js";
-import { REQUIRED_COLUMNS, type LineItem } from "./line-item.js";
+import { type LineItem, REQUIRED_COLUMNS } from "./line-item.js";
 
 export const COLUMN_MAPPING_ENV = "MENUYUKTI_COLUMN_MAPPING";
 export const DEFAULT_MAPPING_FILENAME = "pos-column-mapping.json";

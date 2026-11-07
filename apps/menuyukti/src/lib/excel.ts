@@ -46,9 +46,7 @@ export function readTableSheet(
 ): { headers: string[]; rows: RowMap[] } {
   const workbook = openWorkbook(data);
   const want = sheetName.trim().toLowerCase();
-  const name = workbook.SheetNames.find(
-    (n) => n.trim().toLowerCase() === want,
-  );
+  const name = workbook.SheetNames.find((n) => n.trim().toLowerCase() === want);
   if (!name) {
     throw new ExcelError(
       `Excel workbook has no sheet named '${sheetName}' (available: ${workbook.SheetNames.join(", ")})`,
@@ -178,7 +176,15 @@ function excelSerialToDateTime(serial: number): string | null {
 function parseFlexibleDateTime(raw: string): string | null {
   const s = raw.trim();
   if (!s) return null;
-  const patterns: Array<{ re: RegExp; y: number; mo: number; d: number; h?: number; mi?: number; se?: number }> = [];
+  const patterns: Array<{
+    re: RegExp;
+    y: number;
+    mo: number;
+    d: number;
+    h?: number;
+    mi?: number;
+    se?: number;
+  }> = [];
   void patterns;
   // Try Date.parse for ISO-ish first
   const iso = Date.parse(s.includes("T") ? s : s.replace(" ", "T"));
@@ -186,9 +192,7 @@ function parseFlexibleDateTime(raw: string): string | null {
     return formatDateTime(new Date(iso));
   }
   const m =
-    s.match(
-      /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/,
-    ) ||
+    s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/) ||
     s.match(
       /^(\d{2})[/-](\d{2})[/-](\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/,
     );

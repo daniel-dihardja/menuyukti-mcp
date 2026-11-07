@@ -111,7 +111,7 @@ function calculateMenuEngineeringMatrix(
   const totalMarginRatio =
     totalRevenueAll > 0 ? totalProfitAll / totalRevenueAll : 0;
 
-  let rows = rowsIn.filter((r) => r.cogs > 0 && r.total_revenue > 0);
+  const rows = rowsIn.filter((r) => r.cogs > 0 && r.total_revenue > 0);
   if (rows.length === 0) {
     throw new Error(
       `No valid menu items with cogs > 0 and revenue > 0 (unmatched menus: ${unmatchedMenus.length ? unmatchedMenus.join(", ") : "none"}). Add or fix COGS for sold items.`,
@@ -137,10 +137,8 @@ function calculateMenuEngineeringMatrix(
   const matrix: MatrixRow[] = rows.map((r) => {
     const totalCogs = r.cogs * r.quantity;
     const contributionMargin = r.total_revenue - totalCogs;
-    const weValue =
-      r.total_revenue > 0 ? totalCogs / r.total_revenue : 0;
-    const marginPerUnit =
-      r.quantity > 0 ? contributionMargin / r.quantity : 0;
+    const weValue = r.total_revenue > 0 ? totalCogs / r.total_revenue : 0;
+    const marginPerUnit = r.quantity > 0 ? contributionMargin / r.quantity : 0;
     return {
       menu: r.menu,
       quantity: r.quantity,
@@ -164,9 +162,7 @@ function calculateMenuEngineeringMatrix(
   );
   for (const row of matrix) {
     row.contribution_margin_percentage =
-      totalMarginMatrix > 0
-        ? row.contribution_margin / totalMarginMatrix
-        : 0;
+      totalMarginMatrix > 0 ? row.contribution_margin / totalMarginMatrix : 0;
   }
 
   const avgPopularity =
@@ -200,10 +196,7 @@ function calculateMenuEngineeringMatrix(
   for (const category of ["star", "plow_horse", "puzzle", "weak"]) {
     const group = matrix.filter((r) => r.category === category);
     if (group.length === 0) continue;
-    const categoryMargin = group.reduce(
-      (s, r) => s + r.contribution_margin,
-      0,
-    );
+    const categoryMargin = group.reduce((s, r) => s + r.contribution_margin, 0);
     distribution.push({
       category,
       item_count: group.length,
@@ -271,8 +264,7 @@ function classifyAction(
     category === "weak" &&
     contributionMarginPercentage < 0.005 &&
     quantity < avgPopularity;
-  const reprice =
-    category === "weak" && marginPerUnit >= avgMargin && !remove;
+  const reprice = category === "weak" && marginPerUnit >= avgMargin && !remove;
   const promote = category === "puzzle" && !remove && !reprice;
   if (promote) return "promote";
   if (reprice) return "reprice";

@@ -10,6 +10,12 @@ if [[ ! -d node_modules && ! -d apps/menuyukti/node_modules ]]; then
   pnpm install
 fi
 
+echo "==> biome check"
+pnpm lint
+
+echo "==> plugin skills sync"
+bash scripts/check-plugin-skills-sync.sh
+
 echo "==> tsc --noEmit"
 pnpm --filter menuyukti typecheck
 

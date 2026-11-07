@@ -66,9 +66,7 @@ function ordersWithMenus(rows: LineItem[]): Set<string>[] {
   return [...byBill.values()].filter((s) => s.size > 0);
 }
 
-function menuCategoryByMenu(
-  rows: LineItem[],
-): Map<string, string | null> {
+function menuCategoryByMenu(rows: LineItem[]): Map<string, string | null> {
   const out = new Map<string, string | null>();
   for (const row of rows) {
     const menu = row.menu.trim();

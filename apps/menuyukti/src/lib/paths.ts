@@ -1,9 +1,10 @@
 import {
+  type Dirent,
   existsSync,
   readdirSync,
   readFileSync,
-  statSync,
   realpathSync,
+  statSync,
 } from "node:fs";
 import { homedir } from "node:os";
 import {
@@ -70,10 +71,7 @@ export function getDataDir(override?: string): string {
   return expandUser(raw);
 }
 
-export function resolveAllowedPath(
-  path: string,
-  dataDir?: string,
-): string {
+export function resolveAllowedPath(path: string, dataDir?: string): string {
   const root = canonicalizeRoot(dataDir ? expandUser(dataDir) : getDataDir());
   const candidate = isAbsolute(expandUser(path))
     ? expandUser(path)
@@ -92,10 +90,7 @@ export function resolveAllowedPath(
   return resolved;
 }
 
-export function resolveAllowedDir(
-  path: string,
-  dataDir?: string,
-): string {
+export function resolveAllowedDir(path: string, dataDir?: string): string {
   const root = canonicalizeRoot(dataDir ? expandUser(dataDir) : getDataDir());
   const trimmed = path.trim();
   const candidate =
@@ -161,7 +156,9 @@ export function listWorkspaceFiles(
   const rootPath = dataDir ? expandUser(dataDir) : getDataDir();
   const root = canonicalizeRoot(rootPath);
   if (!existsSync(root) || !statSync(root).isDirectory()) {
-    throw new PathNotAllowedError(`${DATA_DIR_ENV} is not a directory: ${root}`);
+    throw new PathNotAllowedError(
+      `${DATA_DIR_ENV} is not a directory: ${root}`,
+    );
   }
   const dir = resolveAllowedDir(workspace, root);
   const files = collectFiles(root, dir, false);
@@ -183,12 +180,14 @@ function collectFiles(
   excelOnly: boolean,
 ): WorkspaceFileEntry[] {
   const out: WorkspaceFileEntry[] = [];
-  let entries;
+  let entries: Dirent[];
   try {
     entries = readdirSync(dir, { withFileTypes: true });
   } catch {
     if (dir !== root) return out;
-    throw new PathNotAllowedError(`${DATA_DIR_ENV} is not a directory: ${root}`);
+    throw new PathNotAllowedError(
+      `${DATA_DIR_ENV} is not a directory: ${root}`,
+    );
   }
   for (const entry of entries) {
     const full = join(dir, entry.name);

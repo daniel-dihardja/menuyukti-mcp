@@ -2,8 +2,8 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
-  readFileSync,
   readdirSync,
+  readFileSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -13,10 +13,15 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import { menuyuktiPackageRoot } from "./self-contained-views.js";
 
-const scriptsDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../scripts");
+const scriptsDir = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../scripts",
+);
 
 async function loadCsp() {
-  return import(pathToFileURL(path.join(scriptsDir, "self-contained-csp.mjs")).href) as Promise<{
+  return import(
+    pathToFileURL(path.join(scriptsDir, "self-contained-csp.mjs")).href
+  ) as Promise<{
     SELF_CONTAINED_VIEW_NAMES: readonly string[];
     assertSelfContainedDist: (packageRoot: string) => void;
     assertSelfContainedHtml: (viewName: string, html: string) => void;
@@ -25,10 +30,12 @@ async function loadCsp() {
 }
 
 async function loadInliner() {
-  return import(pathToFileURL(path.join(scriptsDir, "inline-widgets.mjs")).href) as Promise<{
-    inlineWidgets: (opts?: { root?: string }) => Promise<
-      { name: string; bytes: number; path: string }[]
-    >;
+  return import(
+    pathToFileURL(path.join(scriptsDir, "inline-widgets.mjs")).href
+  ) as Promise<{
+    inlineWidgets: (opts?: {
+      root?: string;
+    }) => Promise<{ name: string; bytes: number; path: string }[]>;
   }>;
 }
 
@@ -47,9 +54,7 @@ describe("self-contained CSP helpers", () => {
     const fromDisk = readdirSync(viewsDir)
       .filter(
         (f) =>
-          f.endsWith(".tsx") &&
-          !f.endsWith(".test.tsx") &&
-          f !== "shared.tsx",
+          f.endsWith(".tsx") && !f.endsWith(".test.tsx") && f !== "shared.tsx",
       )
       .map((f) => f.replace(/\.tsx$/, ""))
       .sort();
@@ -125,8 +130,14 @@ describe("self-contained CSP helpers", () => {
       await loadCsp();
     const root = menuyuktiPackageRoot();
     const dir = path.join(root, "dist", "self-contained");
-    if (!existsSync(dir)) {
-      // CI runs pnpm check without skybridge build; fixture tests above cover CSP.
+    // Skip when unset or empty (e.g. wiped dist, or CI without skybridge build).
+    // Fixture tests above always cover CSP; this path runs after a real build.
+    if (
+      !existsSync(dir) ||
+      !SELF_CONTAINED_VIEW_NAMES.some((name) =>
+        existsSync(path.join(dir, `${name}.html`)),
+      )
+    ) {
       return;
     }
     assertSelfContainedDist(root);

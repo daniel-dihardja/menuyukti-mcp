@@ -23,10 +23,7 @@ const require = createRequire(import.meta.url);
 function skybridgeTemplateHelperUrl(): string {
   // skybridge package exports omit package.json; resolve via ./server entry.
   const serverEntry = require.resolve("skybridge/server");
-  const helperPath = path.join(
-    path.dirname(serverEntry),
-    "templateHelper.js",
-  );
+  const helperPath = path.join(path.dirname(serverEntry), "templateHelper.js");
   return pathToFileURL(helperPath).href;
 }
 

@@ -80,7 +80,7 @@ export class WeakItemsPayloadError extends Error {
 }
 
 export function buildWeakItemsPayload(path: string) {
-  let cogs;
+  let cogs: ReturnType<typeof loadWorkspaceCogs>;
   try {
     cogs = loadWorkspaceCogs(path);
   } catch (err) {
@@ -118,7 +118,9 @@ export function buildWeakItemsPayload(path: string) {
   }
 }
 
-export type MenuHeatmapsToolPayload = ReturnType<typeof buildMenuHeatmapsPayload>;
+export type MenuHeatmapsToolPayload = ReturnType<
+  typeof buildMenuHeatmapsPayload
+>;
 export type VenueSlotToolPayload = ReturnType<typeof buildVenueSlotPayload>;
 export type PairLiftToolPayload = ReturnType<typeof buildPairLiftPayload>;
 export type WeakItemsToolPayload = ReturnType<typeof buildWeakItemsPayload>;

@@ -1,9 +1,9 @@
 import {
-  useRef,
-  useState,
   type CSSProperties,
   type KeyboardEvent,
   type ReactNode,
+  useRef,
+  useState,
 } from "react";
 import "./widget.css";
 
@@ -66,13 +66,11 @@ export function Segmented<T extends string>({
   value,
   options,
   onChange,
-  role = "radiogroup",
 }: {
   label: string;
   value: T;
   options: Array<{ id: T; label: string; ariaLabel?: string }>;
   onChange: (id: T) => void;
-  role?: "radiogroup" | "group";
 }) {
   const labelId = `${label.replace(/\s+/g, "-").toLowerCase()}-label`;
   const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -86,7 +84,7 @@ export function Segmented<T extends string>({
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (role !== "radiogroup" || options.length === 0) return;
+    if (options.length === 0) return;
     const current = Math.max(
       0,
       options.findIndex((opt) => opt.id === value),
@@ -122,7 +120,7 @@ export function Segmented<T extends string>({
       </span>
       <div
         className="myk-seg"
-        role={role}
+        role="radiogroup"
         aria-labelledby={labelId}
         onKeyDown={onKeyDown}
       >
@@ -135,9 +133,8 @@ export function Segmented<T extends string>({
                 buttonRefs.current[index] = el;
               }}
               type="button"
-              role={role === "radiogroup" ? "radio" : "button"}
-              aria-checked={role === "radiogroup" ? selected : undefined}
-              aria-pressed={role === "group" ? selected : undefined}
+              role="radio"
+              aria-checked={selected}
               aria-label={opt.ariaLabel ?? opt.label}
               tabIndex={selected ? 0 : -1}
               onClick={() => onChange(opt.id)}
@@ -228,9 +225,7 @@ export function usePersistedJson<T>(
     (next) => {
       setValue((prev) => {
         const resolved =
-          typeof next === "function"
-            ? (next as (prev: T) => T)(prev)
-            : next;
+          typeof next === "function" ? (next as (prev: T) => T)(prev) : next;
         try {
           localStorage.setItem(key, JSON.stringify(resolved));
         } catch {

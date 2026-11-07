@@ -1,4 +1,5 @@
-# Typecheck and test the Skybridge Menuyukti MCP app on every PR and push to main.
+# Typecheck, lint, skill sync, and test the Skybridge Menuyukti MCP app.
+# On push to main, also build self-contained widgets and re-run the CSP smoke.
 name: CI
 
 on:
@@ -15,7 +16,7 @@ permissions:
 
 jobs:
   check:
-    name: pnpm check (typecheck, test)
+    name: pnpm check (lint, skills, typecheck, test)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,6 +36,38 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Quality gate
+        run: pnpm check
+        env:
+          MENUYUKTI_DATA_DIR: ${{ github.workspace }}/workspaces
+
+  widgets-build-smoke:
+    name: self-contained widget build smoke
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: check
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build + inline widgets
+        run: pnpm --filter menuyukti build
+        env:
+          MENUYUKTI_DATA_DIR: ${{ github.workspace }}/workspaces
+
+      - name: Re-run check with dist present
         run: pnpm check
         env:
           MENUYUKTI_DATA_DIR: ${{ github.workspace }}/workspaces

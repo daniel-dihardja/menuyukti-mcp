@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  activeDailyHours,
-  dailyValuesForHours,
-} from "./menu-heatmap-hours.js";
+import { activeDailyHours, dailyValuesForHours } from "./menu-heatmap-hours.js";
 
 describe("activeDailyHours", () => {
   it("returns only hours with quantity >= 1 across items", () => {

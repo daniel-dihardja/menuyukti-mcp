@@ -7,11 +7,7 @@ import {
 import { ExcelError } from "./excel.js";
 import type { LineItem } from "./line-item.js";
 import { NormalizeError, normalizeForPos } from "./normalize/index.js";
-import {
-  getDataDir,
-  resolveAllowedPath,
-  ResolvePathError,
-} from "./paths.js";
+import { getDataDir, ResolvePathError, resolveAllowedPath } from "./paths.js";
 import { configFor, detectPosFromExcelBytes } from "./pos.js";
 import {
   resolveWorkspaceSalesPath,

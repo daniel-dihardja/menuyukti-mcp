@@ -53,9 +53,7 @@ describe("analytics widget views", () => {
   it("venue slot strength surfaces tool errors", () => {
     toolInfo.output = venueSlotError;
     render(<VenueSlotStrength />);
-    expect(
-      screen.getByText(venueSlotError.error),
-    ).toBeTruthy();
+    expect(screen.getByText(venueSlotError.error)).toBeTruthy();
   });
 
   it("pair lift matrix renders populated fixture", () => {

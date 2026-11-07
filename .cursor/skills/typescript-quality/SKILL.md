@@ -21,11 +21,16 @@ After TypeScript / Skybridge changes, run and pass:
 pnpm check
 ```
 
-That is `scripts/check.sh`: `tsc --noEmit` → `vitest run` in `apps/menuyukti`.
+That is `scripts/check.sh`:
 
-Typecheck only: `pnpm typecheck`. Tests only: `pnpm test`.
+1. `pnpm lint` (Biome lint + format check)
+2. `pnpm check:skills` (`.agents/skills` ↔ `plugins/menuyukti/skills`)
+3. `tsc --noEmit` (`pnpm typecheck`)
+4. `vitest run` (`pnpm test`)
 
-Do not weaken the gate (skipping typecheck, broad `any`, empty tests) unless the user explicitly asks.
+Helpers: `pnpm lint:fix`, `pnpm typecheck`, `pnpm test`, `pnpm sync:plugin-skills`.
+
+Do not weaken the gate (skipping lint/typecheck, broad `any`, empty tests) unless the user explicitly asks.
 
 ## App boundaries
 

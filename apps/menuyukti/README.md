@@ -34,7 +34,7 @@ pnpm mcp:prod   # Codex Desktop: self-contained widgets (no localhost asset URLs
 ### Quality gate
 
 ```bash
-pnpm check        # tsc --noEmit + vitest (from apps/menuyukti or repo root)
+pnpm check        # from repo root: biome + skill sync + typecheck + test
 ```
 
 ### Preview views (no ChatGPT required)

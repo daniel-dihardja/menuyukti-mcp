@@ -4,10 +4,10 @@ import {
   cellAsI64,
   cellAsString,
   getCell,
-  readTable,
   type RowMap,
+  readTable,
 } from "../excel.js";
-import { REQUIRED_COLUMNS, type LineItem } from "../line-item.js";
+import { type LineItem, REQUIRED_COLUMNS } from "../line-item.js";
 import { NormalizeError } from "./errors.js";
 
 export function normalizeEsbExcel(

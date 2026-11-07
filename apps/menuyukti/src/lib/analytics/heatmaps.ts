@@ -27,9 +27,7 @@ export function applyMatrixCategories(
   }
 }
 
-export function calculateMenuHeatmaps(
-  rows: LineItem[],
-): MenuHeatmapPayload[] {
+export function calculateMenuHeatmaps(rows: LineItem[]): MenuHeatmapPayload[] {
   if (rows.length === 0) return [];
 
   let reportingPeriod = "";
@@ -118,7 +116,7 @@ export function pruneMenuHeatmaps(
   } = {},
 ): MenuHeatmapPayload[] {
   const { topN = null, activeHoursOnly = false } = options;
-  let items =
+  const items =
     topN == null || !Number.isFinite(topN) || topN <= 0
       ? heatmaps
       : heatmaps.slice(0, Math.floor(topN));

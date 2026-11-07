@@ -1,16 +1,16 @@
 import { useMemo } from "react";
-import type { SlotDemandCell } from "../lib/analytics/index.js";
 import { useToolInfo } from "../helpers.js";
+import type { SlotDemandCell } from "../lib/analytics/index.js";
 import {
+  cellStyle,
   Empty,
+  intensity,
   Legend,
   Loading,
+  lightTextClass,
   Panel,
   Segmented,
   ToolError,
-  cellStyle,
-  intensity,
-  lightTextClass,
   toolErrorMessage,
   usePersistedState,
 } from "./shared.js";
@@ -60,8 +60,7 @@ const METRICS: Record<
     showing: "Showing traffic share",
     legend: "Color + number = traffic share",
     field: (c) => Number(c.traffic_share ?? 0),
-    format: (n) =>
-      Number.isFinite(n) ? `${(n * 100).toFixed(1)}%` : "—",
+    format: (n) => (Number.isFinite(n) ? `${(n * 100).toFixed(1)}%` : "—"),
   },
 };
 
@@ -145,10 +144,7 @@ export default function VenueSlotStrength() {
   }
 
   const pos = output.pos ? String(output.pos) : "";
-  const meta = [
-    pos ? `POS: ${pos}` : null,
-    `${profile.length} slots`,
-  ]
+  const meta = [pos ? `POS: ${pos}` : null, `${profile.length} slots`]
     .filter(Boolean)
     .join(" · ");
 

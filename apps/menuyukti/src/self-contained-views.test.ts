@@ -55,7 +55,10 @@ describe("requireSelfContainedHtml", () => {
     temps.push(root);
     const out = path.join(root, "dist", "self-contained");
     mkdirSync(out, { recursive: true });
-    writeFileSync(path.join(out, "venue-slot-strength.html"), "<html>ok</html>");
+    writeFileSync(
+      path.join(out, "venue-slot-strength.html"),
+      "<html>ok</html>",
+    );
 
     expect(requireSelfContainedHtml("venue-slot-strength", root)).toBe(
       "<html>ok</html>",

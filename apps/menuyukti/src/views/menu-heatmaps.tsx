@@ -1,20 +1,17 @@
 import { useMemo, useState } from "react";
-import type { MenuHeatmapPayload } from "../lib/analytics/index.js";
 import { useToolInfo } from "../helpers.js";
+import type { MenuHeatmapPayload } from "../lib/analytics/index.js";
+import { activeDailyHours, dailyValuesForHours } from "./menu-heatmap-hours.js";
 import {
-  activeDailyHours,
-  dailyValuesForHours,
-} from "./menu-heatmap-hours.js";
-import {
+  cellStyle,
   Empty,
+  intensity,
   Legend,
   Loading,
+  lightTextClass,
   Panel,
   Segmented,
   ToolError,
-  cellStyle,
-  intensity,
-  lightTextClass,
   toolErrorMessage,
   usePersistedState,
 } from "./shared.js";
@@ -56,7 +53,10 @@ function categoryOf(item: MenuHeatmapPayload): CatId | null {
 function weeklyValues(item: MenuHeatmapPayload): number[] {
   const rows = item.weekly_heatmap ?? [];
   const byDay = new Map(
-    rows.map((r) => [String(r.day ?? "").toLowerCase(), Number(r.quantity ?? 0)]),
+    rows.map((r) => [
+      String(r.day ?? "").toLowerCase(),
+      Number(r.quantity ?? 0),
+    ]),
   );
   return WEEKDAYS.map((d) => byDay.get(d) ?? 0);
 }
@@ -72,22 +72,20 @@ export default function MenuHeatmaps() {
     "weekly",
     ["weekly", "daily"],
   );
-  const [enabledCats, setEnabledCats] = useState<Record<CatId, boolean>>(
-    () => {
-      try {
-        const raw = localStorage.getItem("menuyukti-menu-heatmaps-cats");
-        if (raw) {
-          return {
-            ...DEFAULT_CATS,
-            ...(JSON.parse(raw) as Partial<Record<CatId, boolean>>),
-          };
-        }
-      } catch {
-        /* ignore */
+  const [enabledCats, setEnabledCats] = useState<Record<CatId, boolean>>(() => {
+    try {
+      const raw = localStorage.getItem("menuyukti-menu-heatmaps-cats");
+      if (raw) {
+        return {
+          ...DEFAULT_CATS,
+          ...(JSON.parse(raw) as Partial<Record<CatId, boolean>>),
+        };
       }
-      return { ...DEFAULT_CATS };
-    },
-  );
+    } catch {
+      /* ignore */
+    }
+    return { ...DEFAULT_CATS };
+  });
 
   function setCat(id: CatId, on: boolean) {
     setEnabledCats((prev) => {
@@ -110,9 +108,7 @@ export default function MenuHeatmaps() {
   const categoriesPresent = heatmaps.some((h) => categoryOf(h) != null);
 
   const visible = useMemo(() => {
-    const pool = [...heatmaps].sort(
-      (a, b) => weeklyTotal(b) - weeklyTotal(a),
-    );
+    const pool = [...heatmaps].sort((a, b) => weeklyTotal(b) - weeklyTotal(a));
     if (!categoriesPresent) return pool;
     return pool.filter((item) => {
       const cat = categoryOf(item);
@@ -184,7 +180,11 @@ export default function MenuHeatmaps() {
           above.
         </Empty>
         {categoriesPresent ? (
-          <div className="myk-filter-bar" aria-label="Matrix categories">
+          <div
+            className="myk-filter-bar"
+            role="group"
+            aria-label="Matrix categories"
+          >
             {(Object.keys(CAT_LABEL) as CatId[]).map((id) => (
               <label key={id}>
                 <input
@@ -232,7 +232,11 @@ export default function MenuHeatmaps() {
         ]}
       />
       {categoriesPresent ? (
-        <div className="myk-filter-bar" aria-label="Matrix categories">
+        <div
+          className="myk-filter-bar"
+          role="group"
+          aria-label="Matrix categories"
+        >
           {(Object.keys(CAT_LABEL) as CatId[]).map((id) => (
             <label key={id}>
               <input
@@ -252,30 +256,23 @@ export default function MenuHeatmaps() {
             <tr>
               <th className="row-label">Menu</th>
               {columns.map((col) => (
-                <th
-                  key={col}
-                  className={view === "daily" ? "hour" : undefined}
-                >
+                <th key={col} className={view === "daily" ? "hour" : undefined}>
                   {col}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {visible.map((item, r) => {
-              const values = grid[r] ?? [];
+            {visible.map((item, rowIndex) => {
+              const values = grid[rowIndex] ?? [];
               const cat = categoryOf(item);
               const menu = item.menu ?? "Unknown";
               const total = values.reduce((s, n) => s + n, 0);
               return (
-                <tr key={`${menu}-${r}`}>
+                <tr key={menu}>
                   <td
                     className="row-label"
-                    title={[
-                      menu,
-                      cat ? CAT_LABEL[cat] : null,
-                      `${total} units`,
-                    ]
+                    title={[menu, cat ? CAT_LABEL[cat] : null, `${total} units`]
                       .filter(Boolean)
                       .join(" · ")}
                   >
@@ -286,9 +283,10 @@ export default function MenuHeatmaps() {
                   </td>
                   {values.map((value, c) => {
                     const t = intensity(value, min, max);
+                    const colKey = columns[c] ?? String(c);
                     return (
                       <td
-                        key={c}
+                        key={`${menu}-${colKey}`}
                         className={`cell ${lightTextClass(t)}`}
                         style={cellStyle(t)}
                       >
