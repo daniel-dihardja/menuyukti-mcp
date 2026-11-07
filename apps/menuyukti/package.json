@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "DO_NOT_TRACK=1 SKYBRIDGE_TELEMETRY_DISABLED=1 skybridge dev -p 8787 --no-open",
     "dev:tunnel": "DO_NOT_TRACK=1 SKYBRIDGE_TELEMETRY_DISABLED=1 skybridge dev -p 8787 --tunnel",
-    "build": "DO_NOT_TRACK=1 SKYBRIDGE_TELEMETRY_DISABLED=1 skybridge build",
+    "build": "DO_NOT_TRACK=1 SKYBRIDGE_TELEMETRY_DISABLED=1 skybridge build && node ./scripts/inline-widgets.mjs",
+    "inline-widgets": "node ./scripts/inline-widgets.mjs",
     "start": "DO_NOT_TRACK=1 SKYBRIDGE_TELEMETRY_DISABLED=1 skybridge start -p 8787",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -16,6 +17,7 @@
   },
   "dependencies": {
     "@vitejs/plugin-react": "^6.2.1",
+    "esbuild": "^0.28.2",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "skybridge": "^2.1.0",

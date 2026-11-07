@@ -13,15 +13,17 @@ The server is the **Skybridge** TypeScript app in [`apps/menuyukti/`](../../apps
 
 ```bash
 pnpm install
-pnpm mcp
-# or: bash scripts/run-mcp-skybridge.sh
-# or: cd apps/menuyukti && MENUYUKTI_DATA_DIR="$PWD/../../workspaces" pnpm dev
+pnpm mcp          # Vite dev + DevTools (local preview)
+# Codex Desktop widgets: use production (self-contained HTML — no localhost asset fetches)
+pnpm mcp:prod
+# or: bash scripts/run-mcp-skybridge-prod.sh
 ```
 
 Keep that terminal open while ChatGPT / Codex is connected.
 
 - **MCP:** `http://127.0.0.1:8787/mcp` (matches [`plugins/menuyukti/mcp.json`](../../plugins/menuyukti/mcp.json))
-- **DevTools** (call tools / preview `render_*` views without ChatGPT): `http://127.0.0.1:8787/`
+- **Codex Desktop:** prefer `pnpm mcp:prod`. Dev (`pnpm mcp`) shells load Vite assets from `127.0.0.1`, which Codex CSP often blocks (widget timeout). Production inlines each view into one HTML resource (same idea as the old Rust widgets).
+- **DevTools** (call tools / preview `render_*` views without ChatGPT): `http://127.0.0.1:8787/` with `pnpm mcp`
 - Details: [`apps/menuyukti/README.md`](../../apps/menuyukti/README.md)
 
 Optional: open [MCP Inspector](https://modelcontextprotocol.io/) against the running server:

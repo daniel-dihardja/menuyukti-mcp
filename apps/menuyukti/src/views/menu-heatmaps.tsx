@@ -1,6 +1,10 @@
 import { useMemo, useState } from "react";
 import { useToolInfo } from "../helpers.js";
 import {
+  activeDailyHours,
+  dailyValuesForHours,
+} from "./menu-heatmap-hours.js";
+import {
   Empty,
   Legend,
   Loading,
@@ -63,14 +67,6 @@ function weeklyValues(item: HeatmapItem): number[] {
   return WEEKDAYS.map((d) => byDay.get(d) ?? 0);
 }
 
-function dailyValues(item: HeatmapItem): number[] {
-  const rows = item.daily_heatmap ?? [];
-  const byHour = new Map(
-    rows.map((r) => [Number(r.hour ?? -1), Number(r.quantity ?? 0)]),
-  );
-  return Array.from({ length: 24 }, (_, h) => byHour.get(h) ?? 0);
-}
-
 function weeklyTotal(item: HeatmapItem): number {
   return weeklyValues(item).reduce((s, n) => s + n, 0);
 }
@@ -129,16 +125,23 @@ export default function MenuHeatmaps() {
     });
   }, [heatmaps, categoriesPresent, enabledCats]);
 
+  const dailyHours = useMemo(
+    () => (view === "daily" ? activeDailyHours(visible) : []),
+    [view, visible],
+  );
+
   const columns =
     view === "daily"
-      ? Array.from({ length: 24 }, (_, h) => String(h))
+      ? dailyHours.map((h) => String(h))
       : WEEKDAYS.map((d) => WEEKDAY_LABEL[d]!);
 
   const grid = useMemo(() => {
     return visible.map((item) =>
-      view === "daily" ? dailyValues(item) : weeklyValues(item),
+      view === "daily"
+        ? dailyValuesForHours(item, dailyHours)
+        : weeklyValues(item),
     );
-  }, [visible, view]);
+  }, [visible, view, dailyHours]);
 
   const { min, max } = useMemo(() => {
     const vals = grid.flat().filter(Number.isFinite);
@@ -197,7 +200,11 @@ export default function MenuHeatmaps() {
     pos ? `POS: ${pos}` : null,
     period || null,
     `${visible.length} of ${heatmaps.length} menus`,
-    view === "daily" ? "by hour" : "by weekday",
+    view === "daily"
+      ? dailyHours.length > 0
+        ? `by hour (${dailyHours.length} with sales)`
+        : "by hour (none with sales)"
+      : "by weekday",
   ]
     .filter(Boolean)
     .join(" · ");

@@ -13,7 +13,8 @@ From the repo root (`package.json` is the source of truth):
 
 ```bash
 pnpm scripts              # list package scripts
-pnpm mcp                  # Skybridge MCP (http://127.0.0.1:8787/mcp)
+pnpm mcp                  # Skybridge Vite dev + DevTools
+pnpm mcp:prod             # Production + self-contained widgets (Codex Desktop)
 pnpm mcp:skybridge        # Alias for pnpm mcp
 pnpm mcp:inspect          # Skybridge + MCP Inspector
 pnpm check                # tsc --noEmit + vitest (required quality gate)
@@ -23,6 +24,8 @@ pnpm sync:plugin-skills   # copy .agents/skills → plugins/menuyukti/skills
 pnpm sync:codex-plugin    # sync skills + reinstall Menuyukti into Codex CLI
 pnpm backlog              # Backlog.md board (optional)
 ```
+
+`pnpm mcp:prod` runs `skybridge build`, inlines each view into `dist/self-contained/*.html`, then `skybridge start`. Use that for Codex; use `pnpm mcp` for DevTools/HMR.
 
 First time (or after lockfile changes):
 

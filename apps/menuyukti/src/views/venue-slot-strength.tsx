@@ -92,7 +92,7 @@ export default function VenueSlotStrength() {
   const profile = (output?.slot_demand_profile ?? []) as SlotCell[];
   const metric = METRICS[metricId];
 
-  const { byKey, min, max, periodHeads } = useMemo(() => {
+  const { byKey, min, max, periodLabels } = useMemo(() => {
     const map = new Map<string, SlotCell>();
     for (const cell of profile) {
       const day = String(cell.day ?? "").toLowerCase();
@@ -101,7 +101,7 @@ export default function VenueSlotStrength() {
       map.set(`${day}:${period}`, cell);
     }
     const values = profile.map((c) => metric.field(c)).filter(Number.isFinite);
-    const periodHeadsLocal = PERIODS.map((period) => {
+    const periodLabelsLocal = PERIODS.map((period) => {
       const sample = DAYS.map((d) => map.get(`${d}:${period}`)).find(Boolean);
       return periodLabel(sample, period);
     });
@@ -109,7 +109,7 @@ export default function VenueSlotStrength() {
       byKey: map,
       min: values.length ? Math.min(...values) : 0,
       max: values.length ? Math.max(...values) : 1,
-      periodHeads: periodHeadsLocal,
+      periodLabels: periodLabelsLocal,
     };
   }, [profile, metric]);
 
@@ -171,23 +171,23 @@ export default function VenueSlotStrength() {
         <table className="myk-table" style={{ minWidth: 520 }}>
           <thead>
             <tr>
-              <th className="row-label">Day</th>
-              {periodHeads.map((label) => (
-                <th key={label}>{label}</th>
+              <th className="row-label">Meal period</th>
+              {DAYS.map((day) => (
+                <th key={day}>{DAY_LABEL[day]}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {DAYS.map((day) => (
-              <tr key={day}>
-                <td className="row-label">{DAY_LABEL[day]}</td>
-                {PERIODS.map((period) => {
+            {PERIODS.map((period, periodIdx) => (
+              <tr key={period}>
+                <td className="row-label">{periodLabels[periodIdx]}</td>
+                {DAYS.map((day) => {
                   const cell = byKey.get(`${day}:${period}`);
                   const value = cell ? metric.field(cell) : 0;
                   const t = intensity(value, min, max);
                   return (
                     <td
-                      key={period}
+                      key={day}
                       className={`cell ${lightTextClass(t)}`}
                       style={cellStyle(t)}
                       title={

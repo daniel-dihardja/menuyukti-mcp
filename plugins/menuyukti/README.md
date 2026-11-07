@@ -28,12 +28,12 @@ Then ask: *What’s my Menuyukti setup status?*
 ### Start the server (quick)
 
 ```bash
-# From this repo (recommended)
+# From this repo — Codex Desktop needs production (self-contained widgets)
 pnpm install
-pnpm mcp
+pnpm mcp:prod
 
-# Or from apps/menuyukti
-cd apps/menuyukti && MENUYUKTI_DATA_DIR="/path/to/workspaces" pnpm dev
+# Local DevTools / Vite HMR (widgets may time out inside Codex)
+pnpm mcp
 ```
 
 ## Install the plugin

@@ -22,11 +22,13 @@ Or from the repo root:
 
 ```bash
 pnpm install
-pnpm mcp
+pnpm mcp        # Vite dev + DevTools
+pnpm mcp:prod   # Codex Desktop: self-contained widgets (no localhost asset URLs)
 ```
 
 - **MCP URL (plugin-compatible):** `http://127.0.0.1:8787/mcp`
-- **DevTools:** `http://127.0.0.1:8787/`
+- **DevTools:** `http://127.0.0.1:8787/` (use `pnpm mcp`)
+- **Codex Desktop:** use `pnpm mcp:prod` — production build inlines each `render_*` view into one HTML resource (Codex CSP blocks Vite’s `http://127.0.0.1` asset imports)
 - Telemetry is opted out in the npm scripts (`DO_NOT_TRACK` / `SKYBRIDGE_TELEMETRY_DISABLED`)
 
 ### Quality gate

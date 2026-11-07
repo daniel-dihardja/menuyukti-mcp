@@ -22,7 +22,7 @@ Licensed under the [MIT License](LICENSE).
 
 Short path:
 
-1. Run the local Skybridge MCP server (`pnpm mcp`, Node 24+) with `MENUYUKTI_DATA_DIR` set → [Install and run](docs/howtos/install-and-run.md)
+1. Run the local Skybridge MCP server (`pnpm mcp:prod` for Codex Desktop widgets, or `pnpm mcp` for DevTools; Node 24+) with `MENUYUKTI_DATA_DIR` set → [Install and run](docs/howtos/install-and-run.md)
 2. Install the Menuyukti plugin from this repo’s marketplace → [plugin README](plugins/menuyukti/README.md)
 3. Drop sales (+ optional COGS) into a workspace folder → [Workspaces](docs/howtos/workspaces.md)
 4. In Codex, ask Menuyukti to **set up the workspace**, then ask outcome questions (try *summarize demo-cafe-july-2026*)
