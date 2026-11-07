@@ -8,7 +8,7 @@ Guides for setting up Menuyukti MCP with ChatGPT Desktop / Codex and working wit
 
 **Owner use guide (install plugin, ritual, prompts, charts):** → **[plugins/menuyukti/README.md](../plugins/menuyukti/README.md)**
 
-1. **Run the server** → [Install and run](./howtos/install-and-run.md) (`http://127.0.0.1:8787/mcp`).
+1. **Run the Skybridge server** → [Install and run](./howtos/install-and-run.md) (`pnpm mcp`, `http://127.0.0.1:8787/mcp`).
 2. **Install the Menuyukti plugin** → [plugin README](../plugins/menuyukti/README.md) ([howto](./howtos/codex-plugin.md) for maintainers).
 3. **Drop sales (+ optional COGS)** into one folder per venue/month → [Workspaces](./howtos/workspaces.md).
 4. In Codex, ask Menuyukti to **set up the workspace**, then use the prompts in the [plugin README](../plugins/menuyukti/README.md#what-to-ask).
@@ -20,7 +20,7 @@ Owners do not edit `workspace.yaml` by hand — ChatGPT / Codex writes it after 
 | Guide | Who it’s for |
 | --- | --- |
 | **[Plugin README](../plugins/menuyukti/README.md)** | **Owners using the Codex / Desktop plugin** |
-| [Install and run](./howtos/install-and-run.md) | First-time setup of the local MCP binary |
+| [Install and run](./howtos/install-and-run.md) | First-time setup of the local Skybridge MCP server |
 | [Codex plugin](./howtos/codex-plugin.md) | Maintainer notes + manual non-plugin alternative |
 | [Workspaces](./howtos/workspaces.md) | Where to put sales exports, COGS, and related files |
 | [Custom POS columns](./howtos/custom-pos-columns.md) | When your spreadsheet columns don’t match a known POS |

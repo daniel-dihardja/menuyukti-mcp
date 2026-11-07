@@ -1,18 +1,43 @@
 #!/usr/bin/env bash
-# Start the local MCP server and open MCP Inspector against it.
+# Start the Skybridge MCP server and open MCP Inspector against it.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+APP="$ROOT/apps/menuyukti"
 cd "$ROOT"
 
 # Default to workspaces/ so tool paths are relative (e.g. demo-cafe-july-2026/sales.xlsx).
 export MENUYUKTI_DATA_DIR="${MENUYUKTI_DATA_DIR:-$ROOT/workspaces}"
+export DO_NOT_TRACK="${DO_NOT_TRACK:-1}"
+export SKYBRIDGE_TELEMETRY_DISABLED="${SKYBRIDGE_TELEMETRY_DISABLED:-1}"
 MCP_URL="${MCP_URL:-http://127.0.0.1:8787/mcp}"
 
-echo "MENUYUKTI_DATA_DIR=$MENUYUKTI_DATA_DIR"
-echo "Starting Rust MCP server at $MCP_URL …"
+if ! command -v node >/dev/null 2>&1; then
+  echo "error: Node.js is required (Skybridge needs Node 24+)" >&2
+  exit 1
+fi
 
-cargo run -p menuyukti-mcp --bin menuyukti-mcp --quiet &
+NODE_MAJOR="$(node -p "process.versions.node.split('.')[0]")"
+if [[ "$NODE_MAJOR" -lt 24 ]]; then
+  echo "error: Node.js 24+ required (found $(node -v)). Use Homebrew/nvm Node 24+." >&2
+  exit 1
+fi
+
+if ! command -v pnpm >/dev/null 2>&1; then
+  echo "error: pnpm is required (see packageManager in package.json)" >&2
+  exit 1
+fi
+
+if [[ ! -d "$ROOT/node_modules" && ! -d "$APP/node_modules" ]]; then
+  echo "Installing workspace dependencies…"
+  pnpm install
+fi
+
+echo "MENUYUKTI_DATA_DIR=$MENUYUKTI_DATA_DIR"
+echo "Starting Skybridge MCP server at $MCP_URL …"
+
+cd "$APP"
+pnpm dev &
 MCP_PID=$!
 
 cleanup() {
@@ -24,7 +49,7 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 ready=0
-for _ in $(seq 1 50); do
+for _ in $(seq 1 90); do
   if (echo >/dev/tcp/127.0.0.1/8787) >/dev/null 2>&1; then
     ready=1
     break
@@ -33,7 +58,7 @@ for _ in $(seq 1 50); do
     echo "MCP server exited before becoming ready." >&2
     exit 1
   fi
-  sleep 0.2
+  sleep 0.5
 done
 
 if [[ "$ready" -ne 1 ]]; then
@@ -42,6 +67,6 @@ if [[ "$ready" -ne 1 ]]; then
 fi
 
 echo "Opening MCP Inspector (Streamable HTTP → $MCP_URL) …"
-npx --yes @modelcontextprotocol/inspector@latest --web \
+pnpm dlx @modelcontextprotocol/inspector@latest --web \
   --transport http \
   --server-url "$MCP_URL"

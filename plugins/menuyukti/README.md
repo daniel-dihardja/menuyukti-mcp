@@ -4,7 +4,7 @@ Portable Agent Plugin for **ChatGPT Desktop / Codex** (version **0.9.0**, approa
 
 It bundles coaching + visualisation skills and connects Codex to the **local** Menuyukti MCP server at `http://127.0.0.1:8787/mcp`. Sales files stay on your machine.
 
-Use this guide to install and operate the plugin. Deeper binary, workspace, and contributor docs live in the [repo docs](../../docs/).
+Use this guide to install and operate the plugin. Deeper server, workspace, and contributor docs live in the [repo docs](../../docs/).
 
 ## What you can do
 
@@ -15,11 +15,11 @@ Use this guide to install and operate the plugin. Deeper binary, workspace, and 
 
 Four analytics capabilities ship with tools + charts: venue slot strength, menu heatmaps, pair lift index, and weak items analysis.
 
-**Desktop only.** The MCP URL is localhost. The plugin does **not** start the binary for you — keep the server running while you chat.
+**Desktop only.** The MCP URL is localhost. The plugin does **not** start the server for you — keep Skybridge running while you chat.
 
 ## Prerequisites
 
-1. **Run the Menuyukti MCP binary** with `MENUYUKTI_DATA_DIR` set → [Install and run](../../docs/howtos/install-and-run.md)
+1. **Run the Menuyukti Skybridge MCP server** with `MENUYUKTI_DATA_DIR` set → [Install and run](../../docs/howtos/install-and-run.md) (**Node.js 24+**; no Rust required)
 2. Keep **`http://127.0.0.1:8787/mcp`** reachable
 3. Put sales (+ optional COGS) in a [workspace](../../docs/howtos/workspaces.md) folder (try `demo-cafe-july-2026` in this repo)
 
@@ -28,11 +28,12 @@ Then ask: *What’s my Menuyukti setup status?*
 ### Start the server (quick)
 
 ```bash
-# Prebuilt binary (from GitHub Releases)
-MENUYUKTI_DATA_DIR="/path/to/workspaces" ./menuyukti-mcp
+# From this repo — Codex Desktop needs production (self-contained widgets)
+pnpm install
+pnpm mcp:prod
 
-# From this repo (developers)
-make mcp
+# Local DevTools / Vite HMR (widgets may time out inside Codex)
+pnpm mcp
 ```
 
 ## Install the plugin
@@ -107,35 +108,35 @@ Menuyukti MCP returns **structured analytics JSON**. Presentation depends on the
 
 | Chart | Preferred presentation |
 | --- | --- |
-| Venue slot strength | `render_venue_slot_strength` (MCP Apps widget) when mounted; otherwise `get_venue_slot_strength` + skill → **one** local HTML file |
-| Pair lift index | `render_pair_lift_matrix` (MCP Apps widget) when mounted; otherwise `get_pair_lift_matrix` for numbers |
-| Menu heatmaps | `render_menu_heatmaps` (MCP Apps widget) when mounted; otherwise `get_menu_heatmaps` + skill → **one** local HTML file |
-| Weak items | `render_weak_items_review` (MCP Apps widget) when mounted; otherwise `get_weak_items_review` + skill → **one** local HTML table (**needs COGS**) |
+| Venue slot strength | **`render_venue_slot_strength`** (Skybridge MCP Apps view) when the host mounts widgets; otherwise `get_venue_slot_strength` + skill → **one** local HTML file |
+| Pair lift index | **`render_pair_lift_matrix`** when mounted; otherwise `get_pair_lift_matrix` for numbers |
+| Menu heatmaps | **`render_menu_heatmaps`** when mounted; otherwise `get_menu_heatmaps` + skill → **one** local HTML file |
+| Weak items | **`render_weak_items_review`** when mounted; otherwise `get_weak_items_review` + skill → **one** local HTML table (**needs COGS**) |
 
-**One chart per ask.** If a widget already mounted, narrate only — do not also write HTML.
+**One chart per ask.** If a `render_*` view already mounted, narrate only — do **not** also write HTML in the same turn.
 
 ## Bundled skills
 
 | Skill | Role |
 | --- | --- |
 | `menuyukti-mcp` | Setup ritual and goal → tool map |
-| `menuyukti-venue-slot-strength` | Venue demand: prefer MCP Apps widget, else local HTML heatmap |
-| `menuyukti-visualize-menu-heatmaps` | Codex fallback: per-dish HTML heatmaps (prefer `render_menu_heatmaps` in ChatGPT) |
-| `menuyukti-visualize-weak-items` | Codex fallback: sortable weak-items HTML table (prefer `render_weak_items_review` in ChatGPT; **needs COGS**) |
+| `menuyukti-venue-slot-strength` | Venue demand: prefer `render_venue_slot_strength`, else local HTML heatmap |
+| `menuyukti-visualize-menu-heatmaps` | Codex fallback: per-dish HTML heatmaps (prefer `render_menu_heatmaps` when widgets mount) |
+| `menuyukti-visualize-weak-items` | Codex fallback: sortable weak-items HTML table (prefer `render_weak_items_review`; **needs COGS**) |
 
-Authoring lives under [`.agents/skills/`](../../.agents/skills/); `make sync-plugin-skills` copies into this package.
+Authoring lives under [`.agents/skills/`](../../.agents/skills/); `pnpm sync:plugin-skills` copies into this package.
 
 ## Optional SessionStart hook
 
-`hooks/check_mcp.sh` only probes whether the MCP URL responds. It never starts the binary and never reads POS files.
+`hooks/check_mcp.sh` only probes whether the MCP URL responds. It never starts the server and never reads POS files.
 
 Codex **skips** plugin hooks until you review and trust them (CLI: `/hooks`). Prefer docs + `get_setup_status` if you do not want hooks.
 
 ## Maintainers
 
 ```bash
-make sync-plugin-skills   # refresh skills/ from .agents/skills
-make sync-codex-plugin    # package + reinstall into Codex CLI
+pnpm sync:plugin-skills   # refresh skills/ from .agents/skills
+pnpm sync:codex-plugin    # package + reinstall into Codex CLI
 ```
 
 Do not hand-edit copies under `skills/` except for packaging smoke tests. Start a **new** Codex session after reinstall.

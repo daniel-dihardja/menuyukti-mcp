@@ -1,0 +1,28 @@
+---
+description: TypeScript quality gate — biome + skills sync + typecheck + vitest via pnpm check
+alwaysApply: true
+---
+
+# TypeScript quality gate
+
+After substantive TypeScript / Skybridge changes under `apps/menuyukti`, run the workspace gate before claiming done:
+
+```bash
+pnpm check
+# equivalent: bash scripts/check.sh
+```
+
+The gate is:
+
+1. `biome check` (`pnpm lint`)
+2. Plugin skills sync (`pnpm check:skills`)
+3. `tsc --noEmit` (`pnpm typecheck`)
+4. `vitest run` (`pnpm test`)
+
+Rules:
+
+- Prefer `pnpm check` over ad-hoc flags that weaken the gate.
+- Keep the root `pnpm-lock.yaml` committed; use `pnpm install --frozen-lockfile` in CI.
+- Fix lint/typecheck/test failures; do not silence with broad `any` or skipped tests.
+- After editing `.agents/skills`, run `pnpm sync:plugin-skills` before `pnpm check`.
+- Individual helpers: `pnpm lint`, `pnpm lint:fix`, `pnpm typecheck`, `pnpm test`, `pnpm check:skills`.

@@ -1,47 +1,95 @@
 # Develop
 
-Contributor workflow for building Menuyukti MCP from source.
+Contributor workflow for Menuyukti MCP (Skybridge / TypeScript).
+
+## Prerequisites
+
+- **Node.js 24+**
+- **pnpm 10+** (see `packageManager` in root `package.json`)
+
+### Editor TypeScript
+
+Skybridge’s base `tsconfig` uses `${configDir}` (TypeScript **5.5+**). This repo pins the workspace SDK at `apps/menuyukti/node_modules/typescript` via `.vscode/settings.json`. In Cursor/VS Code, choose **TypeScript: Select TypeScript Version → Use Workspace Version** if the editor still shows spurious red squiggles while `pnpm typecheck` is clean.
 
 ## Commands
 
+From the repo root (`package.json` is the source of truth):
+
 ```bash
-make check     # fmt --check + clippy + tests
-make test
-# or: cargo test -p menuyukti && cargo test -p menuyukti-mcp
-make mcp
-make mcp-inspect
-make widgets-preview  # mock widget HTML (refresh after edits; no Node)
-make sync-plugin-skills  # copy .agents/skills → plugins/menuyukti/skills
-make sync-codex-plugin   # sync skills + reinstall Menuyukti into Codex CLI
-make backlog   # Backlog.md board (optional)
+pnpm scripts              # list package scripts
+pnpm mcp                  # Skybridge Vite dev + DevTools
+pnpm mcp:prod             # Production + self-contained widgets (Codex Desktop)
+pnpm mcp:skybridge        # Alias for pnpm mcp
+pnpm mcp:inspect          # Skybridge + MCP Inspector
+pnpm check                # biome + skill sync + tsc + vitest (required quality gate)
+pnpm lint                 # Biome check (lint + format)
+pnpm lint:fix            # Biome auto-fix
+pnpm typecheck
+pnpm test
+pnpm check:skills         # fail if plugins/menuyukti/skills ≠ .agents/skills
+pnpm sync:plugin-skills   # copy .agents/skills → plugins/menuyukti/skills
+pnpm sync:codex-plugin    # sync skills + reinstall Menuyukti into Codex CLI
+pnpm backlog              # Backlog.md board (optional)
 ```
 
-After editing Codex skills under `.agents/skills/`, run `make sync-plugin-skills` before committing so the installable plugin stays in sync. To also refresh your local Codex install, use `make sync-codex-plugin` (then start a new session). See [Codex plugin](./codex-plugin.md).
+`pnpm mcp:prod` runs `skybridge build`, inlines each view into `dist/self-contained/*.html`, then `skybridge start`. Use that for Codex; use `pnpm mcp` for DevTools/HMR.
+
+After changing MCP Apps views or the widget inliner, also verify self-contained CSP artifacts:
+
+```bash
+pnpm --filter menuyukti build   # writes dist/self-contained/*.html
+pnpm check                      # vitest asserts CSP-clean HTML when dist exists;
+                                # always covers the inliner fixture + view-name list
+```
+
+`pnpm check` alone does **not** run `skybridge build` (dist is gitignored). The inliner fixture smoke still runs on every CI; **push to `main`** also runs `pnpm --filter menuyukti build` then `pnpm check` so real `dist/self-contained` blobs are validated.
+
+First time (or after lockfile changes):
+
+```bash
+pnpm install
+```
+
+After editing Codex skills under `.agents/skills/`, run `pnpm sync:plugin-skills` before committing so the installable plugin stays in sync. To also refresh your local Codex install, use `pnpm sync:codex-plugin` (then start a new session). See [Codex plugin](./codex-plugin.md).
+
+From the app package (workspace `menuyukti`):
+
+```bash
+cd apps/menuyukti
+pnpm check    # typecheck + test
+pnpm dev      # same as pnpm mcp from root
+```
 
 ## CI
 
-GitHub Actions runs the same `make check` gate on every **pull request** and on **push to `main`** (see [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)). Version-tag releases stay in [`release.yml`](../../.github/workflows/release.yml). The toolchain is pinned via [`rust-toolchain.toml`](../../rust-toolchain.toml) (stable + rustfmt + clippy).
+GitHub Actions (see [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)):
 
-## Crate layout
+- **Every PR / push:** `pnpm check` — Biome, plugin-skill sync, `tsc --noEmit`, Vitest (Node 24, frozen lockfile).
+- **Push to `main` only:** after that gate, build self-contained widgets and re-run `pnpm check` so CSP smokes cover real `dist/self-contained/*.html`.
 
-- `crates/menuyukti` — Excel normalize + analytics library
-- `crates/menuyukti-mcp` — MCP HTTP binary (`menuyukti-mcp`) plus optional `menuyukti-widget-preview` for local widget styling
+Rust binary tag releases are retired (TASK-44.10).
 
-## MCP Apps widget theme
+## Layout
 
-Heatmap widgets (venue slot strength, pair lift) share chrome tokens under
-[`crates/menuyukti-mcp/assets/shared/widget-theme.css`](../../crates/menuyukti-mcp/assets/shared/widget-theme.css).
-Each widget HTML keeps a `/* __MENUYUKTI_SHARED_THEME__ */` marker; the MCP server
-and `make widgets-preview` **inline** that CSS into a self-contained document before
-serving (ChatGPT mounts one HTML resource, so runtime `<link>` is not used).
+- `apps/menuyukti` — **Skybridge MCP server** (source of truth)
+- `plugins/menuyukti` — Codex / ChatGPT Desktop plugin package
+- `.agents/skills` — skill source of truth (synced into the plugin)
+- `workspaces/` — default `MENUYUKTI_DATA_DIR` (includes `demo-cafe-july-2026`)
 
-Edit the shared file for host colors, panel padding, legend/table chrome, and default
-`--heatmap-*` scale tokens. Heatmap widgets share that blue sequential scale unless a
-widget overrides `--heatmap-*` in its own `<style>`.
+## MCP Apps views
+
+Analytics charts mount as Skybridge React views under [`apps/menuyukti/src/views/`](../../apps/menuyukti/src/views/).
+
+- **Fixture preview (no Excel):** from `apps/menuyukti`, run `pnpm widgets:preview` → `http://127.0.0.1:8790/` (query `view` + `kind=populated|empty|error`). Fixtures: [`src/views/fixtures`](../../apps/menuyukti/src/views/fixtures/).
+- **Live DevTools:** `pnpm mcp` → `http://127.0.0.1:8787/` and call the matching `render_*` tool.
+
+Codex Desktop requires self-contained HTML (no `http://127.0.0.1` asset fetches). Production serving hard-fails if `dist/self-contained/<view>.html` is missing after build. See [`scripts/self-contained-csp.mjs`](../../apps/menuyukti/scripts/self-contained-csp.mjs) and [`scripts/inline-widgets.mjs`](../../apps/menuyukti/scripts/inline-widgets.mjs).
+
+The inliner minifies each view into its own HTML blob. React is still duplicated per view: a shared `/assets` chunk would reintroduce localhost fetches that Codex CSP blocks. Further size cuts would need a multi-view shell or a non-React production path.
 
 ## Local data
 
-By default, `make mcp` sets `MENUYUKTI_DATA_DIR` to [`workspaces/`](../../workspaces/). See [Workspaces](./workspaces.md).
+By default, `pnpm mcp` sets `MENUYUKTI_DATA_DIR` to [`workspaces/`](../../workspaces/). See [Workspaces](./workspaces.md).
 
 ## Related guides
 

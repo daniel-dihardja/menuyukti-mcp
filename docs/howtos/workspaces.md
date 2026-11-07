@@ -4,9 +4,9 @@ A **workspace** is a folder for one venue and period (for example July at your c
 
 ## Default location
 
-In the source checkout, use [`workspaces/`](../../workspaces/). That folder is the default `MENUYUKTI_DATA_DIR` when you run `make mcp`.
+In the source checkout, use [`workspaces/`](../../workspaces/). That folder is the default `MENUYUKTI_DATA_DIR` when you run `pnpm mcp` (Skybridge).
 
-With a prebuilt binary, use any folder and set `MENUYUKTI_DATA_DIR` to it — see [Install and run](./install-and-run.md).
+With another data folder, set `MENUYUKTI_DATA_DIR` to it — see [Install and run](./install-and-run.md).
 
 ## Owner flow (3-step ritual)
 
@@ -98,7 +98,7 @@ To **show the heatmap**, ask for the venue slot strength chart. The agent should
 
 To **show the heatmap**, ask for the menu / dish heatmaps chart. In ChatGPT the agent should call **`render_menu_heatmaps`** (MCP Apps widget) — prefer that over narrating raw JSON. The widget toggles daily/weekly views and matrix categories when present (**weak off by default**). Keep `get_menu_heatmaps` for numbers-only answers. In **Codex** (or when the host does not mount MCP Apps), use `get_menu_heatmaps` + the **menuyukti-visualize-menu-heatmaps** skill (see [`.agents/skills/menuyukti-visualize-menu-heatmaps/`](../../.agents/skills/menuyukti-visualize-menu-heatmaps/)) — never both widget and skill redraw in the same turn.
 
-Local styling: `make widgets-preview` lists **Menu heatmaps** fixtures at `http://127.0.0.1:8790/`.
+Local styling: with `pnpm mcp` running, open Skybridge DevTools at `http://127.0.0.1:8787/` and call `render_menu_heatmaps`.
 
 ## Pair lift index (sales alone)
 
@@ -126,4 +126,4 @@ If COGS is missing, drop a COGS Excel into the folder and ask ChatGPT to update 
 
 To **show the sortable table**, ask for the weak items table / chart. In ChatGPT the agent should call **`render_weak_items_review`** (MCP Apps widget) — prefer that over narrating raw JSON. Keep `get_weak_items_review` for numbers-only answers. In **Codex** (or when the host does not mount MCP Apps), use `get_weak_items_review` + the **menuyukti-visualize-weak-items** skill (see [`.agents/skills/menuyukti-visualize-weak-items/`](../../.agents/skills/menuyukti-visualize-weak-items/)) — never both widget and skill redraw in the same turn. There is no Action / keep / remove column.
 
-Local styling: `make widgets-preview` lists **Weak items review** fixtures at `http://127.0.0.1:8790/`.
+Local styling: with `pnpm mcp` running, open Skybridge DevTools at `http://127.0.0.1:8787/` and call `render_weak_items_review`.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Reachability check only — does not start the Menuyukti binary or read POS files.
+# Reachability check only — does not start the Menuyukti server or read POS files.
 set -euo pipefail
 
 URL="${MENUYUKTI_MCP_URL:-http://127.0.0.1:8787/mcp}"
@@ -17,8 +17,8 @@ fi
 
 cat <<EOF
 Menuyukti MCP did not respond at ${URL}.
-Start the local server (MENUYUKTI_DATA_DIR set), then reconnect:
+Start the local Skybridge server (pnpm mcp; MENUYUKTI_DATA_DIR set), then reconnect:
   docs/howtos/install-and-run.md
-This hook never launches the binary and never reads sales files.
+This hook never launches the server and never reads sales files.
 EOF
 exit 0

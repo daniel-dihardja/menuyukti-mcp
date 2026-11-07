@@ -1,80 +1,62 @@
 # Install and run
 
-Menuyukti MCP runs on your computer. ChatGPT (or another MCP client) talks to it locally — your sales files are not uploaded to Menuyukti.
+Menuyukti MCP runs on your computer. ChatGPT / Codex (or another MCP client) talks to it locally — your sales files are not uploaded to Menuyukti.
 
-## Option A — Prebuilt binary (recommended for owners)
+The server is the **Skybridge** TypeScript app in [`apps/menuyukti/`](../../apps/menuyukti/). It serves the MCP URL the Codex plugin expects: **`http://127.0.0.1:8787/mcp`**.
 
-Tagged releases publish archives for Windows (x64), macOS (Apple Silicon + Intel), and Linux (x64 + ARM64). No Rust install.
+## From this repo (recommended)
 
-1. Download the archive for your OS from [GitHub Releases](https://github.com/daniel-dihardja/menuyukti-mcp/releases).
-2. Extract it. Inside you’ll find `menuyukti-mcp` (or `menuyukti-mcp.exe` on Windows), plus `LICENSE` and `README.md`.
-3. Create a folder for your analysis workspaces (any path you like).
-4. Start the server:
-
-```bash
-# macOS / Linux
-MENUYUKTI_DATA_DIR="/path/to/workspaces" ./menuyukti-mcp
-
-# Windows (PowerShell)
-$env:MENUYUKTI_DATA_DIR="C:\path\to\workspaces"
-.\menuyukti-mcp.exe
-```
-
-Keep that terminal open while ChatGPT / your MCP client is connected.
-
-The server listens at **`http://127.0.0.1:8787/mcp`**.
-
-## Option B — From source (developers)
-
-1. Install [Rust](https://rustup.rs/) (stable toolchain with Cargo).
+1. Install **[Node.js 24+](https://nodejs.org/)** (Skybridge `engines`) and **pnpm 10+**.
 2. Clone this repository and open a terminal in the repo root.
 3. Put POS Excel exports in [`workspaces/`](../../workspaces/) (a demo workspace is included), or point `MENUYUKTI_DATA_DIR` elsewhere.
-4. Start the server:
+4. Install deps once, then start the server:
 
 ```bash
-make mcp
-# or: bash scripts/run-mcp.sh
-# or: MENUYUKTI_DATA_DIR="$PWD/workspaces" cargo run -p menuyukti-mcp --bin menuyukti-mcp
+pnpm install
+pnpm mcp          # Vite dev + DevTools (local preview)
+# Codex Desktop widgets: use production (self-contained HTML — no localhost asset fetches)
+pnpm mcp:prod
+# or: bash scripts/run-mcp-skybridge-prod.sh
 ```
 
-Optional: open [MCP Inspector](https://modelcontextprotocol.io/) against the running server (needs Node / `npx`):
+Keep that terminal open while ChatGPT / Codex is connected.
+
+- **MCP:** `http://127.0.0.1:8787/mcp` (matches [`plugins/menuyukti/mcp.json`](../../plugins/menuyukti/mcp.json))
+- **Codex Desktop:** prefer `pnpm mcp:prod`. Dev (`pnpm mcp`) shells load Vite assets from `127.0.0.1`, which Codex CSP often blocks (widget timeout). Production inlines each view into one HTML resource (same idea as the old Rust widgets).
+- **DevTools** (call tools / preview `render_*` views without ChatGPT): `http://127.0.0.1:8787/` with `pnpm mcp`
+- Details: [`apps/menuyukti/README.md`](../../apps/menuyukti/README.md)
+
+Optional: open [MCP Inspector](https://modelcontextprotocol.io/) against the running server:
 
 ```bash
-make mcp-inspect
+pnpm mcp:inspect
 ```
 
-### Widget preview (styles / mock data)
+## Preview views without ChatGPT
 
-To style MCP Apps widgets without ChatGPT or the MCP server, run the Rust preview harness:
+With the server running, open Skybridge DevTools at `http://127.0.0.1:8787/` and call:
 
-```bash
-make widgets-preview
-# or: bash scripts/run-widget-preview.sh
-# or: cargo run -p menuyukti-mcp --bin menuyukti-widget-preview
-```
-
-Open **`http://127.0.0.1:8790/`**, pick a widget (Hello World, venue slot strength, pair lift, menu heatmaps, or an empty edge case). The page iframes the real HTML under `crates/menuyukti-mcp/assets/` (with shared `widget-theme.css` inlined for heatmaps) and injects mock `structuredContent`. There is **no live reload** — refresh the browser after editing assets. Node is not required for this path. Optional port override: `MENUYUKTI_WIDGET_PREVIEW_PORT`. See [Develop](./develop.md#mcp-apps-widget-theme) for the shared theme.
+- `render_venue_slot_strength` / `render_pair_lift_matrix` / `render_menu_heatmaps` — path `demo-cafe-july-2026`
+- `render_weak_items_review` — workspace with sales + COGS (demo cafe works)
+- `render_hello_world_widget` — mock smoke only
 
 ## Next steps
 
 - Put sales files in a [workspace](./workspaces.md).
-- Prefer installing the **[Menuyukti Codex plugin](../../plugins/menuyukti/README.md)** (skills + localhost MCP) from this repo’s marketplace in **ChatGPT Desktop / Codex**. The plugin is Desktop-only and still requires this binary to be running. Maintainer notes: [Codex plugin howto](./codex-plugin.md).
+- Install the **[Menuyukti Codex plugin](../../plugins/menuyukti/README.md)** (skills + localhost MCP) from this repo’s marketplace in **ChatGPT Desktop / Codex**. Keep `pnpm mcp` running while you chat. Maintainer notes: [Codex plugin howto](./codex-plugin.md).
 - Manual alternative: in ChatGPT Desktop settings, add Menuyukti MCP as an MCP server at `http://127.0.0.1:8787/mcp`, then add skills from [`.agents/skills/`](../../.agents/skills/) one by one.
 - Ask *What’s my Menuyukti setup status?* or try `demo-cafe-july-2026`.
 - If your POS export isn’t recognized, see [Custom POS columns](./custom-pos-columns.md).
 
-## MCP Apps widgets (Hello World / charts)
+## MCP Apps widgets
 
-Tool status text like “Hello World widget ready.” means ChatGPT called the tool.
-An inline iframe is a separate step: ChatGPT must also `resources/read` the
-`ui://` HTML template.
+Tool status text like “Venue slot strength ready.” means the host called the tool.
+An inline iframe is a separate step: the host must also mount the Skybridge `ui://` view.
 
 If the tool succeeds but no widget appears:
 
-1. Restart `make mcp`, then refresh the MCP connection in ChatGPT and start a **new** chat.
+1. Restart `pnpm mcp`, then refresh the MCP connection in ChatGPT / Codex and start a **new** chat.
 2. On Chrome 142+, OpenAI’s Apps SDK examples require disabling
    `chrome://flags/#local-network-access-check` (set to Disabled) and restarting
    Chrome — otherwise localhost MCP widgets stay blank.
-3. Prefer ChatGPT Desktop or a ChatGPT plugin connected to an HTTPS tunnel
-   (`ngrok http 8787` → `https://….ngrok.app/mcp`) when local Desktop MCP only
-   shows tool text.
+3. Prefer ChatGPT Desktop. Web connectors need a tunnel (`pnpm --filter menuyukti dev:tunnel`) — out of Menuyukti 1.0 local Desktop scope.

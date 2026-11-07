@@ -1,10 +1,31 @@
 # Menu item heatmaps — Codex HTML recipe
 
-Matches Menuyukti v3 `MenuHeatmapContent` / `adaptDailyHeatmapMatrix` / `adaptWeeklyHeatmapMatrix`: cell value is raw unit **`quantity`**.
+Matches the Skybridge React view `apps/menuyukti/src/views/menu-heatmaps.tsx` (+ `menu-heatmap-hours.ts`, `shared.tsx`, `widget.css`). Cell value is raw unit **`quantity`**.
 
-Source tool: `get_menu_heatmaps` → `{ pos, menu_count, heatmaps: MenuHeatmapPayload[] }` (`crates/menuyukti/src/analytics/heatmaps.rs`).
+Source tool: `get_menu_heatmaps` → `{ pos, menu_count, heatmaps: MenuHeatmapPayload[] }` (`apps/menuyukti/src/lib/analytics/heatmaps.ts`). Prefer `render_menu_heatmaps` when the host mounts MCP Apps (defaults: top 25 menus + active daily hours).
 
 **Write the HTML yourself.** Do not run Python or other render scripts. Do not also dump a markdown grid for the same ask.
+
+## Theme sync (fallback-only)
+
+HTML fallbacks **must not invent a second palette**. Source of truth: `apps/menuyukti/src/views/widget.css` + `cellStyle` / `intensity` / `lightTextClass` in `shared.tsx`.
+
+When writing local HTML, use the **light-mode** token hexes as a fallback-only ramp (same table as venue slot strength):
+
+| Token | Light fallback hex |
+| --- | --- |
+| `--heatmap-low` | `#dbeafe` |
+| `--heatmap-high` | `#2563eb` |
+| `--heatmap-null` | `#e2e8f0` |
+| `--color-text-primary` | `#0f172a` |
+| `--color-text-secondary` | `#64748b` |
+| `--color-background-primary` | `#ffffff` |
+| `--color-background-secondary` | `#f8fafc` |
+| `--color-background-tertiary` | `#f1f5f9` |
+
+Intensity (same as the widget): `t = (value - min) / (max - min || 1)` over **cells you are drawing**, clamp to `[0, 1]`. Light cell text when **`t >= 0.55`**. Do not use alternate sky/cyan ramps (`#e0f2fe` → `#0369a1`).
+
+If you change widget colors, update this table in the same change set.
 
 ## Payload fields
 
@@ -13,7 +34,7 @@ Per menu item:
 - `menu` (row key / label)
 - `menu_category` / `menu_category_detail` (optional POS filters)
 - `matrix_category` — optional menu-engineering quadrant: `star` | `plow_horse` | `puzzle` | `weak` (present when the tool path is a workspace with usable COGS; otherwise `null` / omitted)
-- `daily_heatmap`: 24 rows `{ hour: 0..23, quantity }`
+- `daily_heatmap`: 24 rows `{ hour: 0..23, quantity }` (or fewer when `active_hours_only` pruned the payload)
 - `weekly_heatmap`: 7 rows `{ day: mon..sun, quantity }`
 - `reporting_period` (e.g. `YYYY-MM`)
 
@@ -21,22 +42,30 @@ Per menu item:
 
 1. Named menus win when the user listed dishes.
 2. Otherwise sort by **weekly total** `sum(weekly_heatmap.quantity)` descending (MCP already sorts this way; re-check after filters).
-3. Default pool size **N = 25** (v3 `MENU_HEATMAP_CHAT_TOP_N`).
-4. Daily display may show top **10** of that pool; weekly may show all 25 if readable.
+3. Default pool size **N = 25** (same as `render_menu_heatmaps` / `DEFAULT_MENU_HEATMAP_TOP_N`).
+4. Daily display may show top **10** of that pool when the table would be too wide; weekly may show all 25 if readable.
 5. Prefer a **workspace folder** path so `matrix_category` is populated. Do not invent categories when the field is missing.
 
-## Daily matrix
+## Layout contract (must match React widget)
 
-- Columns: hours from **start** to **end** inclusive. Default **8–22** when venue opening hours are unknown (v3 `DAILY_HEATMAP_DEFAULT_*`). If `knowledge.md` / owner gives open–close hours, use that range instead.
-- Column labels: `08:00`, `09:00`, … (zero-padded hour).
-- Rows: selected `menu` labels.
-- Cell: quantity for that hour (0 if missing).
+### Weekly matrix
 
-## Weekly matrix
+| Axis | Order / content |
+| --- | --- |
+| **Columns** | `mon` … `sun` → Mon … Sun |
+| **Rows** | Selected `menu` labels (sticky first column) |
+| Cell | Quantity for that weekday (0 if missing) |
 
-- Columns: Mon … Sun (`mon` … `sun`).
-- Rows: selected `menu` labels.
-- Cell: quantity for that weekday.
+### Daily matrix
+
+| Axis | Order / content |
+| --- | --- |
+| **Columns** | Hours with **any** unit sales across the **drawn** rows (widget: `activeDailyHours` — hour total ≥ 1). Ascending hour order. |
+| Column labels | Prefer `0`…`23` or zero-padded `HH` to match the widget’s numeric hour headers; `08:00`-style labels are fine if consistent |
+| **Rows** | Selected `menu` labels (sticky first column) |
+| Cell | Quantity for that hour (0 if missing) |
+
+If **no** hour has sales in the drawn set, fall back to hours **8–22** inclusive and say so in the meta line (legacy Codex default when venue hours are unknown). Prefer active hours whenever the payload or drawn rows support them — matching `render_menu_heatmaps` (`active_hours_only` default true).
 
 ## HTML heatmap (required)
 
@@ -44,19 +73,17 @@ Write one self-contained `.html` file the owner can open locally.
 
 ### Color / intensity
 
-Let `max_q` = maximum quantity among **cells you are drawing** (0 → show `0` with neutral background).
+Let `min_q` / `max_q` = min/max quantity among **cells you are drawing** (all-zero → show `0` with low/null background).
 
 - Cell text = raw integer `quantity`
-- Cell background = sequential intensity from **0 → max_q** in the drawn matrix
-  - Suggested scale: light slate / sky (`#f1f5f9` or `#e0f2fe`) → strong blue (`#0369a1` or `#2563eb`)
-  - Light text when intensity is high (roughly top quartile)
+- Cell background = sequential ramp **min_q → max_q** using theme tokens above
 - Hover / `title` = menu · column label · quantity · matrix category when present
-- Legend: Low → High units within this table; note daily hour range when relevant
+- Legend: Low → High units within this table; note daily hour range / active-hour count when relevant
 - No external CDN
 
 ### Menu-engineering category filter (required when `matrix_category` is present)
 
-If **any** selected row has a non-null `matrix_category`, add a filter bar above the table:
+If **any** selected row has a non-null `matrix_category`, add a filter bar above the table (same defaults as the React widget):
 
 - Four checkboxes labeled **Star**, **Plow horse**, **Puzzle**, **Weak** (values `star` / `plow_horse` / `puzzle` / `weak`)
 - Each row must carry its category (e.g. `data-matrix-category="star"`) so toggles can show/hide it with a few lines of inline JS
@@ -68,7 +95,7 @@ Suggested minimal JS pattern: listen to checkbox `change`, toggle `tr` display b
 
 ### Page chrome
 
-- Title: “Menu heatmaps — weekly units” or “Menu heatmaps — daily units (hours HH:00–HH:00)”
+- Title: “Menu heatmaps — weekly units” or “Menu heatmaps — daily units (N hours with sales)” / hour range
 - Meta: POS/workspace, item count shown / total, reporting period when present; note when matrix filters are active (weak hidden by default)
 - Sticky first column for menu names; optionally show a short category badge next to the name when `matrix_category` exists
 - Horizontally scrollable table for daily views

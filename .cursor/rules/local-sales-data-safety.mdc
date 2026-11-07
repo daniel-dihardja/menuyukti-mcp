@@ -1,6 +1,6 @@
 ---
 description: Local POS sales data safety — path gating and privacy
-globs: "crates/**/*.rs"
+globs: "apps/menuyukti/src/**/*.{ts,tsx}"
 alwaysApply: false
 ---
 
@@ -10,22 +10,23 @@ Sales Excel files stay on the owner’s machine. Treat path handling as a securi
 
 ## Path gating
 
-- Resolve user-supplied paths only via `resolve_allowed_path` / `MENUYUKTI_DATA_DIR`
-- Reject traversal and paths outside the data dir (see `crates/menuyukti/src/paths.rs`)
+- Resolve user-supplied paths only via `resolveAllowedPath` / `MENUYUKTI_DATA_DIR`
+- Reject traversal and paths outside the data dir (see `apps/menuyukti/src/lib/paths.ts`)
 - Never open arbitrary absolute paths from tool arguments without that gate
 
-```rust
+```ts
 // ❌ BAD — trust client path
-std::fs::read(user_path)?;
+readFileSync(userPath);
 
 // ✅ GOOD — gate then read
-let path = resolve_allowed_path(user_path, None)?;
-std::fs::read(path)?;
+const path = resolveAllowedPath(userPath);
+readFileSync(path);
 ```
 
 ## Privacy
 
 - Do not log full sales row contents, PII, or spreadsheet cell dumps at info/default levels
 - Prefer paths relative to `MENUYUKTI_DATA_DIR` in tool results and logs
-- Do not add network upload, telemetry, or remote storage of POS files
+- Do not add network upload or remote storage of POS files
+- Keep Skybridge telemetry opted out in run scripts (`DO_NOT_TRACK` / `SKYBRIDGE_TELEMETRY_DISABLED`)
 - Auth/secrets (API keys) never belong in the repo or fixtures
