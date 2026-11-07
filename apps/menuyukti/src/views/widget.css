@@ -1,0 +1,308 @@
+/* Shared Menuyukti MCP Apps view theme (ported from Rust widget-theme.css). */
+
+:root {
+  color-scheme: light dark;
+  --color-background-primary: light-dark(#ffffff, #171717);
+  --color-background-secondary: light-dark(#f8fafc, #212121);
+  --color-background-tertiary: light-dark(#f1f5f9, #2a2a2a);
+  --color-background-warning: light-dark(#fef3c7, #422006);
+  --color-text-primary: light-dark(#0f172a, #fafafa);
+  --color-text-secondary: light-dark(#64748b, #a3a3a3);
+  --color-text-warning: light-dark(#92400e, #fcd34d);
+  --color-border-primary: light-dark(#e2e8f0, #404040);
+  --font-sans: "Segoe UI", system-ui, -apple-system, sans-serif;
+  --heatmap-low: light-dark(#dbeafe, #1e3a5f);
+  --heatmap-high: light-dark(#2563eb, #60a5fa);
+  --heatmap-cell-ink-on-high: light-dark(#f8fafc, #0f172a);
+  --heatmap-null: light-dark(#e2e8f0, #2a2a2a);
+  --pad-top: 48px;
+  --pad-x: 32px;
+  --pad-bottom: 32px;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-background-primary);
+}
+
+.myk-panel {
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--pad-top) var(--pad-x) var(--pad-bottom);
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+}
+
+.myk-panel h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.myk-desc {
+  margin: 6px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.myk-meta {
+  margin: 10px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+}
+
+.myk-showing {
+  color: var(--color-text-secondary);
+  font-size: 0.72rem;
+}
+
+.myk-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+}
+
+.myk-legend-bar {
+  flex: 1;
+  min-width: 6rem;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--heatmap-low),
+    color-mix(in srgb, var(--heatmap-high) 50%, var(--heatmap-low)),
+    var(--heatmap-high)
+  );
+}
+
+.myk-scroll {
+  margin-top: 14px;
+  overflow-x: auto;
+}
+
+.myk-table {
+  border-collapse: separate;
+  border-spacing: 1px;
+  width: 100%;
+  min-width: 420px;
+  font-size: 0.72rem;
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+}
+
+.myk-table th,
+.myk-table td {
+  border: 0;
+  padding: 10px 4px;
+  text-align: center;
+}
+
+.myk-table th {
+  background: var(--color-background-tertiary);
+  font-weight: 600;
+}
+
+.myk-table th.row-label,
+.myk-table td.row-label {
+  text-align: left;
+  padding-left: 8px;
+  white-space: nowrap;
+  background: var(--color-background-secondary);
+  font-weight: 600;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+
+.myk-table td.cell {
+  font-weight: 600;
+  min-width: 3.2rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.myk-table td.cell.light-text {
+  color: var(--heatmap-cell-ink-on-high);
+}
+
+.myk-table td.cell.null-cell {
+  background: var(--heatmap-null);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.myk-empty {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--color-background-warning);
+  color: var(--color-text-warning);
+  font-size: 0.9rem;
+}
+
+.myk-metric-bar,
+.myk-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-top: 14px;
+}
+
+.myk-metric-label {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.myk-seg {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--color-border-primary);
+  border-radius: 8px;
+  background: var(--color-background-secondary);
+  gap: 2px;
+}
+
+.myk-seg button {
+  appearance: none;
+  margin: 0;
+  border: 0;
+  border-radius: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1.2;
+}
+
+.myk-seg button:hover {
+  color: var(--color-text-primary);
+}
+
+.myk-seg button[aria-checked="true"],
+.myk-seg button[aria-pressed="true"] {
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  box-shadow: 0 0 0 1px var(--color-border-primary);
+}
+
+.myk-seg button:focus-visible {
+  outline: 2px solid var(--heatmap-high);
+  outline-offset: 1px;
+}
+
+.myk-filter-bar label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.myk-kpis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.myk-kpi {
+  flex: 1 1 7rem;
+  min-width: 7rem;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border-primary);
+}
+
+.myk-kpi .label {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--color-text-secondary);
+}
+
+.myk-kpi .value {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.myk-sort-hint {
+  margin: 8px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.72rem;
+}
+
+.myk-table.bordered {
+  border-collapse: collapse;
+  border-spacing: 0;
+  border: 1px solid var(--color-border-primary);
+  min-width: 520px;
+}
+
+.myk-table.bordered th,
+.myk-table.bordered td {
+  border: 1px solid var(--color-border-primary);
+  padding: 8px 10px;
+}
+
+.myk-table th.sortable button {
+  appearance: none;
+  width: 100%;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.myk-table th.sortable.row-label button {
+  justify-content: flex-start;
+}
+
+.myk-table th.sortable .sort-ind {
+  opacity: 0.35;
+  font-size: 0.7rem;
+}
+
+.myk-table th.sortable button[aria-sort="ascending"] .sort-ind,
+.myk-table th.sortable button[aria-sort="descending"] .sort-ind {
+  opacity: 1;
+}
+
+.myk-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  background: var(--color-background-tertiary);
+  color: var(--color-text-secondary);
+}
+
+.myk-caption {
+  margin: 10px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.7rem;
+}

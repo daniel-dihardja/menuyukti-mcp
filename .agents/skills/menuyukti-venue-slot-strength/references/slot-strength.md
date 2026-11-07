@@ -1,6 +1,6 @@
 # Venue slot strength (Menuyukti)
 
-Matches `crates/menuyukti/src/analytics/slot_demand.rs`.
+Matches `apps/menuyukti/src/lib/analytics/slot-demand.ts`.
 
 ## Order definition
 

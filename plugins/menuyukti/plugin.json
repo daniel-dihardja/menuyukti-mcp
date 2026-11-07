@@ -24,7 +24,7 @@
       "interface": {
         "displayName": "Menuyukti",
         "shortDescription": "Analyze local POS Excel sales privately with Codex.",
-        "longDescription": "Connects Codex to a local Menuyukti MCP server on your computer. Bundle includes coaching and visualisation skills for venue slot strength, menu heatmaps, and weak items. Requires the Menuyukti MCP binary running at http://127.0.0.1:8787/mcp and MENUYUKTI_DATA_DIR with your workspaces. Desktop only (localhost MCP).",
+        "longDescription": "Connects Codex to a local Menuyukti Skybridge MCP server on your computer. Bundle includes coaching and visualisation skills for venue slot strength, menu heatmaps, and weak items. Requires pnpm mcp (Node 24+) at http://127.0.0.1:8787/mcp and MENUYUKTI_DATA_DIR with your workspaces. Desktop only (localhost MCP).",
         "developerName": "Menuyukti",
         "category": "Productivity",
         "capabilities": ["Read"],
