@@ -1,24 +1,29 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import type { MenuBasketPair } from "../lib/analytics/index.js";
 import { useToolInfo } from "../helpers.js";
 import {
   Empty,
   Legend,
   Loading,
   Panel,
+  ToolError,
   cellStyle,
   intensity,
   lightTextClass,
+  toolErrorMessage,
+  usePersistedJson,
 } from "./shared.js";
 
-type Pair = {
-  menu_a?: string;
-  menu_b?: string;
-  co_order_count?: number;
-  support?: number;
-  lift?: number;
-};
-
 type SortKey = "label" | number;
+type SortState = { key: SortKey; dir: "asc" | "desc" };
+
+function isSortState(value: unknown): value is SortState {
+  if (!value || typeof value !== "object") return false;
+  const v = value as { key?: unknown; dir?: unknown };
+  const keyOk = v.key === "label" || (typeof v.key === "number" && Number.isInteger(v.key) && v.key >= 0);
+  const dirOk = v.dir === "asc" || v.dir === "desc";
+  return keyOk && dirOk;
+}
 
 function cellLift(
   matrix: Array<Array<number | null>>,
@@ -38,10 +43,10 @@ function formatLift(n: number): string {
 }
 
 function findPair(
-  pairs: Pair[],
+  pairs: MenuBasketPair[],
   a: string,
   b: string,
-): Pair | undefined {
+): MenuBasketPair | undefined {
   return pairs.find(
     (p) =>
       (p.menu_a === a && p.menu_b === b) ||
@@ -51,12 +56,27 @@ function findPair(
 
 export default function PairLiftMatrix() {
   const { output, isPending } = useToolInfo<"render_pair_lift_matrix">();
-  const [sortKey, setSortKey] = useState<SortKey>("label");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sort, setSort] = usePersistedJson<SortState>(
+    "menuyukti-pair-lift-sort",
+    { key: "label", dir: "asc" },
+    isSortState,
+  );
 
-  const focus = (output?.focus_menus ?? []) as string[];
-  const matrix = (output?.matrix_lift ?? []) as Array<Array<number | null>>;
-  const pairs = (output?.pairs ?? []) as Pair[];
+  const focus: string[] = Array.isArray(output?.focus_menus)
+    ? output.focus_menus
+    : [];
+  const matrix: Array<Array<number | null>> = Array.isArray(output?.matrix_lift)
+    ? output.matrix_lift
+    : [];
+  const pairs: MenuBasketPair[] = Array.isArray(output?.pairs)
+    ? output.pairs
+    : [];
+
+  const sortKey: SortKey =
+    typeof sort.key === "number" && sort.key >= focus.length
+      ? "label"
+      : sort.key;
+  const sortDir = sort.dir;
 
   const { min, max, order } = useMemo(() => {
     const lifts: number[] = [];
@@ -89,16 +109,27 @@ export default function PairLiftMatrix() {
   }, [focus, matrix, sortKey, sortDir]);
 
   function toggleSort(next: SortKey) {
-    if (sortKey === next) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortKey(next);
-      setSortDir(next === "label" ? "asc" : "desc");
-    }
+    setSort((prev) => {
+      if (prev.key === next) {
+        return { key: next, dir: prev.dir === "asc" ? "desc" : "asc" };
+      }
+      return { key: next, dir: next === "label" ? "asc" : "desc" };
+    });
   }
 
   if (isPending || !output) {
     return <Loading label="Pair lift index" />;
+  }
+
+  const toolError = toolErrorMessage(output);
+  if (toolError) {
+    return (
+      <ToolError
+        title="Pair lift index"
+        description="Focus menu × focus menu co-purchase lift."
+        message={toolError}
+      />
+    );
   }
 
   if (focus.length < 2 || matrix.length === 0) {

@@ -1,9 +1,11 @@
 ---
 id: TASK-49
 title: Harden Skybridge analytics widget serving and DX
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@agent'
 created_date: '2026-11-07T03:59:00Z'
+updated_date: '2026-11-07T04:22:00Z'
 labels:
   - skybridge
   - widgets
@@ -33,7 +35,19 @@ Packaging/stdio launch stays under TASK-48.2 — do not duplicate that spike her
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Child tasks cover production serving hardening, error UX, DRY handlers/types, bundle size, tests/preview DX, and optional upstream/skill follow-ups
-- [ ] #2 TASK-48.2 remains the stdio/plugin packaging spike; this epic does not redefine plugin ZIP layout
-- [ ] #3 No change required to analytics math in lib/analytics unless a child task explicitly scopes payload pruning
+- [x] #1 Child tasks cover production serving hardening, error UX, DRY handlers/types, bundle size, tests/preview DX, and optional upstream/skill follow-ups
+- [x] #2 TASK-48.2 remains the stdio/plugin packaging spike; this epic does not redefine plugin ZIP layout
+- [x] #3 No change required to analytics math in lib/analytics unless a child task explicitly scopes payload pruning
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+All 14 children Done (49.1–49.14). Low polish: a11y/theme/sort (49.12), keep self-contained patch GO (49.13/doc-4), skill recipes synced to widget.css (49.14). Stdio/plugin ZIP remains TASK-48.2. Analytics math unchanged except intentional heatmap prune in 49.11.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Hardened Skybridge analytics widgets for Codex Desktop: self-contained HTML hard-fail + package-root paths + CSP smokes; shared get_/render_ payloads and outputSchema; tool errors in views; minify; preview + React tests; heatmap prune; a11y/theme/sort polish; upstream spike keeps the inliner patch; Codex skill recipes aligned to widget.css. Packaging/stdio stays on TASK-48.2.
+<!-- SECTION:FINAL_SUMMARY:END -->

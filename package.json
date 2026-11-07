@@ -19,6 +19,7 @@
     "mcp:prod": "bash scripts/run-mcp-skybridge-prod.sh",
     "mcp:tunnel": "bash scripts/run-mcp-skybridge-tunnel.sh",
     "mcp:inspect": "bash scripts/mcp-inspect.sh",
+    "widgets:preview": "pnpm --filter menuyukti widgets:preview",
     "check": "bash scripts/check.sh",
     "typecheck": "pnpm --filter menuyukti typecheck",
     "test": "pnpm --filter menuyukti test",

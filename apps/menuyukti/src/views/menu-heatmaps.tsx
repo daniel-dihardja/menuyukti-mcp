@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import type { MenuHeatmapPayload } from "../lib/analytics/index.js";
 import { useToolInfo } from "../helpers.js";
 import {
   activeDailyHours,
@@ -10,20 +11,13 @@ import {
   Loading,
   Panel,
   Segmented,
+  ToolError,
   cellStyle,
   intensity,
   lightTextClass,
+  toolErrorMessage,
   usePersistedState,
 } from "./shared.js";
-
-type HeatRow = { hour?: number; day?: string; quantity?: number };
-type HeatmapItem = {
-  menu?: string;
-  matrix_category?: string | null;
-  daily_heatmap?: HeatRow[];
-  weekly_heatmap?: HeatRow[];
-  reporting_period?: string;
-};
 
 type ViewId = "weekly" | "daily";
 type CatId = "star" | "plow_horse" | "puzzle" | "weak";
@@ -52,14 +46,14 @@ const DEFAULT_CATS: Record<CatId, boolean> = {
   weak: false,
 };
 
-function categoryOf(item: HeatmapItem): CatId | null {
+function categoryOf(item: MenuHeatmapPayload): CatId | null {
   const raw = item.matrix_category;
   if (!raw) return null;
   const key = String(raw).toLowerCase() as CatId;
   return key in CAT_LABEL ? key : null;
 }
 
-function weeklyValues(item: HeatmapItem): number[] {
+function weeklyValues(item: MenuHeatmapPayload): number[] {
   const rows = item.weekly_heatmap ?? [];
   const byDay = new Map(
     rows.map((r) => [String(r.day ?? "").toLowerCase(), Number(r.quantity ?? 0)]),
@@ -67,7 +61,7 @@ function weeklyValues(item: HeatmapItem): number[] {
   return WEEKDAYS.map((d) => byDay.get(d) ?? 0);
 }
 
-function weeklyTotal(item: HeatmapItem): number {
+function weeklyTotal(item: MenuHeatmapPayload): number {
   return weeklyValues(item).reduce((s, n) => s + n, 0);
 }
 
@@ -110,7 +104,9 @@ export default function MenuHeatmaps() {
     });
   }
 
-  const heatmaps = (output?.heatmaps ?? []) as HeatmapItem[];
+  const heatmaps: MenuHeatmapPayload[] = Array.isArray(output?.heatmaps)
+    ? output.heatmaps
+    : [];
   const categoriesPresent = heatmaps.some((h) => categoryOf(h) != null);
 
   const visible = useMemo(() => {
@@ -153,6 +149,17 @@ export default function MenuHeatmaps() {
 
   if (isPending || !output) {
     return <Loading label="Menu heatmaps" />;
+  }
+
+  const toolError = toolErrorMessage(output);
+  if (toolError) {
+    return (
+      <ToolError
+        title="Menu heatmaps"
+        description="Unit quantity by dish — daily or weekly."
+        message={toolError}
+      />
+    );
   }
 
   if (!Array.isArray(output.heatmaps) || heatmaps.length === 0) {

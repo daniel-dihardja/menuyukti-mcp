@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import type { SlotDemandCell } from "../lib/analytics/index.js";
 import { useToolInfo } from "../helpers.js";
 import {
   Empty,
@@ -6,22 +7,13 @@ import {
   Loading,
   Panel,
   Segmented,
+  ToolError,
   cellStyle,
   intensity,
   lightTextClass,
+  toolErrorMessage,
   usePersistedState,
 } from "./shared.js";
-
-type SlotCell = {
-  day?: string;
-  meal_period?: string;
-  meal_period_label?: string;
-  meal_period_hours_label?: string;
-  order_count?: number;
-  traffic_share?: number;
-  demand_index?: number;
-  relative_demand?: string;
-};
 
 type MetricId = "demand" | "orders" | "share";
 
@@ -48,7 +40,7 @@ const METRICS: Record<
   {
     showing: string;
     legend: string;
-    field: (c: SlotCell) => number;
+    field: (c: SlotDemandCell) => number;
     format: (n: number) => string;
   }
 > = {
@@ -73,7 +65,7 @@ const METRICS: Record<
   },
 };
 
-function periodLabel(cell: SlotCell | undefined, period: string): string {
+function periodLabel(cell: SlotDemandCell | undefined, period: string): string {
   if (!cell) return period;
   const label = cell.meal_period_label ?? "";
   const hours = cell.meal_period_hours_label ?? "";
@@ -89,11 +81,13 @@ export default function VenueSlotStrength() {
     ["demand", "orders", "share"],
   );
 
-  const profile = (output?.slot_demand_profile ?? []) as SlotCell[];
+  const profile: SlotDemandCell[] = Array.isArray(output?.slot_demand_profile)
+    ? output.slot_demand_profile
+    : [];
   const metric = METRICS[metricId];
 
   const { byKey, min, max, periodLabels } = useMemo(() => {
-    const map = new Map<string, SlotCell>();
+    const map = new Map<string, SlotDemandCell>();
     for (const cell of profile) {
       const day = String(cell.day ?? "").toLowerCase();
       const period = String(cell.meal_period ?? "").toLowerCase();
@@ -115,6 +109,17 @@ export default function VenueSlotStrength() {
 
   if (isPending || !output) {
     return <Loading label="Venue slot strength" />;
+  }
+
+  const toolError = toolErrorMessage(output);
+  if (toolError) {
+    return (
+      <ToolError
+        title="Venue slot strength"
+        description="Weekday × meal-period demand."
+        message={toolError}
+      />
+    );
   }
 
   if (!Array.isArray(output.slot_demand_profile)) {

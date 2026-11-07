@@ -37,7 +37,7 @@ Definitions: [references/slot-strength.md](references/slot-strength.md). Custom 
 Follow [references/heatmap-recipe.md](references/heatmap-recipe.md). **Never** show two charts for the same ask.
 
 1. If **`render_venue_slot_strength` mounted a view** → do **not** write HTML. Narrate only (peaks / staffing).
-2. Else from `get_venue_slot_strength` JSON: write a self-contained **HTML** color heatmap. Cells = `demand_index`; blue intensity min→max across the profile; **1.0 = average**. Tell the owner the path and to open it in a browser.
+2. Else from `get_venue_slot_strength` JSON: write a self-contained **HTML** color heatmap per the recipe (axes: columns = Mon–Sun, rows = meal periods; colors from `widget.css` fallback tokens). Cells = `demand_index`; intensity min→max; light text when `t >= 0.55`; **1.0 = average**. Tell the owner the path and to open it in a browser.
 3. Do **not** also print a markdown glyph grid for the same ask.
 4. Optionally list peak/trough slots with `order_count`.
 

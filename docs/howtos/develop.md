@@ -27,6 +27,16 @@ pnpm backlog              # Backlog.md board (optional)
 
 `pnpm mcp:prod` runs `skybridge build`, inlines each view into `dist/self-contained/*.html`, then `skybridge start`. Use that for Codex; use `pnpm mcp` for DevTools/HMR.
 
+After changing MCP Apps views or the widget inliner, also verify self-contained CSP artifacts:
+
+```bash
+pnpm --filter menuyukti build   # writes dist/self-contained/*.html
+pnpm check                      # vitest asserts CSP-clean HTML when dist exists;
+                                # always covers the inliner fixture + view-name list
+```
+
+`pnpm check` alone does **not** run `skybridge build` (dist is gitignored). The inliner fixture smoke still runs in CI; validating the real production blobs needs the build step above (or `pnpm mcp:prod`).
+
 First time (or after lockfile changes):
 
 ```bash
@@ -58,7 +68,14 @@ Rust binary tag releases are retired (TASK-44.10).
 
 ## MCP Apps views
 
-Analytics charts mount as Skybridge React views under [`apps/menuyukti/src/views/`](../../apps/menuyukti/src/views/). Preview them with `pnpm mcp` → DevTools at `http://127.0.0.1:8787/` by calling the matching `render_*` tool.
+Analytics charts mount as Skybridge React views under [`apps/menuyukti/src/views/`](../../apps/menuyukti/src/views/).
+
+- **Fixture preview (no Excel):** from `apps/menuyukti`, run `pnpm widgets:preview` → `http://127.0.0.1:8790/` (query `view` + `kind=populated|empty|error`). Fixtures: [`src/views/fixtures`](../../apps/menuyukti/src/views/fixtures/).
+- **Live DevTools:** `pnpm mcp` → `http://127.0.0.1:8787/` and call the matching `render_*` tool.
+
+Codex Desktop requires self-contained HTML (no `http://127.0.0.1` asset fetches). Production serving hard-fails if `dist/self-contained/<view>.html` is missing after build. See [`scripts/self-contained-csp.mjs`](../../apps/menuyukti/scripts/self-contained-csp.mjs) and [`scripts/inline-widgets.mjs`](../../apps/menuyukti/scripts/inline-widgets.mjs).
+
+The inliner minifies each view into its own HTML blob. React is still duplicated per view: a shared `/assets` chunk would reintroduce localhost fetches that Codex CSP blocks. Further size cuts would need a multi-view shell or a non-React production path.
 
 ## Local data
 

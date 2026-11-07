@@ -1,14 +1,17 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import type {
+  WeakDisplayRow,
+  WeakPortfolioStats,
+} from "../lib/analytics/index.js";
 import { useToolInfo } from "../helpers.js";
-import { Empty, Loading, Panel } from "./shared.js";
-
-type WeakRow = {
-  menu?: string;
-  units_sold?: number;
-  avg_qty_per_day?: number | null;
-  contribution_margin?: number;
-  contribution_margin_share?: number;
-};
+import {
+  Empty,
+  Loading,
+  Panel,
+  ToolError,
+  toolErrorMessage,
+  usePersistedJson,
+} from "./shared.js";
 
 type SortKey =
   | "menu"
@@ -16,6 +19,26 @@ type SortKey =
   | "units_sold"
   | "contribution_margin"
   | "contribution_margin_share";
+
+type SortState = { key: SortKey; dir: "asc" | "desc" };
+
+const WEAK_SORT_KEYS: readonly SortKey[] = [
+  "menu",
+  "avg_qty_per_day",
+  "units_sold",
+  "contribution_margin",
+  "contribution_margin_share",
+];
+
+function isWeakSortState(value: unknown): value is SortState {
+  if (!value || typeof value !== "object") return false;
+  const v = value as { key?: unknown; dir?: unknown };
+  return (
+    typeof v.key === "string" &&
+    (WEAK_SORT_KEYS as readonly string[]).includes(v.key) &&
+    (v.dir === "asc" || v.dir === "desc")
+  );
+}
 
 function asNumber(v: unknown): number {
   const n = Number(v);
@@ -34,11 +57,21 @@ function formatMoney(n: number): string {
 
 export default function WeakItemsReview() {
   const { output, isPending } = useToolInfo<"render_weak_items_review">();
-  const [sortKey, setSortKey] = useState<SortKey>("contribution_margin_share");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sort, setSort] = usePersistedJson<SortState>(
+    "menuyukti-weak-items-sort",
+    { key: "contribution_margin_share", dir: "asc" },
+    isWeakSortState,
+  );
+  const sortKey = sort.key;
+  const sortDir = sort.dir;
 
-  const items = (output?.items ?? []) as WeakRow[];
-  const stats = (output?.stats ?? {}) as Record<string, unknown>;
+  const items: WeakDisplayRow[] = Array.isArray(output?.items)
+    ? output.items
+    : [];
+  const stats: WeakPortfolioStats | undefined =
+    output?.stats && typeof output.stats === "object"
+      ? (output.stats as WeakPortfolioStats)
+      : undefined;
   const showAvgQty = items.some(
     (r) => r.avg_qty_per_day != null && Number.isFinite(Number(r.avg_qty_per_day)),
   );
@@ -65,12 +98,12 @@ export default function WeakItemsReview() {
   }, [items, sortKey, sortDir]);
 
   function toggleSort(next: SortKey) {
-    if (sortKey === next) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortKey(next);
-      setSortDir("asc");
-    }
+    setSort((prev) => {
+      if (prev.key === next) {
+        return { key: next, dir: prev.dir === "asc" ? "desc" : "asc" };
+      }
+      return { key: next, dir: "asc" };
+    });
   }
 
   function header(key: SortKey, label: string, numeric = true) {
@@ -101,6 +134,17 @@ export default function WeakItemsReview() {
     return <Loading label="Weak items review" />;
   }
 
+  const toolError = toolErrorMessage(output);
+  if (toolError) {
+    return (
+      <ToolError
+        title="Weak items review"
+        description="Low popularity and low contribution-margin dishes."
+        message={toolError}
+      />
+    );
+  }
+
   if (!Array.isArray(output.items)) {
     return (
       <Panel
@@ -119,6 +163,17 @@ export default function WeakItemsReview() {
         description="Low popularity and low contribution-margin dishes."
       >
         <Empty>No weak-quadrant items in this workspace period.</Empty>
+      </Panel>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <Panel
+        title="Weak items review"
+        description="Low popularity and low contribution-margin dishes."
+      >
+        <Empty>Missing weak items portfolio stats.</Empty>
       </Panel>
     );
   }

@@ -1,6 +1,8 @@
 import {
+  useRef,
   useState,
   type CSSProperties,
+  type KeyboardEvent,
   type ReactNode,
 } from "react";
 import "./widget.css";
@@ -11,13 +13,13 @@ export function Panel({
   children,
 }: {
   title: string;
-  description: string;
+  description?: string;
   children: ReactNode;
 }) {
   return (
     <main className="myk-panel">
       <h2>{title}</h2>
-      <p className="myk-desc">{description}</p>
+      {description ? <p className="myk-desc">{description}</p> : null}
       {children}
     </main>
   );
@@ -31,6 +33,30 @@ export function Loading({ label }: { label: string }) {
   return (
     <Panel title={label} description="Loading analytics…">
       <p className="myk-meta">Waiting for tool result…</p>
+    </Panel>
+  );
+}
+
+/** Read errJson structuredContent.error from a render_* tool result. */
+export function toolErrorMessage(output: unknown): string | null {
+  if (!output || typeof output !== "object") return null;
+  const err = (output as { error?: unknown }).error;
+  if (typeof err === "string" && err.trim()) return err.trim();
+  return null;
+}
+
+export function ToolError({
+  title,
+  description,
+  message,
+}: {
+  title: string;
+  description: string;
+  message: string;
+}) {
+  return (
+    <Panel title={title} description={description}>
+      <Empty>{message}</Empty>
     </Panel>
   );
 }
@@ -49,17 +75,65 @@ export function Segmented<T extends string>({
   role?: "radiogroup" | "group";
 }) {
   const labelId = `${label.replace(/\s+/g, "-").toLowerCase()}-label`;
+  const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  function focusIndex(index: number) {
+    const clamped = Math.max(0, Math.min(options.length - 1, index));
+    const next = options[clamped];
+    if (!next) return;
+    onChange(next.id);
+    queueMicrotask(() => buttonRefs.current[clamped]?.focus());
+  }
+
+  function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (role !== "radiogroup" || options.length === 0) return;
+    const current = Math.max(
+      0,
+      options.findIndex((opt) => opt.id === value),
+    );
+    switch (event.key) {
+      case "ArrowRight":
+      case "ArrowDown":
+        event.preventDefault();
+        focusIndex((current + 1) % options.length);
+        break;
+      case "ArrowLeft":
+      case "ArrowUp":
+        event.preventDefault();
+        focusIndex((current - 1 + options.length) % options.length);
+        break;
+      case "Home":
+        event.preventDefault();
+        focusIndex(0);
+        break;
+      case "End":
+        event.preventDefault();
+        focusIndex(options.length - 1);
+        break;
+      default:
+        break;
+    }
+  }
+
   return (
     <div className="myk-metric-bar">
       <span className="myk-metric-label" id={labelId}>
         {label}
       </span>
-      <div className="myk-seg" role={role} aria-labelledby={labelId}>
-        {options.map((opt) => {
+      <div
+        className="myk-seg"
+        role={role}
+        aria-labelledby={labelId}
+        onKeyDown={onKeyDown}
+      >
+        {options.map((opt, index) => {
           const selected = opt.id === value;
           return (
             <button
               key={opt.id}
+              ref={(el) => {
+                buttonRefs.current[index] = el;
+              }}
               type="button"
               role={role === "radiogroup" ? "radio" : "button"}
               aria-checked={role === "radiogroup" ? selected : undefined}
@@ -129,6 +203,41 @@ export function usePersistedState<T extends string>(
       } catch {
         /* ignore */
       }
+    },
+  ];
+}
+
+/** Persist a small JSON object (e.g. sort key + direction) in localStorage. */
+export function usePersistedJson<T>(
+  key: string,
+  fallback: T,
+  isValid: (value: unknown) => value is T,
+): [T, (next: T | ((prev: T) => T)) => void] {
+  const [value, setValue] = useState<T>(() => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      const parsed: unknown = JSON.parse(raw);
+      return isValid(parsed) ? parsed : fallback;
+    } catch {
+      return fallback;
+    }
+  });
+  return [
+    value,
+    (next) => {
+      setValue((prev) => {
+        const resolved =
+          typeof next === "function"
+            ? (next as (prev: T) => T)(prev)
+            : next;
+        try {
+          localStorage.setItem(key, JSON.stringify(resolved));
+        } catch {
+          /* ignore */
+        }
+        return resolved;
+      });
     },
   ];
 }

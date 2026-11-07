@@ -39,7 +39,15 @@ pnpm check        # tsc --noEmit + vitest (from apps/menuyukti or repo root)
 
 ### Preview views (no ChatGPT required)
 
-DevTools can call any `render_*` tool to mount the view locally:
+**Fixture preview (no Excel / MCP):**
+
+```bash
+pnpm widgets:preview   # http://127.0.0.1:8790/?view=venue-slot-strength&kind=populated
+```
+
+Switch `view` (`venue-slot-strength` | `pair-lift-matrix` | `menu-heatmaps` | `weak-items-review`) and `kind` (`populated` | `empty` | `error`). Fixtures live in `src/views/fixtures/`.
+
+**DevTools with live sales:** call any `render_*` tool at `http://127.0.0.1:8787/` (`pnpm mcp`):
 
 - `render_hello_world_widget` — mock smoke
 - `render_venue_slot_strength` / `render_pair_lift_matrix` / `render_menu_heatmaps` — path `demo-cafe-july-2026`

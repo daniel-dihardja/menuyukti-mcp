@@ -2,6 +2,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadWorkspaceCogs } from "../cogs.js";
 import { loadNormalizedSales } from "../load.js";
+import { buildMenuHeatmapsPayload } from "../analytics-payloads.js";
 import {
   adaptWeakReviewFromOrders,
   applyMatrixCategories,
@@ -9,8 +10,10 @@ import {
   computeMenuBasketAffinitiesFromOrders,
   computeMenuEngineeringFromOrders,
   computeSlotDemandProfileFromOrders,
+  DEFAULT_MENU_HEATMAP_TOP_N,
   enrichedMenuHeatmaps,
   optionalStarFocus,
+  pruneMenuHeatmaps,
 } from "./index.js";
 
 const workspaces = resolve(
@@ -26,6 +29,35 @@ describe("demo-cafe-july-2026 analytics", () => {
     expect(heatmaps[0]?.daily_heatmap).toHaveLength(24);
     expect(heatmaps[0]?.weekly_heatmap).toHaveLength(7);
     expect(heatmaps.every((h) => h.matrix_category === null)).toBe(true);
+
+    const pruned = pruneMenuHeatmaps(heatmaps, {
+      topN: DEFAULT_MENU_HEATMAP_TOP_N,
+      activeHoursOnly: true,
+    });
+    expect(pruned).toHaveLength(DEFAULT_MENU_HEATMAP_TOP_N);
+    expect(pruned[0]?.daily_heatmap.length).toBeLessThan(24);
+    expect(pruned[0]?.daily_heatmap.length).toBeGreaterThan(0);
+
+    const prevDataDir = process.env.MENUYUKTI_DATA_DIR;
+    process.env.MENUYUKTI_DATA_DIR = workspaces;
+    try {
+      const widgetPayload = buildMenuHeatmapsPayload("demo-cafe-july-2026", {
+        topN: DEFAULT_MENU_HEATMAP_TOP_N,
+        activeHoursOnly: true,
+      });
+      expect(widgetPayload.menu_total).toBe(98);
+      expect(widgetPayload.menu_count).toBe(DEFAULT_MENU_HEATMAP_TOP_N);
+      expect(widgetPayload.limit_applied).toBe(DEFAULT_MENU_HEATMAP_TOP_N);
+      expect(widgetPayload.active_hours_only).toBe(true);
+
+      const fullPayload = buildMenuHeatmapsPayload("demo-cafe-july-2026");
+      expect(fullPayload.menu_count).toBe(98);
+      expect(fullPayload.limit_applied).toBeNull();
+      expect(fullPayload.active_hours_only).toBe(false);
+    } finally {
+      if (prevDataDir === undefined) delete process.env.MENUYUKTI_DATA_DIR;
+      else process.env.MENUYUKTI_DATA_DIR = prevDataDir;
+    }
 
     const viaFile = calculateMenuHeatmaps(
       loadNormalizedSales("demo-cafe-july-2026/sales.xlsx", workspaces).rows,

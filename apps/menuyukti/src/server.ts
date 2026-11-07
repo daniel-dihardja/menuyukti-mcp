@@ -1,13 +1,22 @@
 import { Skybridge } from "skybridge/server";
 import { z } from "zod";
 import {
-  adaptWeakReviewFromOrders,
-  computeMenuBasketAffinitiesFromOrders,
   computeMenuEngineeringFromOrders,
-  computeSlotDemandProfileFromOrders,
-  enrichedMenuHeatmaps,
-  optionalStarFocus,
 } from "./lib/analytics/index.js";
+import {
+  buildMenuHeatmapsPayload,
+  buildPairLiftPayload,
+  buildVenueSlotPayload,
+  buildWeakItemsPayload,
+  DEFAULT_MENU_HEATMAP_TOP_N,
+  WeakItemsPayloadError,
+} from "./lib/analytics-payloads.js";
+import {
+  menuHeatmapsPayloadSchema,
+  pairLiftPayloadSchema,
+  venueSlotPayloadSchema,
+  weakItemsPayloadSchema,
+} from "./lib/analytics-schemas.js";
 import { CogsError, loadWorkspaceCogs } from "./lib/cogs.js";
 import { LoadError, loadNormalizedSales } from "./lib/load.js";
 import { errJson, okJson, widgetJson } from "./lib/mcp-result.js";
@@ -59,6 +68,25 @@ const salesPathSchema = {
     .string()
     .describe(
       "Workspace folder (reads files.sales from workspace.yaml) or an Excel file under MENUYUKTI_DATA_DIR.",
+    ),
+};
+
+const menuHeatmapsPathSchema = {
+  ...salesPathSchema,
+  limit: z
+    .number()
+    .int()
+    .positive()
+    .max(500)
+    .optional()
+    .describe(
+      `Max menus to return, ranked by quantity. Omit for all menus on get_menu_heatmaps; render_menu_heatmaps defaults to ${DEFAULT_MENU_HEATMAP_TOP_N}.`,
+    ),
+  active_hours_only: z
+    .boolean()
+    .optional()
+    .describe(
+      "When true, daily_heatmap rows are limited to hours with demand across the returned menus. Default false for get_menu_heatmaps; true for render_menu_heatmaps.",
     ),
 };
 
@@ -285,8 +313,9 @@ export const app = new Skybridge({
         {
           name: "get_menu_heatmaps",
           description:
-            "Return per-menu daily (hourly) and weekly demand heatmaps from local POS sales. Path may be a workspace folder (workspace.yaml sales role) or an Excel file under MENUYUKTI_DATA_DIR. Sales alone is enough. When the path is a workspace with usable COGS, each item also includes matrix_category (star / plow_horse / puzzle / weak). Useful for when each dish sells most.",
-          inputSchema: salesPathSchema,
+            `Return per-menu daily (hourly) and weekly demand heatmaps from local POS sales. Path may be a workspace folder (workspace.yaml sales role) or an Excel file under MENUYUKTI_DATA_DIR. Sales alone is enough. When the path is a workspace with usable COGS, each item also includes matrix_category (star / plow_horse / puzzle / weak). Optional limit truncates to top menus by quantity; optional active_hours_only prunes empty daily hours. Response includes menu_total and limit_applied so agents know what was truncated. Prefer render_menu_heatmaps (default top ${DEFAULT_MENU_HEATMAP_TOP_N} + active hours) when the host mounts MCP Apps views.`,
+          inputSchema: menuHeatmapsPathSchema,
+          outputSchema: menuHeatmapsPayloadSchema,
           annotations: {
             title: "Menu heatmaps",
             readOnlyHint: true,
@@ -294,15 +323,14 @@ export const app = new Skybridge({
             openWorldHint: false,
           },
         },
-        async ({ path }) => {
+        async ({ path, limit, active_hours_only }) => {
           try {
-            const loaded = loadNormalizedSales(path);
-            const heatmaps = enrichedMenuHeatmaps(path, loaded.rows);
-            return okJson({
-              pos: loaded.pos,
-              menu_count: heatmaps.length,
-              heatmaps,
-            });
+            return okJson(
+              buildMenuHeatmapsPayload(path, {
+                topN: limit ?? null,
+                activeHoursOnly: active_hours_only === true,
+              }),
+            );
           } catch (err) {
             return errJson(loadErrMessage(err));
           }
@@ -314,6 +342,7 @@ export const app = new Skybridge({
           description:
             "Return venue slot strength: weekday × meal-period demand (order counts, traffic share, demand index, relative demand). Path may be a workspace folder (workspace.yaml sales role) or an Excel file under MENUYUKTI_DATA_DIR. Sales alone is enough — use for timing, staffing, and when to promote. Returns a fixed 35-cell slot_demand_profile.",
           inputSchema: salesPathSchema,
+          outputSchema: venueSlotPayloadSchema,
           annotations: {
             title: "Venue slot strength",
             readOnlyHint: true,
@@ -323,13 +352,7 @@ export const app = new Skybridge({
         },
         async ({ path }) => {
           try {
-            const loaded = loadNormalizedSales(path);
-            const profile = computeSlotDemandProfileFromOrders(loaded.rows);
-            return okJson({
-              pos: loaded.pos,
-              slot_count: profile.length,
-              slot_demand_profile: profile,
-            });
+            return okJson(buildVenueSlotPayload(path));
           } catch (err) {
             return errJson(loadErrMessage(err));
           }
@@ -393,8 +416,9 @@ export const app = new Skybridge({
         {
           name: "get_weak_items_review",
           description:
-            "Return Weak items review analytics for reprice / improve / remove decisions. Workspace folder under MENUYUKTI_DATA_DIR with files.sales and files.cogs required. Filters the menu-engineering matrix to the weak quadrant and adds period depth (avg qty/day, portfolio item/margin share). If COGS is missing, list_workspace_files / write_workspace_config or ask the owner for unit costs first. JSON-only — MCP Apps weak-items widget arrives in TASK-44.7+.",
+            "Return Weak items review analytics for reprice / improve / remove decisions. Workspace folder under MENUYUKTI_DATA_DIR with files.sales and files.cogs required. Filters the menu-engineering matrix to the weak quadrant and adds period depth (avg qty/day, portfolio item/margin share). If COGS is missing, list_workspace_files / write_workspace_config or ask the owner for unit costs first. Prefer render_weak_items_review when the host mounts MCP Apps views and the owner should see the table; use this tool for JSON-only answers.",
           inputSchema: workspacePathSchema,
+          outputSchema: weakItemsPayloadSchema,
           annotations: {
             title: "Weak items review",
             readOnlyHint: true,
@@ -404,44 +428,11 @@ export const app = new Skybridge({
         },
         async ({ path }) => {
           try {
-            let cogs;
-            try {
-              cogs = loadWorkspaceCogs(path);
-            } catch (err) {
-              const message =
-                err instanceof CogsError || err instanceof Error
-                  ? err.message
-                  : String(err);
-              return errJson(
-                `${message} Weak items review needs sales + a unit-cost (COGS) Excel: ask the owner to drop COGS into the folder, then list_workspace_files and write_workspace_config (or call get_setup_status).`,
-              );
-            }
-            const loaded = loadNormalizedSales(path);
-            try {
-              const matrix = computeMenuEngineeringFromOrders(
-                loaded.rows,
-                cogs.unit_costs,
-              );
-              const review = adaptWeakReviewFromOrders(matrix, loaded.rows);
-              return okJson({
-                pos: loaded.pos,
-                workspace: path,
-                cogs_path: cogs.path,
-                period_start: review.period_start,
-                period_end: review.period_end,
-                stats: review.stats,
-                distribution_stats: review.distribution_stats,
-                items: review.rows,
-                coverage: matrix.coverage,
-              });
-            } catch (err) {
-              const message =
-                err instanceof Error ? err.message : String(err);
-              return errJson(
-                `${message}. Fix COGS coverage (Menu + COGS columns matching sold menu names) or ask the owner to update unit costs.`,
-              );
-            }
+            return okJson(buildWeakItemsPayload(path));
           } catch (err) {
+            if (err instanceof WeakItemsPayloadError) {
+              return errJson(err.message);
+            }
             return errJson(loadErrMessage(err));
           }
         },
@@ -452,6 +443,7 @@ export const app = new Skybridge({
           description:
             "Return the pair lift matrix (co-purchase affinity) for combo and upsell ideas. Path may be a workspace folder (workspace.yaml sales role) or an Excel file under MENUYUKTI_DATA_DIR. Sales alone is enough (top menus by order presence). When the path is a workspace with files.cogs and menu engineering yields at least two stars, those stars become the focus. Returns focus_menus, matrix_lift, totals, scope, and ranked pairs.",
           inputSchema: salesPathSchema,
+          outputSchema: pairLiftPayloadSchema,
           annotations: {
             title: "Pair lift matrix",
             readOnlyHint: true,
@@ -461,23 +453,7 @@ export const app = new Skybridge({
         },
         async ({ path }) => {
           try {
-            const loaded = loadNormalizedSales(path);
-            const starFocus = optionalStarFocus(path, loaded.rows);
-            const affinities = computeMenuBasketAffinitiesFromOrders(
-              loaded.rows,
-              starFocus,
-            );
-            return okJson({
-              pos: loaded.pos,
-              total_orders: affinities.total_orders,
-              multi_item_order_count: affinities.multi_item_order_count,
-              avg_distinct_items_per_order:
-                affinities.avg_distinct_items_per_order,
-              scope: affinities.scope,
-              focus_menus: affinities.focus_menus,
-              matrix_lift: affinities.matrix_lift,
-              pairs: affinities.pairs,
-            });
+            return okJson(buildPairLiftPayload(path));
           } catch (err) {
             return errJson(loadErrMessage(err));
           }
@@ -489,6 +465,7 @@ export const app = new Skybridge({
           description:
             "Render the venue slot strength heatmap widget (weekday × meal-period demand). Path may be a workspace folder (workspace.yaml sales role) or an Excel file under MENUYUKTI_DATA_DIR. Sales alone is enough. Prefer this when the owner should see the timing chart; use get_venue_slot_strength for JSON-only answers.",
           inputSchema: salesPathSchema,
+          outputSchema: venueSlotPayloadSchema,
           annotations: {
             title: "Render venue slot strength",
             readOnlyHint: true,
@@ -508,15 +485,10 @@ export const app = new Skybridge({
         },
         async ({ path }) => {
           try {
-            const loaded = loadNormalizedSales(path);
-            const profile = computeSlotDemandProfileFromOrders(loaded.rows);
+            const payload = buildVenueSlotPayload(path);
             return widgetJson(
-              {
-                pos: loaded.pos,
-                slot_count: profile.length,
-                slot_demand_profile: profile,
-              },
-              `Showing venue slot strength heatmap (${loaded.pos}, ${profile.length} slots).`,
+              payload,
+              `Showing venue slot strength heatmap (${payload.pos}, ${payload.slot_count} slots).`,
             );
           } catch (err) {
             return errJson(loadErrMessage(err));
@@ -529,6 +501,7 @@ export const app = new Skybridge({
           description:
             "Render the pair lift index heatmap widget (focus menu × focus menu co-purchase lift). Path may be a workspace folder (workspace.yaml sales role) or an Excel file under MENUYUKTI_DATA_DIR. Sales alone is enough; COGS upgrades focus to stars when ≥2. Prefer this when the owner should see the combo chart; use get_pair_lift_matrix for JSON-only answers.",
           inputSchema: salesPathSchema,
+          outputSchema: pairLiftPayloadSchema,
           annotations: {
             title: "Render pair lift matrix",
             readOnlyHint: true,
@@ -547,25 +520,10 @@ export const app = new Skybridge({
         },
         async ({ path }) => {
           try {
-            const loaded = loadNormalizedSales(path);
-            const starFocus = optionalStarFocus(path, loaded.rows);
-            const affinities = computeMenuBasketAffinitiesFromOrders(
-              loaded.rows,
-              starFocus,
-            );
+            const payload = buildPairLiftPayload(path);
             return widgetJson(
-              {
-                pos: loaded.pos,
-                total_orders: affinities.total_orders,
-                multi_item_order_count: affinities.multi_item_order_count,
-                avg_distinct_items_per_order:
-                  affinities.avg_distinct_items_per_order,
-                scope: affinities.scope,
-                focus_menus: affinities.focus_menus,
-                matrix_lift: affinities.matrix_lift,
-                pairs: affinities.pairs,
-              },
-              `Showing pair lift index heatmap (${loaded.pos}, ${affinities.focus_menus.length} focus menus).`,
+              payload,
+              `Showing pair lift index heatmap (${payload.pos}, ${payload.focus_menus.length} focus menus).`,
             );
           } catch (err) {
             return errJson(loadErrMessage(err));
@@ -576,8 +534,9 @@ export const app = new Skybridge({
         {
           name: "render_menu_heatmaps",
           description:
-            "Render the menu heatmaps widget (per-menu daily hour and weekly weekday unit quantities). Path may be a workspace folder (workspace.yaml sales role) or an Excel file under MENUYUKTI_DATA_DIR. Sales alone is enough; workspace COGS adds matrix_category filters (weak off by default). Prefer this when the owner should see the dish timing chart; use get_menu_heatmaps for JSON-only answers.",
-          inputSchema: salesPathSchema,
+            `Render the menu heatmaps widget (per-menu daily hour and weekly weekday unit quantities). Path may be a workspace folder (workspace.yaml sales role) or an Excel file under MENUYUKTI_DATA_DIR. Sales alone is enough; workspace COGS adds matrix_category filters (weak off by default). Defaults to top ${DEFAULT_MENU_HEATMAP_TOP_N} menus by quantity and active daily hours only (override with limit / active_hours_only). Response fields menu_total and limit_applied describe truncation. Prefer this when the owner should see the dish timing chart; use get_menu_heatmaps for full JSON.`,
+          inputSchema: menuHeatmapsPathSchema,
+          outputSchema: menuHeatmapsPayloadSchema,
           annotations: {
             title: "Render menu heatmaps",
             readOnlyHint: true,
@@ -594,17 +553,20 @@ export const app = new Skybridge({
               "Per-menu daily/weekly quantity heatmaps with category filters",
           },
         },
-        async ({ path }) => {
+        async ({ path, limit, active_hours_only }) => {
           try {
-            const loaded = loadNormalizedSales(path);
-            const heatmaps = enrichedMenuHeatmaps(path, loaded.rows);
+            const payload = buildMenuHeatmapsPayload(path, {
+              topN: limit ?? DEFAULT_MENU_HEATMAP_TOP_N,
+              activeHoursOnly: active_hours_only !== false,
+            });
+            const truncated =
+              payload.limit_applied != null &&
+              payload.menu_total > payload.menu_count
+                ? `, top ${payload.menu_count} of ${payload.menu_total}`
+                : `, ${payload.menu_count} menus`;
             return widgetJson(
-              {
-                pos: loaded.pos,
-                menu_count: heatmaps.length,
-                heatmaps,
-              },
-              `Showing menu heatmaps (${loaded.pos}, ${heatmaps.length} menus).`,
+              payload,
+              `Showing menu heatmaps (${payload.pos}${truncated}${payload.active_hours_only ? ", active hours" : ""}).`,
             );
           } catch (err) {
             return errJson(loadErrMessage(err));
@@ -617,6 +579,7 @@ export const app = new Skybridge({
           description:
             "Render the weak items review widget (sortable weak-quadrant table with portfolio KPIs). Workspace folder under MENUYUKTI_DATA_DIR with files.sales and files.cogs required. Prefer this when the owner should see the weak items table; use get_weak_items_review for JSON-only answers. Never also redraw HTML via a presentation skill in the same turn.",
           inputSchema: workspacePathSchema,
+          outputSchema: weakItemsPayloadSchema,
           annotations: {
             title: "Render weak items review",
             readOnlyHint: true,
@@ -636,47 +599,15 @@ export const app = new Skybridge({
         },
         async ({ path }) => {
           try {
-            let cogs;
-            try {
-              cogs = loadWorkspaceCogs(path);
-            } catch (err) {
-              const message =
-                err instanceof CogsError || err instanceof Error
-                  ? err.message
-                  : String(err);
-              return errJson(
-                `${message} Weak items review needs sales + a unit-cost (COGS) Excel: ask the owner to drop COGS into the folder, then list_workspace_files and write_workspace_config (or call get_setup_status).`,
-              );
-            }
-            const loaded = loadNormalizedSales(path);
-            try {
-              const matrix = computeMenuEngineeringFromOrders(
-                loaded.rows,
-                cogs.unit_costs,
-              );
-              const review = adaptWeakReviewFromOrders(matrix, loaded.rows);
-              return widgetJson(
-                {
-                  pos: loaded.pos,
-                  workspace: path,
-                  cogs_path: cogs.path,
-                  period_start: review.period_start,
-                  period_end: review.period_end,
-                  stats: review.stats,
-                  distribution_stats: review.distribution_stats,
-                  items: review.rows,
-                  coverage: matrix.coverage,
-                },
-                `Showing weak items review (${loaded.pos}, ${review.rows.length} weak items).`,
-              );
-            } catch (err) {
-              const message =
-                err instanceof Error ? err.message : String(err);
-              return errJson(
-                `${message}. Fix COGS coverage (Menu + COGS columns matching sold menu names) or ask the owner to update unit costs.`,
-              );
-            }
+            const payload = buildWeakItemsPayload(path);
+            return widgetJson(
+              payload,
+              `Showing weak items review (${payload.pos}, ${payload.items.length} weak items).`,
+            );
           } catch (err) {
+            if (err instanceof WeakItemsPayloadError) {
+              return errJson(err.message);
+            }
             return errJson(loadErrMessage(err));
           }
         },

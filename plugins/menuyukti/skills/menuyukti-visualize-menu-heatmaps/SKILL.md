@@ -41,13 +41,13 @@ Follow [references/menu-heatmap-recipe.md](references/menu-heatmap-recipe.md):
 
 | User intent | Draw |
 | --- | --- |
-| What **time** / hour / daypart for dishes | **Daily** matrix (default hours **8–22** inclusive) |
-| Which **day** / weekday | **Weekly** matrix (Mon–Sun) |
+| What **time** / hour / daypart for dishes | **Daily** matrix (columns = hours with sales across drawn rows; else **8–22**) |
+| Which **day** / weekday | **Weekly** matrix (columns Mon–Sun; rows = menus) |
 | Unspecified “show heatmaps” | **Weekly** first (narrower); offer daily for top or named items |
 
 ## Render + narrate (HTML fallback only)
 
-- Write one self-contained **HTML** file per ask (cell value = raw `quantity`; color intensity from the **drawn** matrix max). Tell the owner the path and to open it in a browser.
+- Write one self-contained **HTML** file per ask (cell value = raw `quantity`; `widget.css` heatmap ramp; intensity min→max of drawn cells; light text when `t >= 0.55`). Tell the owner the path and to open it in a browser.
 - When any drawn row has `matrix_category`, include **interactive enable/disable checkboxes** for `star`, `plow_horse`, `puzzle`, and `weak` that show/hide matching rows. **Weak starts unchecked** (hidden); the other three start checked.
 - Do **not** also dump a markdown grid for the same ask.
 - After the file: peak column (hour or weekday), top item by row total, and item count — from selected rows only (respect default category filter when narrating).

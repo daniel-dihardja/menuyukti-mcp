@@ -17,11 +17,14 @@ import {
 } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  assertSelfContainedDist,
+  assertSelfContainedHtml,
+} from "./self-contained-csp.mjs";
 
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const assetsRoot = path.join(appRoot, "dist", "assets");
 const manifestPath = path.join(assetsRoot, ".vite", "manifest.json");
-const outDir = path.join(appRoot, "dist", "self-contained");
 
 function assertManifest() {
   if (!existsSync(manifestPath)) {
@@ -29,15 +32,6 @@ function assertManifest() {
       `Missing ${manifestPath}. Run skybridge build before inline-widgets.`,
     );
   }
-}
-
-function loadCss(manifest) {
-  const styleEntry = manifest["style.css"];
-  if (!styleEntry?.file) {
-    throw new Error("Vite manifest missing style.css entry");
-  }
-  const cssPath = path.join(assetsRoot, styleEntry.file);
-  return readFileSync(cssPath, "utf8");
 }
 
 function entryViews(manifest) {
@@ -103,16 +97,17 @@ export async function inlineWidgets({ root = appRoot } = {}) {
       write: false,
       format: "esm",
       platform: "browser",
+      // One HTML blob per view (Codex CSP) cannot share a React chunk across
+      // files — minify is the practical size win without breaking self-containment.
+      minify: true,
+      legalComments: "none",
+      treeShaking: true,
       logLevel: "warning",
     });
     const js = bundled.outputFiles[0]?.text;
     if (!js) throw new Error(`esbuild produced no output for ${view.name}`);
     const html = wrapHtml(css, js);
-    if (/https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?\/(?:assets|@vite|_skybridge)/i.test(html)) {
-      throw new Error(
-        `Self-contained HTML for ${view.name} still references localhost Vite/assets URLs`,
-      );
-    }
+    assertSelfContainedHtml(view.name, html);
     const htmlPath = path.join(out, `${view.name}.html`);
     writeFileSync(htmlPath, html);
     written.push({ name: view.name, bytes: html.length, path: htmlPath });
@@ -123,6 +118,7 @@ export async function inlineWidgets({ root = appRoot } = {}) {
 async function main() {
   assertManifest();
   const written = await inlineWidgets();
+  assertSelfContainedDist(appRoot);
   for (const w of written) {
     console.log(`inlined ${w.name} (${w.bytes} bytes) → ${path.relative(appRoot, w.path)}`);
   }

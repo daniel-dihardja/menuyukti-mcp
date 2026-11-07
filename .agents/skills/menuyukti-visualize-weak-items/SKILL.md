@@ -34,8 +34,8 @@ Present the **weak** menu-engineering quadrant. Prefer the Skybridge **`render_w
 
 Follow [references/weak-table-recipe.md](references/weak-table-recipe.md).
 
-1. **Always** include a short KPI strip from `stats` (item count / share, margin share, margin amount, period).
-2. Write a single self-contained **HTML** file (sortable column headers). Default sort = **margin share ascending** (v3). Tell the owner the path and to open it in a browser.
+1. **Always** include a short KPI strip from `stats` (item count / share, margin share, margin amount, period) matching the React widget.
+2. Write a single self-contained **HTML** file (sortable column headers; chrome from `widget.css` fallback tokens in the recipe). Default sort = **margin share ascending**. Tell the owner the path and to open it in a browser.
 3. Narrate in chat (3–5 bullets). Do **not** also dump a markdown data table for the same ask.
 
 ## Narrate

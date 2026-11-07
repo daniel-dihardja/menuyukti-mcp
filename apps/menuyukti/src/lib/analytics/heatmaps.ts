@@ -102,3 +102,44 @@ export function calculateMenuHeatmaps(
   });
   return payloads;
 }
+
+/** Default top-N for chat/widget heatmaps (matches Codex skill MENU_HEATMAP_CHAT_TOP_N). */
+export const DEFAULT_MENU_HEATMAP_TOP_N = 25;
+
+/**
+ * Limit menus (already quantity-ranked) and optionally prune daily hours to
+ * those with demand across the returned set.
+ */
+export function pruneMenuHeatmaps(
+  heatmaps: MenuHeatmapPayload[],
+  options: {
+    topN?: number | null;
+    activeHoursOnly?: boolean;
+  } = {},
+): MenuHeatmapPayload[] {
+  const { topN = null, activeHoursOnly = false } = options;
+  let items =
+    topN == null || !Number.isFinite(topN) || topN <= 0
+      ? heatmaps
+      : heatmaps.slice(0, Math.floor(topN));
+
+  if (!activeHoursOnly || items.length === 0) return items;
+
+  const hourTotals = new Array<number>(24).fill(0);
+  for (const item of items) {
+    for (const row of item.daily_heatmap) {
+      if (row.hour < 0 || row.hour > 23) continue;
+      hourTotals[row.hour]! += row.quantity;
+    }
+  }
+  const active = hourTotals
+    .map((qty, hour) => (qty >= 1 ? hour : -1))
+    .filter((hour) => hour >= 0);
+  if (active.length === 0 || active.length === 24) return items;
+
+  const keep = new Set(active);
+  return items.map((item) => ({
+    ...item,
+    daily_heatmap: item.daily_heatmap.filter((row) => keep.has(row.hour)),
+  }));
+}
