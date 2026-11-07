@@ -13,6 +13,14 @@ apps/menuyukti/.vercel/
 __pycache__/
 .pytest_cache/
 
+# Node / pnpm / frontend local artifacts
+node_modules/
+.pnpm-store/
+dist/
+.vercel/
+.skybridge/
+*.tsbuildinfo
+
 # Local analysis workspaces (keep the default demo + folder README)
 workspaces/*
 !workspaces/README.md
