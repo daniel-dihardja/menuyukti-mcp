@@ -7,6 +7,10 @@ Contributor workflow for Menuyukti MCP (Skybridge / TypeScript).
 - **Node.js 24+**
 - **pnpm 10+** (see `packageManager` in root `package.json`)
 
+### Editor TypeScript
+
+Skybridge’s base `tsconfig` uses `${configDir}` (TypeScript **5.5+**). This repo pins the workspace SDK at `apps/menuyukti/node_modules/typescript` via `.vscode/settings.json`. In Cursor/VS Code, choose **TypeScript: Select TypeScript Version → Use Workspace Version** if the editor still shows spurious red squiggles while `pnpm typecheck` is clean.
+
 ## Commands
 
 From the repo root (`package.json` is the source of truth):
