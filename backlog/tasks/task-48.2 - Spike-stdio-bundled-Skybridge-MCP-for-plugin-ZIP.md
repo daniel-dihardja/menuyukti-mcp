@@ -4,12 +4,14 @@ title: Spike stdio-bundled Skybridge MCP for plugin ZIP
 status: To Do
 assignee: []
 created_date: '2026-11-07T03:34:00Z'
+updated_date: '2026-11-07T04:00:00Z'
 labels:
   - openai
   - plugin
   - spike
 dependencies: []
 references:
+  - backlog/tasks/task-49 - Harden-Skybridge-analytics-widget-serving-and-DX.md
   - https://developers.openai.com/plugins/deploy/desktop-only
   - apps/menuyukti/package.json
   - plugins/menuyukti/mcp.json
@@ -34,4 +36,5 @@ Spike how to package or wrap the Skybridge Menuyukti server so a clean Desktop p
 - [ ] #1 Written spike notes describe a viable stdio (or accepted local) launch path from PLUGIN_ROOT
 - [ ] #2 Notes list runtime deps (Node version, data dir, widget/assets) and size/constraints
 - [ ] #3 GO/NO-GO recommendation recorded for building the directory package in the follow-up task
+- [ ] #4 Spike notes explicitly cover shipping dist/self-contained HTML (or equivalent) and the Menuyukti self-contained production patch so Codex CSP widgets still work under stdio/PLUGIN_ROOT
 <!-- AC:END -->
